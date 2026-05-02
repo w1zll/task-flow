@@ -66,5 +66,7 @@ export class MoveTaskDto {
 
 export class ReorderTasksDto {
   @ApiProperty({ description: 'Массив тасок в новой последовательности' })
+  @IsArray()
+  @IsUUID('4', { each: true })
   taskIds: string[];
 }

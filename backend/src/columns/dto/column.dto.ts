@@ -1,5 +1,6 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import {
+  IsArray,
   IsNumber,
   IsOptional,
   IsString,
@@ -26,6 +27,8 @@ export class CreateColumnDto {
 export class UpdateColumnDto extends PartialType(CreateColumnDto) {}
 
 export class ReorderColumnsDto {
-  @ApiProperty({ description: 'UUIDs of columns' })
-  columnsIds: string[];
+  @ApiProperty({ description: 'Массив ID колонок в новой последовательности' })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  columnIds: string[];
 }

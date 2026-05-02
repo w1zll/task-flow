@@ -72,7 +72,7 @@ export class ColumnsService {
   ): Promise<void> {
     await this.verifyBoardOwner(boardId, userId);
 
-    const updates = dto.columnsIds.map((colId, index) =>
+    const updates = dto.columnIds.map((colId, index) =>
       this.columnRepo.update({ id: colId, boardId }, { order: index }),
     );
     await Promise.all(updates);

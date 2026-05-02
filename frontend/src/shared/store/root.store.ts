@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext } from 'react';
 import { AuthStore } from './auth.store';
 import { BoardUIStore } from './board-ui.store';

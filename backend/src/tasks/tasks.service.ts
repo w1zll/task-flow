@@ -54,7 +54,10 @@ export class TasksService {
       dto.order = count;
     }
 
-    const task = this.taskRepo.create(dto);
+    const task = this.taskRepo.create({
+      ...dto,
+      dueDate: dto.dueDate ? new Date(dto.dueDate) : new Date(),
+    });
     return this.taskRepo.save(task);
   }
 

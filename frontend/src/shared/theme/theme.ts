@@ -1,3 +1,5 @@
+'use client';
+
 import { alpha, createTheme } from '@mui/material/styles';
 
 const palette = {

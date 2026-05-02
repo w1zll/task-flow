@@ -51,7 +51,7 @@ export const authApi = {
 
   refresh: () => apiClient.post<{ user: AuthUser }>('/api/auth/refresh'),
 
-  me: () => apiClient.get<{ user: AuthUser }>('/api/auth/me'),
+  me: () => apiClient.get<AuthUser>('/api/auth/me'),
 };
 
 export const boardsApi = {
@@ -93,7 +93,7 @@ export const taskApi = {
   }) => apiClient.post<Task>('/api/tasks', data),
 
   update: (id: string, data: Partial<Task>) =>
-    apiClient.patch<Task>(`/api/tasks/${id}`, data),
+    apiClient.put<Task>(`/api/tasks/${id}`, data),
 
   move: (id: string, data: { columnId: string; order: number }) =>
     apiClient.patch<Task>(`/api/tasks/${id}/move`, data),

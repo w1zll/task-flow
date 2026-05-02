@@ -1,3 +1,5 @@
+'use client';
+
 import { makeAutoObservable } from 'mobx';
 
 export class BoardUIStore {

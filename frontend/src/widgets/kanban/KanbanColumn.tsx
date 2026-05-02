@@ -1,0 +1,293 @@
+'use client';
+
+import { Board, BoardColumn } from '@/shared/api/api';
+import {
+  useCreateTask,
+  useDeleteColumn,
+  useUpdateColumn,
+} from '@/shared/queries/boards.queries';
+import { useBoardUIStore } from '@/shared/store/root.store';
+import { Add, Delete, Edit, MoreHoriz } from '@mui/icons-material';
+import {
+  alpha,
+  Box,
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  Paper,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import { observer } from 'mobx-react-lite';
+import { useState } from 'react';
+import { Draggable, Droppable } from '@hello-pangea/dnd';
+import TaskCard from './TaskCard';
+
+interface Props {
+  column: BoardColumn;
+  board: Board;
+  index: number;
+}
+
+const KanbanColumn = observer(({ column, board, index }: Props) => {
+  const boardUI = useBoardUIStore();
+  const createTask = useCreateTask();
+  const deleteColumn = useDeleteColumn();
+  const updateColumn = useUpdateColumn();
+
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleInput, setTitleInput] = useState(column.title);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  const isAddingTask = boardUI.addingTaskInColumnId === column.id;
+
+  const handleAddTask = () => {
+    const title = newTaskTitle.trim();
+    if (!title) return;
+    createTask.mutate(
+      { title, columnId: column.id, boardId: board.id },
+      {
+        onSuccess: () => {
+          setNewTaskTitle('');
+          boardUI.setAddingTaskInColumn(null);
+        },
+      },
+    );
+  };
+
+  const handleRenameColumn = () => {
+    const title = titleInput.trim();
+    if (title && title !== column.title) {
+      updateColumn.mutate({
+        id: column.id,
+        data: { title },
+        boardId: board.id,
+      });
+    }
+    setIsEditingTitle(false);
+  };
+
+  const handleDeleteColumn = () => {
+    setMenuAnchor(null);
+    deleteColumn.mutate({ id: column.id, boardId: board.id });
+  };
+
+  return (
+    <Draggable draggableId={column.id} index={index}>
+      {(provided, snapshot) => (
+        <Paper
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          elevation={0}
+          sx={{
+            width: 280,
+            flexShrink: 0,
+            bgcolor: (theme) =>
+              theme.palette.mode === 'dark'
+                ? alpha(
+                    theme.palette.background.paper,
+                    snapshot.isDragging ? 0.95 : 0.8,
+                  )
+                : alpha(theme.palette.grey[100], snapshot.isDragging ? 1 : 0.8),
+            border: '1px solid',
+            borderColor: snapshot.isDragging ? 'primary.main' : 'divider',
+            borderRadius: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: 'calc(100vh - 180px)',
+            transition: 'border-color 0.15s',
+          }}
+        >
+          <Box
+            {...provided.dragHandleProps}
+            sx={{
+              px: 2,
+              pt: 2,
+              pb: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'grab',
+            }}
+          >
+            {isEditingTitle ? (
+              <TextField
+                autoFocus
+                size="small"
+                value={titleInput}
+                onChange={(e) => setTitleInput(e.target.value)}
+                onBlur={handleRenameColumn}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRenameColumn();
+                  if (e.key === 'Escape') {
+                    setTitleInput(column.title);
+                    setIsEditingTitle(false);
+                  }
+                }}
+                sx={{ flex: 1, mr: 1 }}
+                inputProps={{ style: { fontWeight: 600 } }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                <Typography variant="subtitle2" fontWeight={600} noWrap>
+                  {column.title}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    bgcolor: 'action.selected',
+                    px: 0.8,
+                    py: 0.2,
+                    borderRadius: 1,
+                    fontWeight: 600,
+                    flexShrink: 0,
+                  }}
+                >
+                  {column.tasks?.length ?? 0}
+                </Typography>
+              </Box>
+            )}
+
+            <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+              <Tooltip title="Добвить задачу">
+                <IconButton
+                  size="small"
+                  onClick={() => boardUI.setAddingTaskInColumn(column.id)}
+                >
+                  <Add fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <IconButton
+                size="small"
+                onClick={(e) => setMenuAnchor(e.currentTarget)}
+              >
+                <MoreHoriz fontSize="small" />
+              </IconButton>
+            </Box>
+          </Box>
+
+          <Droppable droppableId={column.id} type="TASK">
+            {(provided, snapshot) => (
+              <Box
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                sx={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  px: 1.5,
+                  pb: 1,
+                  minHeight: 60,
+                  bgcolor: snapshot.isDraggingOver
+                    ? (theme) => alpha(theme.palette.primary.main, 0.04)
+                    : 'transparent',
+                  transition: 'background-color 0.15s',
+                  borderRadius: 1,
+                  '&::-webkit-scrollbar': { width: 4 },
+                  '&::-webkit-scrollbar-thumb': {
+                    bgcolor: 'divider',
+                    borderRadius: 2,
+                  },
+                }}
+              >
+                {(column.tasks ?? []).map((task, taskIndex) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    index={taskIndex}
+                    boardId={board.id}
+                  />
+                ))}
+                {provided.placeholder}
+              </Box>
+            )}
+          </Droppable>
+
+          {isAddingTask ? (
+            <Box sx={{ px: 1.5, pb: 1.5 }}>
+              <TextField
+                autoFocus
+                size="small"
+                fullWidth
+                multiline
+                maxRows={4}
+                placeholder="Название задачи"
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAddTask();
+                  }
+                  if (e.key === 'Escape') boardUI.setAddingTaskInColumn(null);
+                }}
+                sx={{ mb: 1 }}
+              />
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleAddTask}
+                  disabled={createTask.isPending}
+                >
+                  Добавить
+                </Button>
+                <Button
+                  size="small"
+                  onClick={() => boardUI.setAddingTaskInColumn(null)}
+                >
+                  Отмена
+                </Button>
+              </Box>
+            </Box>
+          ) : (
+            <Box sx={{ px: 1.5, pb: 1.5 }}>
+              <Button
+                size="small"
+                startIcon={<Add />}
+                onClick={() => boardUI.setAddingTaskInColumn(column.id)}
+                sx={{
+                  width: '100%',
+                  justifyContent: 'flex-start',
+                  color: 'text.secondary',
+                }}
+              >
+                Добавить задачу
+              </Button>
+            </Box>
+          )}
+
+          <Menu
+            anchorEl={menuAnchor}
+            open={!!menuAnchor}
+            onClose={() => setMenuAnchor(null)}
+          >
+            <MenuItem
+              onClick={() => {
+                setMenuAnchor(null);
+                setIsEditingTitle(true);
+              }}
+            >
+              <Edit fontSize="small" sx={{ mr: 1 }} /> Переименовать
+            </MenuItem>
+            <MenuItem onClick={handleDeleteColumn} sx={{ color: 'error.main' }}>
+              <Delete fontSize="small" sx={{ mr: 1 }} /> Удалить колонку
+            </MenuItem>
+          </Menu>
+        </Paper>
+      )}
+    </Draggable>
+  );
+});
+
+export default KanbanColumn;

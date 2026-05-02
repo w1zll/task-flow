@@ -110,7 +110,16 @@ export const useCreateTask = () => {
       description?: string;
       priority?: Task['priority'];
       labels?: string[];
-    }) => taskApi.create(data).then((r) => r.data),
+    }) =>
+      taskApi
+        .create({
+          title: data.title,
+          columnId: data.columnId,
+          description: data.description,
+          priority: data.priority,
+          labels: data.labels,
+        })
+        .then((r) => r.data),
     onSuccess: (_, { boardId }) =>
       qc.invalidateQueries({ queryKey: queryKeys.board(boardId) }),
   });

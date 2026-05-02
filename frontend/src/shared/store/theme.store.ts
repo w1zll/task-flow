@@ -1,3 +1,5 @@
+'use client';
+
 import { makeAutoObservable } from 'mobx';
 
 type ThemeMode = 'light' | 'dark';
