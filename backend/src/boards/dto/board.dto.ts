@@ -1,6 +1,7 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString, IsUUID, Matches, MaxLength } from 'class-validator';
 import { ColumnResponseDto } from '@/columns/dto/column.dto';
+import { UserResponseDto } from '@/users/dto/user.dto';
 
 export class CreateBoardDto {
   @ApiProperty({ example: 'Board 1' })
@@ -69,14 +70,8 @@ export class BoardMemberResponseDto {
   @ApiProperty({ example: 'user-uuid' })
   userId: string;
 
-  @ApiProperty({ example: 'john@example.com' })
-  email: string;
-
-  @ApiProperty({ example: 'John Doe' })
-  name: string;
-
-  @ApiProperty({ example: 'https://example.com/avatar.png', required: false })
-  avatar?: string;
+  @ApiProperty({ type: () => UserResponseDto })
+  user: UserResponseDto;
 
   @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
   createdAt: string;

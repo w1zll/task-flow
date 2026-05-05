@@ -3,7 +3,7 @@
 import { Board, Task } from '@/shared/api/api';
 import { useBoardSocket } from '@/shared/hooks/useBoardSocket';
 import { getSocket } from '@/shared/lib/socket';
-import { useDeleteTask, useUpdateTask } from '@/shared/queries/boards.queries';
+import { useDeleteTask } from '@/shared/queries/boards.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
 import {
   CalendarToday,
@@ -61,10 +61,7 @@ const LABEL_PRESETS = [
 ];
 
 const TaskDetailModal = observer(({ board }: Props) => {
-  console.log(board);
-  console.log(board.members);
   const boardUI = useBoardUIStore();
-  const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
 
   const socket = getSocket();
@@ -77,6 +74,7 @@ const TaskDetailModal = observer(({ board }: Props) => {
   const [form, setForm] = useState<Partial<Task>>({});
   const [labelInput, setLabelInput] = useState('');
   const [isDirty, setIsDirty] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (task) {
@@ -93,6 +91,20 @@ const TaskDetailModal = observer(({ board }: Props) => {
     }
   }, [task?.id]);
 
+  useEffect(() => {
+    const handleTaskUpdate = (updatedTask: Task) => {
+      if (updatedTask.id === task?.id) {
+        setIsUpdating(false);
+      }
+    };
+
+    socket.on('task:update', handleTaskUpdate);
+
+    return () => {
+      socket.off('task:update', handleTaskUpdate);
+    };
+  }, [task?.id, socket]);
+
   const patch = <K extends keyof Task>(key: K, value: Task[K]) => {
     setForm((p) => ({ ...p, [key]: value }));
     setIsDirty(true);
@@ -100,15 +112,14 @@ const TaskDetailModal = observer(({ board }: Props) => {
 
   const handleSave = () => {
     if (!task) return;
+    setIsUpdating(true);
     socket.emit('task:update', {
       boardId: board.id,
       taskId: task.id,
       changes: form,
     });
-    // updateTask.mutate(
-    //   { id: task.id, data: form, boardId: board.id },
-    //   { onSuccess: () => setIsDirty(false) },
-    // );
+    setIsDirty(false);
+    // isUpdating сбросится по событию 'task:update' от сервера
   };
 
   const handleDelete = () => {
@@ -258,7 +269,7 @@ const TaskDetailModal = observer(({ board }: Props) => {
               <MenuItem value="">Не указан</MenuItem>
               {board.members?.map((member) => (
                 <MenuItem key={member.id} value={member.userId}>
-                  {member.user!.name}
+                  {member.user.name}
                 </MenuItem>
               ))}
             </Select>
@@ -366,10 +377,10 @@ const TaskDetailModal = observer(({ board }: Props) => {
             variant="contained"
             startIcon={<Save />}
             onClick={handleSave}
-            disabled={!isDirty || updateTask.isPending}
+            disabled={!isDirty || isUpdating}
             size="small"
           >
-            {updateTask.isPending ? 'Сохранение…' : 'Сохранить'}
+            {isUpdating ? 'Сохранение…' : 'Сохранить'}
           </Button>
         </Box>
       </DialogActions>

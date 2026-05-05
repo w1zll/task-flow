@@ -488,17 +488,26 @@ export interface components {
             /** @example 2026-05-05T12:00:00.000Z */
             updatedAt: string;
         };
-        BoardMemberResponseDto: {
-            /** @example member-uuid */
-            id: string;
+        UserResponseDto: {
             /** @example user-uuid */
-            userId: string;
+            id: string;
             /** @example john@example.com */
             email: string;
             /** @example John Doe */
             name: string;
             /** @example https://example.com/avatar.png */
             avatar?: string;
+            /** @example 2026-05-05T12:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-05-05T12:00:00.000Z */
+            updatedAt: string;
+        };
+        BoardMemberResponseDto: {
+            /** @example member-uuid */
+            id: string;
+            /** @example user-uuid */
+            userId: string;
+            user: components["schemas"]["UserResponseDto"];
             /** @example 2026-05-05T12:00:00.000Z */
             createdAt: string;
         };
