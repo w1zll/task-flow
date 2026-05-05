@@ -9,15 +9,25 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import {
+  AuthResponseDto,
+  LoginDto,
+  RegisterDto,
+  UserDto,
+} from './dto/auth.dto';
 import type { Request, Response } from 'express';
-import { UsingJoinTableIsNotAllowedError } from 'typeorm';
 import { User } from '@/users/entities/user.entity';
-import { emitWarning } from 'process';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { MessageDto } from '@/common/dto/message-response.dto';
 
 const REFRESH_COOKIE = 'refresh_token';
 const ACCESS_COOKIE = 'access_token';
@@ -36,6 +46,7 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Регистрация пользователя' })
+  @ApiCreatedResponse({ type: AuthResponseDto })
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
@@ -48,6 +59,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Авторизация пользователя' })
+  @ApiOkResponse({ type: AuthResponseDto })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -60,6 +72,7 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Обновление токенов' })
+  @ApiOkResponse({ type: AuthResponseDto })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -75,6 +88,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'Выход пользователя - удалиение токенов и очищение куки',
   })
+  @ApiOkResponse({ type: MessageDto })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.[REFRESH_COOKIE];
     await this.authService.logout(refreshToken);
@@ -87,6 +101,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Получение информации о текущем пользователе' })
+  @ApiOkResponse({
+    type: UserDto,
+  })
   async me(@CurrentUser() user: User) {
     return {
       id: user.id,

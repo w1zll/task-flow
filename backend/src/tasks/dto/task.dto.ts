@@ -54,6 +54,41 @@ export class CreateTaskDto {
 
 export class UpdateTaskDto extends PartialType(CreateTaskDto) {}
 
+export class TaskResponseDto {
+  @ApiProperty({ example: 'task-uuid' })
+  id: string;
+
+  @ApiProperty({ example: 'Task 1' })
+  title: string;
+
+  @ApiProperty({ required: false })
+  description?: string;
+
+  @ApiProperty({ enum: TaskPriority, default: TaskPriority.MEDIUM })
+  priority: TaskPriority;
+
+  @ApiProperty({ example: 0 })
+  order: number;
+
+  @ApiProperty({ required: false, example: ['Label 1', 'Label 2'] })
+  labels?: string[];
+
+  @ApiProperty({ required: false, example: '2026-05-05T12:00:00.000Z' })
+  dueDate?: string;
+
+  @ApiProperty({ required: false })
+  assigneeName?: string;
+
+  @ApiProperty({ example: 'column-uuid' })
+  columnId: string;
+
+  @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
+  createdAt: string;
+
+  @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
+  updatedAt: string;
+}
+
 export class MoveTaskDto {
   @ApiProperty({ description: 'ID новой колонки' })
   @IsUUID()

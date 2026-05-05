@@ -10,12 +10,20 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import {
   CreateTaskDto,
   MoveTaskDto,
   ReorderTasksDto,
+  TaskResponseDto,
   UpdateTaskDto,
 } from './dto/task.dto';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
@@ -31,12 +39,14 @@ export class TasksController {
 
   @Post()
   @ApiOperation({ summary: 'Создать задачу в колонке' })
+  @ApiCreatedResponse({ type: TaskResponseDto })
   create(@Body() dto: CreateTaskDto, @CurrentUser() user: User) {
     return this.tasksService.create(dto, user.id);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Изменить задачу' })
+  @ApiOkResponse({ type: TaskResponseDto })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateTaskDto,
@@ -49,6 +59,7 @@ export class TasksController {
   @ApiOperation({
     summary: 'Переместить задачу в другую колонку (drag & drop)',
   })
+  @ApiOkResponse({ type: TaskResponseDto })
   move(
     @Param('id') id: string,
     @Body() dto: MoveTaskDto,
@@ -60,6 +71,7 @@ export class TasksController {
   @Put('column/:columnId/reorder')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Переупорядочить задачи в колонке' })
+  @ApiNoContentResponse()
   reorder(
     @Param('columnId') columnId: string,
     @Body() dto: ReorderTasksDto,
@@ -71,6 +83,7 @@ export class TasksController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Удалить задачу' })
+  @ApiNoContentResponse()
   remove(@Param('id') id: string, @CurrentUser() user: User) {
     return this.tasksService.remove(id, user.id);
   }

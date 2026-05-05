@@ -10,10 +10,17 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ColumnsService } from './column.service';
-import { CreateBoardDto } from '@/boards/dto/board.dto';
 import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { ColumnsService } from './column.service';
+import {
+  ColumnResponseDto,
   CreateColumnDto,
   ReorderColumnsDto,
   UpdateColumnDto,
@@ -30,12 +37,14 @@ export class ColumnsController {
 
   @Post()
   @ApiOperation({ summary: 'Создание колонки' })
+  @ApiCreatedResponse({ type: ColumnResponseDto })
   create(@Body() dto: CreateColumnDto, @CurrentUser() user: User) {
     return this.columnsService.create(dto, user.id);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update column title/order' })
+  @ApiOkResponse({ type: ColumnResponseDto })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateColumnDto,
@@ -47,6 +56,7 @@ export class ColumnsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete column (cascades tasks)' })
+  @ApiNoContentResponse()
   remove(@Param('id') id: string, @CurrentUser() user: User) {
     return this.columnsService.remove(id, user.id);
   }
@@ -54,6 +64,7 @@ export class ColumnsController {
   @Put('board/:boardId/reorder')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Reorder columns in board' })
+  @ApiNoContentResponse()
   reorder(
     @Param('boardId') boardId: string,
     @Body() dto: ReorderColumnsDto,

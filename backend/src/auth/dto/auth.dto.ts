@@ -28,3 +28,22 @@ export class LoginDto {
   @IsString()
   password: string;
 }
+
+export class UserDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  email: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty({ required: false })
+  avatar?: string;
+}
+
+export class AuthResponseDto {
+  @ApiProperty()
+  user: UserDto;
+}
