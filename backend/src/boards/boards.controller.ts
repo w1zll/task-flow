@@ -23,8 +23,10 @@ import { BoardsService } from './boards.service';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { User } from '@/users/entities/user.entity';
 import {
+  BoardMemberResponseDto,
   BoardResponseDto,
   CreateBoardDto,
+  ShareBoardDto,
   UpdateBoardDto,
 } from './dto/board.dto';
 
@@ -47,6 +49,36 @@ export class BoardsController {
   @ApiOkResponse({ type: BoardResponseDto })
   findOne(@Param('id') id: string, @CurrentUser() user: User) {
     return this.boardsService.findOne(id, user.id);
+  }
+
+  @Post(':id/share')
+  @ApiOperation({ summary: 'Пригласить пользователя к доске' })
+  @ApiOkResponse({ type: BoardMemberResponseDto })
+  share(
+    @Param('id') id: string,
+    @Body() dto: ShareBoardDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.boardsService.share(id, dto, user.id);
+  }
+
+  @Get(':id/members')
+  @ApiOperation({ summary: 'Получить список участников доски' })
+  @ApiOkResponse({ type: BoardMemberResponseDto, isArray: true })
+  members(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.boardsService.listMembers(id, user.id);
+  }
+
+  @Delete(':id/share/:memberId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Удалить участника из доски' })
+  @ApiNoContentResponse()
+  revokeMember(
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.boardsService.revokeMember(id, memberId, user.id);
   }
 
   @Post()

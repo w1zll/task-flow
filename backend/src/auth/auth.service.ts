@@ -122,6 +122,25 @@ export class AuthService {
     }
   }
 
+  async getSessions(userId: string) {
+    return this.refreshTokenRepo
+      .createQueryBuilder('token')
+      .where('token.userId = :userId', { userId })
+      .andWhere('token.isRevoked = false')
+      .andWhere('token.expiresAt > NOW()')
+      .orderBy('token.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async revokeSession(userId: string, sessionId: string) {
+    const session = await this.refreshTokenRepo.findOne({ where: { id: sessionId } });
+    if (!session || session.userId !== userId) {
+      throw new UnauthorizedException('Сессия не найдена');
+    }
+    session.isRevoked = true;
+    await this.refreshTokenRepo.save(session);
+  }
+
   async validateUser(userId: string): Promise<User> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new UnauthorizedException('Пользователь не найден');

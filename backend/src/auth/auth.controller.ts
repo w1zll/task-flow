@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Req,
   Res,
@@ -21,6 +23,7 @@ import {
   AuthResponseDto,
   LoginDto,
   RegisterDto,
+  SessionDto,
   UserDto,
 } from './dto/auth.dto';
 import type { Request, Response } from 'express';
@@ -111,6 +114,32 @@ export class AuthController {
       name: user.name,
       avatar: user.avatar,
     };
+  }
+
+  @Get('sessions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Получить активные сессии пользователя' })
+  @ApiOkResponse({ type: SessionDto, isArray: true })
+  async sessions(@CurrentUser() user: User) {
+    const sessions = await this.authService.getSessions(user.id);
+    return sessions.map((session) => ({
+      id: session.id,
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt,
+    }));
+  }
+
+  @Delete('sessions/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Завершить активную сессию' })
+  async revokeSession(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+  ) {
+    await this.authService.revokeSession(user.id, id);
   }
 
   private setTokenCookies(

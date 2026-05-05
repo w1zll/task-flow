@@ -105,6 +105,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Получить активные сессии пользователя */
+        get: operations["AuthController_sessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Завершить активную сессию */
+        delete: operations["AuthController_revokeSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/boards": {
         parameters: {
             query?: never;
@@ -137,6 +171,57 @@ export interface paths {
         post?: never;
         /** Удалить доску */
         delete: operations["BoardsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/boards/{id}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Пригласить пользователя к доске */
+        post: operations["BoardsController_share"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/boards/{id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Получить список участников доски */
+        get: operations["BoardsController_members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/boards/{id}/share/{memberId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Удалить участника из доски */
+        delete: operations["BoardsController_revokeMember"];
         options?: never;
         head?: never;
         patch?: never;
@@ -263,6 +348,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tasks/analytics/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Статистика выполненных задач по дням */
+        get: operations["TasksController_analyticsDaily"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/analytics/monthly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Статистика выполненных задач по месяцам */
+        get: operations["TasksController_analyticsMonthly"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/analytics/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Сводка по выполнению задач в срок и с опозданием */
+        get: operations["TasksController_analyticsSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -294,6 +430,14 @@ export interface components {
             /** @example Успешный ответ */
             message: string;
         };
+        SessionDto: {
+            /** @example session-uuid */
+            id: string;
+            /** @example 2026-05-05T12:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-05-12T12:00:00.000Z */
+            expiresAt: string;
+        };
         TaskResponseDto: {
             /** @example task-uuid */
             id: string;
@@ -316,7 +460,12 @@ export interface components {
             labels?: string[];
             /** @example 2026-05-05T12:00:00.000Z */
             dueDate?: string;
+            /** @example assignee-user-uuid */
+            assigneeId?: string;
             assigneeName?: string;
+            isCompleted?: boolean;
+            /** @example 2026-05-05T12:00:00.000Z */
+            completedAt?: string;
             /** @example column-uuid */
             columnId: string;
             /** @example 2026-05-05T12:00:00.000Z */
@@ -339,6 +488,20 @@ export interface components {
             /** @example 2026-05-05T12:00:00.000Z */
             updatedAt: string;
         };
+        BoardMemberResponseDto: {
+            /** @example member-uuid */
+            id: string;
+            /** @example user-uuid */
+            userId: string;
+            /** @example john@example.com */
+            email: string;
+            /** @example John Doe */
+            name: string;
+            /** @example https://example.com/avatar.png */
+            avatar?: string;
+            /** @example 2026-05-05T12:00:00.000Z */
+            createdAt: string;
+        };
         BoardResponseDto: {
             /** @example board-uuid */
             id: string;
@@ -351,10 +514,17 @@ export interface components {
             /** @example user-uuid */
             ownerId: string;
             columns?: components["schemas"]["ColumnResponseDto"][];
+            members?: components["schemas"]["BoardMemberResponseDto"][];
             /** @example 2026-05-05T12:00:00.000Z */
             createdAt: string;
             /** @example 2026-05-05T12:00:00.000Z */
             updatedAt: string;
+        };
+        ShareBoardDto: {
+            /** @description ID пользователя для приглашения */
+            userId?: string;
+            /** @description Email пользователя для приглашения */
+            email?: string;
         };
         CreateBoardDto: {
             /** @example Board 1 */
@@ -409,6 +579,11 @@ export interface components {
              */
             labels?: string[];
             dueDate?: string;
+            /** @example assignee-user-uuid */
+            assigneeId?: string;
+            isCompleted?: boolean;
+            /** @example 2026-05-05T12:00:00.000Z */
+            completedAt?: string;
             assigneeName?: string;
             /** @example column-uuid */
             columnId: string;
@@ -431,6 +606,11 @@ export interface components {
              */
             labels?: string[];
             dueDate?: string;
+            /** @example assignee-user-uuid */
+            assigneeId?: string;
+            isCompleted?: boolean;
+            /** @example 2026-05-05T12:00:00.000Z */
+            completedAt?: string;
             assigneeName?: string;
             /** @example column-uuid */
             columnId?: string;
@@ -445,6 +625,20 @@ export interface components {
         ReorderTasksDto: {
             /** @description Массив тасок в новой последовательности */
             taskIds: string[];
+        };
+        AnalyticsItemDto: {
+            /** @example 2026-05-05 */
+            period: string;
+            /** @example 12 */
+            count: number;
+        };
+        CompletionSummaryDto: {
+            /** @example 24 */
+            total: number;
+            /** @example 18 */
+            onTime: number;
+            /** @example 6 */
+            late: number;
         };
     };
     responses: never;
@@ -577,6 +771,44 @@ export interface operations {
             };
         };
     };
+    AuthController_sessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionDto"][];
+                };
+            };
+        };
+    };
+    AuthController_revokeSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     BoardsController_findAll: {
         parameters: {
             query?: never;
@@ -671,6 +903,72 @@ export interface operations {
             header?: never;
             path: {
                 id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BoardsController_share: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShareBoardDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardMemberResponseDto"];
+                };
+            };
+        };
+    };
+    BoardsController_members: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardMemberResponseDto"][];
+                };
+            };
+        };
+    };
+    BoardsController_revokeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                memberId: string;
             };
             cookie?: never;
         };
@@ -886,6 +1184,75 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    TasksController_analyticsDaily: {
+        parameters: {
+            query?: {
+                boardId?: string;
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsItemDto"][];
+                };
+            };
+        };
+    };
+    TasksController_analyticsMonthly: {
+        parameters: {
+            query?: {
+                boardId?: string;
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsItemDto"][];
+                };
+            };
+        };
+    };
+    TasksController_analyticsSummary: {
+        parameters: {
+            query?: {
+                boardId?: string;
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompletionSummaryDto"];
+                };
             };
         };
     };

@@ -1,13 +1,26 @@
 'use client';
 
-import { useBoard, useCreateColumn } from '@/shared/queries/boards.queries';
+import {
+  useBoard,
+  useBoardDailyAnalytics,
+  useBoardMembers,
+  useCreateColumn,
+  useRevokeBoardMember,
+  useShareBoard,
+  useTaskCompletionSummary,
+} from '@/shared/queries/boards.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
 import {
   Box,
   Breadcrumbs,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Link,
   Skeleton,
+  Stack,
   TextField,
   Typography,
 } from '@mui/material';
@@ -30,6 +43,27 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
   const boardUI = useBoardUIStore();
 
   const [newColTitle, setNewColTitle] = useState('');
+  const [isShareOpen, setShareOpen] = useState(false);
+  const [shareEmail, setShareEmail] = useState('');
+
+  const boardMembers = useBoardMembers(boardId);
+  const shareBoard = useShareBoard();
+  const revokeMember = useRevokeBoardMember();
+  const summaryAnalytics = useTaskCompletionSummary(boardId);
+  const dailyAnalytics = useBoardDailyAnalytics(boardId);
+
+  const handleShareBoard = () => {
+    if (!shareEmail.trim()) return;
+    shareBoard.mutate(
+      { boardId, email: shareEmail.trim() },
+      {
+        onSuccess: () => {
+          setShareEmail('');
+          setShareOpen(false);
+        },
+      },
+    );
+  };
 
   const handleAddColumn = () => {
     const title = newColTitle.trim();
@@ -47,7 +81,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
 
   if (isError) {
     return (
-      <Box sx={{bgcolor: 'background.default' }}>
+      <Box sx={{ bgcolor: 'background.default' }}>
         <Box
           sx={{
             display: 'flex',
@@ -81,7 +115,6 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
         flexDirection: 'column',
       }}
     >
-
       <Box
         sx={{
           px: 3,
@@ -134,14 +167,23 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
           </Box>
         </Box>
 
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<Add />}
-          onClick={() => boardUI.setAddingColumn(true)}
-        >
-          Добавить колонку
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setShareOpen(true)}
+          >
+            Поделиться
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<Add />}
+            onClick={() => boardUI.setAddingColumn(true)}
+          >
+            Добавить колонку
+          </Button>
+        </Stack>
       </Box>
 
       <Box sx={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', p: 2 }}>
@@ -160,54 +202,177 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
               minHeight: '100%',
             }}
           >
-            <KanbanBoard board={board} />
-
-            {boardUI.isAddingColumn ? (
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <KanbanBoard board={board} />
+            </Box>
+            <Box
+              sx={{
+                width: 320,
+                flexShrink: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+              }}
+            >
               <Box
                 sx={{
-                  width: 280,
-                  flexShrink: 0,
+                  p: 2,
                   bgcolor: 'background.paper',
                   borderRadius: 2,
-                  p: 2,
                   border: '1px solid',
                   borderColor: 'divider',
                 }}
               >
-                <TextField
-                  autoFocus
-                  size="small"
-                  fullWidth
-                  placeholder="Названи колонки"
-                  value={newColTitle}
-                  onChange={(e) => setNewColTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAddColumn();
-                    if (e.key === 'Escape') boardUI.setAddingColumn(false);
-                  }}
-                  sx={{ mb: 1 }}
-                />
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={handleAddColumn}
-                    disabled={createColumn.isPending}
-                  >
-                    Добавить
-                  </Button>
-                  <Button
-                    size="small"
-                    onClick={() => boardUI.setAddingColumn(false)}
-                  >
-                    Отмена
-                  </Button>
-                </Box>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+                  Статистика по задачам
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Выполнено в срок: {summaryAnalytics.data?.onTime ?? '-'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Выполнено после срока: {summaryAnalytics.data?.late ?? '-'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  За сегодня: {dailyAnalytics.data?.length ?? 0}
+                </Typography>
               </Box>
-            ) : null}
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: 'background.paper',
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+                  Участники доски
+                </Typography>
+                {boardMembers.isLoading ? (
+                  <Typography variant="body2" color="text.secondary">
+                    Загрузка...
+                  </Typography>
+                ) : boardMembers.data?.length ? (
+                  <Stack spacing={1}>
+                    {boardMembers.data.map(({ user }: any) => (
+                      <Box
+                        key={user.id}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <Typography variant="body2">{user.name}</Typography>
+                        <Button
+                          size="small"
+                          color="error"
+                          onClick={() =>
+                            revokeMember.mutate({
+                              boardId,
+                              memberId: user.id,
+                            })
+                          }
+                        >
+                          Удалить
+                        </Button>
+                      </Box>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Нет участников.
+                  </Typography>
+                )}
+              </Box>
+              {boardUI.isAddingColumn ? (
+                <Box
+                  sx={{
+                    width: 280,
+                    flexShrink: 0,
+                    bgcolor: 'background.paper',
+                    borderRadius: 2,
+                    p: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
+                  <TextField
+                    autoFocus
+                    size="small"
+                    fullWidth
+                    placeholder="Название колонки"
+                    value={newColTitle}
+                    onChange={(e) => setNewColTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddColumn();
+                      if (e.key === 'Escape') boardUI.setAddingColumn(false);
+                    }}
+                    sx={{ mb: 1 }}
+                  />
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={handleAddColumn}
+                      disabled={createColumn.isPending}
+                    >
+                      Добавить
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() => boardUI.setAddingColumn(false)}
+                    >
+                      Отмена
+                    </Button>
+                  </Box>
+                </Box>
+              ) : null}
+            </Box>
           </Box>
         ) : null}
       </Box>
+
+      <Dialog open={isShareOpen} onClose={() => setShareOpen(false)}>
+        <DialogTitle>Поделиться доской</DialogTitle>
+        <DialogContent
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            minWidth: 320,
+            pt: 1,
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Отправьте приглашение по электронной почте, чтобы дать доступ к
+            доске.
+          </Typography>
+          <TextField
+            label="Email"
+            size="small"
+            fullWidth
+            value={shareEmail}
+            onChange={(e) => setShareEmail(e.target.value)}
+            placeholder="user@example.com"
+          />
+          {shareBoard.isError && (
+            <Typography variant="body2" color="error">
+              Не удалось отправить приглашение.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={() => setShareOpen(false)}>Отмена</Button>
+          <Button
+            variant="contained"
+            onClick={handleShareBoard}
+            disabled={shareBoard.isPending || !shareEmail.trim()}
+          >
+            Отправить
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {board && <TaskDetailModal board={board} />}
     </Box>

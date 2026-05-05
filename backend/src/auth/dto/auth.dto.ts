@@ -47,3 +47,14 @@ export class AuthResponseDto {
   @ApiProperty()
   user: UserDto;
 }
+
+export class SessionDto {
+  @ApiProperty({ example: 'session-uuid' })
+  id: string;
+
+  @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
+  createdAt: string;
+
+  @ApiProperty({ example: '2026-05-12T12:00:00.000Z' })
+  expiresAt: string;
+}

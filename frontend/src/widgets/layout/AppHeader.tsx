@@ -139,6 +139,14 @@ const AppHeader = observer(() => {
             </Box>
             <Divider />
             <MenuItem
+              component={NextLink}
+              href="/profile"
+              onClick={() => setAnchorEl(null)}
+              sx={{ gap: 1 }}
+            >
+              Профиль
+            </MenuItem>
+            <MenuItem
               onClick={() => {
                 setAnchorEl(null);
                 logout();

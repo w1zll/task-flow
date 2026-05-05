@@ -1,5 +1,5 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUUID, Matches, MaxLength } from 'class-validator';
 import { ColumnResponseDto } from '@/columns/dto/column.dto';
 
 export class CreateBoardDto {
@@ -17,6 +17,18 @@ export class CreateBoardDto {
   @IsOptional()
   @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'Неверный формат кода' })
   color?: string;
+}
+
+export class ShareBoardDto {
+  @ApiProperty({ required: false, description: 'ID пользователя для приглашения' })
+  @IsOptional()
+  @IsUUID()
+  userId?: string;
+
+  @ApiProperty({ required: false, description: 'Email пользователя для приглашения' })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 }
 
 export class UpdateBoardDto extends PartialType(CreateBoardDto) {}
@@ -40,9 +52,32 @@ export class BoardResponseDto {
   @ApiProperty({ type: () => ColumnResponseDto, isArray: true, required: false })
   columns?: ColumnResponseDto[];
 
+  @ApiProperty({ type: () => BoardMemberResponseDto, isArray: true, required: false })
+  members?: BoardMemberResponseDto[];
+
   @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
   createdAt: string;
 
   @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
   updatedAt: string;
+}
+
+export class BoardMemberResponseDto {
+  @ApiProperty({ example: 'member-uuid' })
+  id: string;
+
+  @ApiProperty({ example: 'user-uuid' })
+  userId: string;
+
+  @ApiProperty({ example: 'john@example.com' })
+  email: string;
+
+  @ApiProperty({ example: 'John Doe' })
+  name: string;
+
+  @ApiProperty({ example: 'https://example.com/avatar.png', required: false })
+  avatar?: string;
+
+  @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
+  createdAt: string;
 }

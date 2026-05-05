@@ -16,7 +16,6 @@ const AuthHydrator = () => {
     authApi
       .me()
       .then((res) => {
-        console.log(res.data);
         authStore.hydrate(res.data);
       })
       .catch(() => authStore.hydrate(null));

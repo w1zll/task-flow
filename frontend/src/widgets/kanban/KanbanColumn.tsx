@@ -7,7 +7,7 @@ import {
   useUpdateColumn,
 } from '@/shared/queries/boards.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
-import { Add, Delete, Edit, MoreHoriz } from '@mui/icons-material';
+import { Add, Check, Close, Delete, Edit, MoreHoriz } from '@mui/icons-material';
 import {
   alpha,
   Box,
@@ -21,7 +21,7 @@ import {
   Typography,
 } from '@mui/material';
 import { observer } from 'mobx-react-lite';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
 import TaskCard from './TaskCard';
 
@@ -41,6 +41,14 @@ const KanbanColumn = observer(({ column, board, index }: Props) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(column.title);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  useEffect(() => {
+    setTitleInput(column.title);
+  }, [column.title]);
+
+  useEffect(() => {
+    console.log(isEditingTitle);
+  }, [isEditingTitle]);
 
   const isAddingTask = boardUI.addingTaskInColumnId === column.id;
 
@@ -119,7 +127,6 @@ const KanbanColumn = observer(({ column, board, index }: Props) => {
                 size="small"
                 value={titleInput}
                 onChange={(e) => setTitleInput(e.target.value)}
-                onBlur={handleRenameColumn}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleRenameColumn();
                   if (e.key === 'Escape') {
@@ -129,6 +136,29 @@ const KanbanColumn = observer(({ column, board, index }: Props) => {
                 }}
                 sx={{ flex: 1, mr: 1 }}
                 inputProps={{ style: { fontWeight: 600 } }}
+                InputProps={{
+                  endAdornment: (
+                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                      <IconButton
+                        size="small"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={handleRenameColumn}
+                      >
+                        <Check fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setTitleInput(column.title);
+                          setIsEditingTitle(false);
+                        }}
+                      >
+                        <Close fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ),
+                }}
               />
             ) : (
               <Box
@@ -273,7 +303,7 @@ const KanbanColumn = observer(({ column, board, index }: Props) => {
             onClose={() => setMenuAnchor(null)}
           >
             <MenuItem
-              onClick={() => {
+              onClick={(e) => {
                 setMenuAnchor(null);
                 setIsEditingTitle(true);
               }}

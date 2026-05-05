@@ -35,6 +35,16 @@ export const authApi = {
     ),
 
   me: () => apiClient.get<ApiResponse<'/api/auth/me', 'get'>>('/api/auth/me'),
+
+  getSessions: () =>
+    apiClient.get<ApiResponse<'/api/auth/sessions', 'get'>>(
+      '/api/auth/sessions',
+    ),
+
+  revokeSession: (id: string) =>
+    apiClient.delete<ApiResponse<'/api/auth/sessions/{id}', 'delete'>>(
+      `/api/auth/sessions/${id}`,
+    ),
 };
 
 export const boardsApi = {
@@ -55,6 +65,22 @@ export const boardsApi = {
   remove: (id: string) =>
     apiClient.delete<ApiResponse<'/api/boards/{id}', 'delete'>>(
       `/api/boards/${id}`,
+    ),
+
+  share: (id: string, data: ApiBody<'/api/boards/{id}/share', 'post'>) =>
+    apiClient.post<ApiResponse<'/api/boards/{id}/share', 'post'>>(
+      `/api/boards/${id}/share`,
+      data,
+    ),
+
+  getMembers: (id: string) =>
+    apiClient.get<ApiResponse<'/api/boards/{id}/members', 'get'>>(
+      `/api/boards/${id}/members`,
+    ),
+
+  revokeMember: (boardId: string, memberId: string) =>
+    apiClient.delete<ApiResponse<'/api/boards/{id}/share/{memberId}', 'delete'>>(
+      `/api/boards/${boardId}/share/${memberId}`,
     ),
 };
 
@@ -88,6 +114,9 @@ export const taskApi = {
     priority?: Task['priority'];
     labels?: string[];
     dueDate?: string;
+    assigneeId?: string;
+    isCompleted?: boolean;
+    completedAt?: string;
     assigneeName?: string;
   }) => apiClient.post<ApiResponse<'/api/tasks', 'post'>>('/api/tasks', data),
 
@@ -108,6 +137,36 @@ export const taskApi = {
       `/api/tasks/column/${columnId}/reorder`,
       { taskIds },
     ),
+
+  analytics: {
+    daily: (query?: {
+      boardId?: string;
+      fromDate?: string;
+      toDate?: string;
+    }) =>
+      apiClient.get<ApiResponse<'/api/tasks/analytics/daily', 'get'>>(
+        '/api/tasks/analytics/daily',
+        { params: query },
+      ),
+    monthly: (query?: {
+      boardId?: string;
+      fromDate?: string;
+      toDate?: string;
+    }) =>
+      apiClient.get<ApiResponse<'/api/tasks/analytics/monthly', 'get'>>(
+        '/api/tasks/analytics/monthly',
+        { params: query },
+      ),
+    summary: (query?: {
+      boardId?: string;
+      fromDate?: string;
+      toDate?: string;
+    }) =>
+      apiClient.get<ApiResponse<'/api/tasks/analytics/summary', 'get'>>(
+        '/api/tasks/analytics/summary',
+        { params: query },
+      ),
+  },
 
   remove: (id: string) =>
     apiClient.delete<ApiResponse<'/api/tasks/{id}', 'delete'>>(

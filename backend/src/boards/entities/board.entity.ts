@@ -1,5 +1,6 @@
 import { Column as BoardColumn } from '@/columns/entities/column.entity';
 import { User } from '@/users/entities/user.entity';
+import { BoardMember } from './board-member.entity';
 import {
   Column,
   CreateDateColumn,
@@ -31,6 +32,9 @@ export class Board {
   @ManyToOne(() => User, (user) => user.boards, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'ownerId' })
   owner: User;
+
+  @OneToMany(() => BoardMember, (member) => member.board, { cascade: true })
+  members: BoardMember[];
 
   @OneToMany(() => BoardColumn, (col) => col.board, { cascade: true })
   columns: BoardColumn[];

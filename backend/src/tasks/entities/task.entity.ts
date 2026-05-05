@@ -1,4 +1,5 @@
 import { Column } from '@/columns/entities/column.entity';
+import { User } from '@/users/entities/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -45,6 +46,19 @@ export class Task {
 
   @OrmColumn({ nullable: true, length: 200 })
   assigneeName: string; // simple string for pet project
+
+  @OrmColumn({ nullable: true })
+  assigneeId?: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'assigneeId' })
+  assignee?: User;
+
+  @OrmColumn({ default: false })
+  isCompleted: boolean;
+
+  @OrmColumn({ nullable: true })
+  completedAt?: Date;
 
   @OrmColumn()
   columnId: string;

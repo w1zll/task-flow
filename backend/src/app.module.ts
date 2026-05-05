@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/entities/user.entity';
 import { Board } from './boards/entities/board.entity';
+import { BoardMember } from './boards/entities/board-member.entity';
 import { Column } from './columns/entities/column.entity';
 import { Task } from './tasks/entities/task.entity';
 import { RefreshToken } from './auth/entities/refresh-token.entity';
@@ -31,7 +32,7 @@ import { TasksModule } from './tasks/tasks.module';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [User, Board, Column, Task, RefreshToken],
+        entities: [User, Board, BoardMember, Column, Task, RefreshToken],
         synchronize: config.get('NODE_ENV') !== 'production',
         logging: config.get('NODE_ENV') === 'development',
       }),

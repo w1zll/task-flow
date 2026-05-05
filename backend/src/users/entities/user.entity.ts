@@ -12,6 +12,7 @@ import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
 import { RefreshToken } from '@/auth/entities/refresh-token.entity';
 import { Board } from '@/boards/entities/board.entity';
+import { BoardMember } from '@/boards/entities/board-member.entity';
 
 @Entity('users')
 export class User {
@@ -39,6 +40,9 @@ export class User {
 
   @OneToMany(() => Board, (board) => board.owner)
   boards: Board[];
+
+  @OneToMany(() => BoardMember, (member) => member.user)
+  boardMemberships: BoardMember[];
 
   @OneToMany(() => RefreshToken, (token) => token.user)
   refreshTokens: RefreshToken[];

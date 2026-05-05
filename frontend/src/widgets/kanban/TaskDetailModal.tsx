@@ -81,6 +81,7 @@ const TaskDetailModal = observer(({ board }: Props) => {
         labels: task.labels ?? [],
         dueDate: task.dueDate ? dayjs(task.dueDate).format('YYYY-MM-DD') : '',
         assigneeName: task.assigneeName ?? '',
+        assigneeId: task.assigneeId ?? undefined,
       });
       setIsDirty(false);
     }
@@ -225,18 +226,30 @@ const TaskDetailModal = observer(({ board }: Props) => {
             }}
           />
 
-          <TextField
-            label="Ответственный"
-            size="small"
-            sx={{ flex: 1, minWidth: 140 }}
-            value={form.assigneeName ?? ''}
-            onChange={(e) => patch('assigneeName', e.target.value as any)}
-            InputProps={{
-              startAdornment: (
-                <Person sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-              ),
-            }}
-          />
+          <FormControl size="small" sx={{ minWidth: 180, flex: 1 }}>
+            <InputLabel>Ответственный</InputLabel>
+            <Select
+              label="Ответственный"
+              value={form.assigneeId ?? ''}
+              onChange={(e) => {
+                const selected = e.target.value as string;
+                const member = board.members?.find((m) => m.userId === selected);
+                patch('assigneeId', selected as any);
+                patch('assigneeName', member?.name ?? '');
+              }}
+              renderValue={(val) => {
+                const member = board.members?.find((m) => m.userId === val);
+                return member?.name ?? 'Не указан';
+              }}
+            >
+              <MenuItem value="">Не указан</MenuItem>
+              {board.members?.map((member) => (
+                <MenuItem key={member.id} value={member.userId}>
+                  {member.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
 
         <Box>

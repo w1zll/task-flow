@@ -8,6 +8,7 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  IsBoolean,
 } from 'class-validator';
 import { TaskPriority } from '../entities/task.entity';
 
@@ -36,6 +37,21 @@ export class CreateTaskDto {
   @IsOptional()
   @IsDateString()
   dueDate?: string;
+
+  @ApiProperty({ required: false, example: 'assignee-user-uuid' })
+  @IsOptional()
+  @IsUUID()
+  assigneeId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isCompleted?: boolean;
+
+  @ApiProperty({ required: false, example: '2026-05-05T12:00:00.000Z' })
+  @IsOptional()
+  @IsDateString()
+  completedAt?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -76,8 +92,17 @@ export class TaskResponseDto {
   @ApiProperty({ required: false, example: '2026-05-05T12:00:00.000Z' })
   dueDate?: string;
 
+  @ApiProperty({ required: false, example: 'assignee-user-uuid' })
+  assigneeId?: string;
+
   @ApiProperty({ required: false })
   assigneeName?: string;
+
+  @ApiProperty({ required: false })
+  isCompleted: boolean;
+
+  @ApiProperty({ required: false, example: '2026-05-05T12:00:00.000Z' })
+  completedAt?: string;
 
   @ApiProperty({ example: 'column-uuid' })
   columnId: string;
@@ -104,4 +129,40 @@ export class ReorderTasksDto {
   @IsArray()
   @IsUUID('4', { each: true })
   taskIds: string[];
+}
+
+export class AnalyticsQueryDto {
+  @ApiProperty({ required: false, example: 'board-uuid' })
+  @IsOptional()
+  @IsUUID()
+  boardId?: string;
+
+  @ApiProperty({ required: false, example: '2026-05-01' })
+  @IsOptional()
+  @IsDateString()
+  fromDate?: string;
+
+  @ApiProperty({ required: false, example: '2026-05-31' })
+  @IsOptional()
+  @IsDateString()
+  toDate?: string;
+}
+
+export class AnalyticsItemDto {
+  @ApiProperty({ example: '2026-05-05' })
+  period: string;
+
+  @ApiProperty({ example: 12 })
+  count: number;
+}
+
+export class CompletionSummaryDto {
+  @ApiProperty({ example: 24 })
+  total: number;
+
+  @ApiProperty({ example: 18 })
+  onTime: number;
+
+  @ApiProperty({ example: 6 })
+  late: number;
 }
