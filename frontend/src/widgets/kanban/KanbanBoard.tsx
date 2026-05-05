@@ -105,7 +105,7 @@ const KanbanBoard = ({ board }: Props) => {
         if (col) {
           await taskApi.reorder(
             srcColId,
-            col.tasks.map((t) => t.id),
+            col.tasks!.map((t) => t.id),
           );
         }
       } else {

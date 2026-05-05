@@ -1,84 +1,83 @@
 import apiClient from './client';
+import { ApiBody, ApiResponse } from './types';
 
-export interface AuthUser {
-  id: string;
-  email: string;
-  name: string;
-  avatar?: string;
-}
-
-export interface Board {
-  id: string;
-  title: string;
-  description?: string;
-  color: string;
-  ownerId: string;
-  createdAt: string;
-  updatedAt: string;
-  columns?: BoardColumn[];
-}
-
-export interface BoardColumn {
-  id: string;
-  title: string;
-  order: number;
-  boardId: string;
-  tasks: Task[];
-}
-
-export interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  order: number;
-  labels?: string[];
-  dueDate?: string;
-  assigneeName?: string;
-  columnId: string;
-  createdAt: string;
-  updatedAt: string;
-}
+export type AuthResponse = ApiResponse<'/api/auth/register', 'post'>;
+export type AuthUser = ApiResponse<'/api/auth/me', 'get'>;
+export type Board = ApiResponse<'/api/boards/{id}', 'get'>;
+// export type BoardColumn = NonNullable<
+//   ApiResponse<'/api/boards/{id}', 'get'>['columns']
+// >[number];
+export type BoardColumn = Omit<
+  NonNullable<Board['columns']>[number],
+  'createdAt' | 'updatedAt'
+>;
+export type Task = ApiResponse<'/api/tasks/{id}', 'put'>;
 
 export const authApi = {
-  register: (data: { email: string; name: string; password: string }) =>
-    apiClient.post<{ user: AuthUser }>('/api/auth/register', data),
+  register: async (data: ApiBody<'/api/auth/register', 'post'>) =>
+    apiClient.post<ApiResponse<'/api/auth/register', 'post'>>(
+      '/api/auth/register',
+      data,
+    ),
 
   login: (data: { email: string; password: string }) =>
-    apiClient.post<{ user: AuthUser }>('/api/auth/login', data),
+    apiClient.post<ApiResponse<'/api/auth/login', 'post'>>(
+      '/api/auth/login',
+      data,
+    ),
 
-  logout: () => apiClient.post('/api/auth/logout'),
+  logout: () =>
+    apiClient.post<ApiResponse<'/api/auth/logout', 'post'>>('/api/auth/logout'),
 
-  refresh: () => apiClient.post<{ user: AuthUser }>('/api/auth/refresh'),
+  refresh: () =>
+    apiClient.post<ApiResponse<'/api/auth/refresh', 'post'>>(
+      '/api/auth/refresh',
+    ),
 
-  me: () => apiClient.get<AuthUser>('/api/auth/me'),
+  me: () => apiClient.get<ApiResponse<'/api/auth/me', 'get'>>('/api/auth/me'),
 };
 
 export const boardsApi = {
-  getAll: () => apiClient.get<Board[]>('/api/boards'),
+  getAll: () => apiClient.get<ApiResponse<'/api/boards', 'get'>>('/api/boards'),
 
-  getOne: (id: string) => apiClient.get<Board>(`/api/boards/${id}`),
+  getOne: (id: string) =>
+    apiClient.get<ApiResponse<'/api/boards/{id}', 'get'>>(`/api/boards/${id}`),
 
   create: (data: { title: string; description?: string; color?: string }) =>
-    apiClient.post<Board>('/api/boards', data),
+    apiClient.post<ApiResponse<'/api/boards', 'post'>>('/api/boards', data),
 
   update: (id: string, data: Partial<Board>) =>
-    apiClient.patch<Board>(`/api/boards/${id}`, data),
+    apiClient.put<ApiResponse<'/api/boards/{id}', 'put'>>(
+      `/api/boards/${id}`,
+      data,
+    ),
 
-  remove: (id: string) => apiClient.delete(`/api/boards/${id}`),
+  remove: (id: string) =>
+    apiClient.delete<ApiResponse<'/api/boards/{id}', 'delete'>>(
+      `/api/boards/${id}`,
+    ),
 };
 
 export const columnsApi = {
   create: (data: { title: string; boardId: string; order?: number }) =>
-    apiClient.post<BoardColumn>('/api/columns', data),
+    apiClient.post<ApiResponse<'/api/columns', 'post'>>('/api/columns', data),
 
   update: (id: string, data: Partial<BoardColumn>) =>
-    apiClient.patch<BoardColumn>(`/api/columns/${id}`, data),
+    apiClient.put<ApiResponse<'/api/columns/{id}', 'put'>>(
+      `/api/columns/${id}`,
+      data,
+    ),
 
-  remove: (id: string) => apiClient.delete(`/api/columns/${id}`),
+  remove: (id: string) =>
+    apiClient.delete<ApiResponse<'/api/columns/{id}', 'delete'>>(
+      `/api/columns/${id}`,
+    ),
 
   reorder: (boardId: string, columnIds: string[]) =>
-    apiClient.put(`/api/columns/board/${boardId}/reorder`, { columnIds }),
+    apiClient.put<ApiResponse<'/api/columns/board/{boardId}/reorder', 'put'>>(
+      `/api/columns/board/${boardId}/reorder`,
+      { columnIds },
+    ),
 };
 
 export const taskApi = {
@@ -90,16 +89,28 @@ export const taskApi = {
     labels?: string[];
     dueDate?: string;
     assigneeName?: string;
-  }) => apiClient.post<Task>('/api/tasks', data),
+  }) => apiClient.post<ApiResponse<'/api/tasks', 'post'>>('/api/tasks', data),
 
   update: (id: string, data: Partial<Task>) =>
-    apiClient.put<Task>(`/api/tasks/${id}`, data),
+    apiClient.put<ApiResponse<'/api/tasks/{id}', 'put'>>(
+      `/api/tasks/${id}`,
+      data,
+    ),
 
   move: (id: string, data: { columnId: string; order: number }) =>
-    apiClient.patch<Task>(`/api/tasks/${id}/move`, data),
+    apiClient.patch<ApiResponse<'/api/tasks/{id}/move', 'patch'>>(
+      `/api/tasks/${id}/move`,
+      data,
+    ),
 
   reorder: (columnId: string, taskIds: string[]) =>
-    apiClient.put(`/api/tasks/column/${columnId}/reorder`, { taskIds }),
+    apiClient.put<ApiResponse<'/api/tasks/column/{columnId}/reorder', 'put'>>(
+      `/api/tasks/column/${columnId}/reorder`,
+      { taskIds },
+    ),
 
-  remove: (id: string) => apiClient.delete(`/api/tasks/${id}`),
+  remove: (id: string) =>
+    apiClient.delete<ApiResponse<'/api/tasks/{id}', 'delete'>>(
+      `/api/tasks/${id}`,
+    ),
 };
