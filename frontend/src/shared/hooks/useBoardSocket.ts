@@ -25,6 +25,7 @@ export const useBoardSocket = (boardId: string) => {
     });
 
     socket.on('task:update', (updatedTask: Task) => {
+      // console.log('task updated', updatedTask);
       qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
         if (!prev) return prev;
         return {
@@ -40,7 +41,7 @@ export const useBoardSocket = (boardId: string) => {
     });
 
     socket.on('task:moved', (updatedTask: Task) => {
-      console.log('task moved', updatedTask);
+      // console.log('task moved', updatedTask);
       qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
         if (!prev) return prev;
         return {
@@ -59,7 +60,7 @@ export const useBoardSocket = (boardId: string) => {
     socket.on(
       'task:reordered',
       ({ columnId, taskIds }: { columnId: string; taskIds: string[] }) => {
-        console.log('task reordered');
+        // console.log('task reordered');
         qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
           if (!prev) return prev;
           return {

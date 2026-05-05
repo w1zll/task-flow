@@ -8,7 +8,11 @@ import { Board } from './entities/board.entity';
 import { BoardMember } from './entities/board-member.entity';
 import { User } from '@/users/entities/user.entity';
 import { Repository } from 'typeorm';
-import { CreateBoardDto, ShareBoardDto, UpdateBoardDto } from './dto/board.dto';
+import {
+  CreateBoardDto,
+  ShareBoardDto,
+  UpdateBoardDto,
+} from './dto/board.dto';
 
 @Injectable()
 export class BoardsService {
@@ -45,14 +49,18 @@ export class BoardsService {
     });
 
     if (!board) throw new NotFoundException('Доска не найдена');
-    if (!(board.ownerId === userId || board.members?.some((m) => m.userId === userId))) {
+    if (
+      !(
+        board.ownerId === userId ||
+        board.members?.some((m) => m.userId === userId)
+      )
+    ) {
       throw new ForbiddenException('Доступ запрещен');
     }
 
     board.columns.forEach((col) => {
       col.tasks?.sort((a, b) => a.order - b.order);
     });
-
     return board;
   }
 
@@ -89,8 +97,8 @@ export class BoardsService {
     const target = dto.userId
       ? await this.userRepo.findOne({ where: { id: dto.userId } })
       : dto.email
-      ? await this.userRepo.findOne({ where: { email: dto.email } })
-      : null;
+        ? await this.userRepo.findOne({ where: { email: dto.email } })
+        : null;
 
     if (!target) {
       throw new NotFoundException('Пользователь для приглашения не найден');
@@ -116,7 +124,10 @@ export class BoardsService {
   async listMembers(boardId: string, userId: string): Promise<BoardMember[]> {
     const board = await this.boardRepo.findOne({ where: { id: boardId } });
     if (!board) throw new NotFoundException('Доска не найдена');
-    if (board.ownerId !== userId && !(await this.isBoardMember(boardId, userId))) {
+    if (
+      board.ownerId !== userId &&
+      !(await this.isBoardMember(boardId, userId))
+    ) {
       throw new ForbiddenException('Доступ запрещен');
     }
 
@@ -144,7 +155,10 @@ export class BoardsService {
     await this.memberRepo.remove(member);
   }
 
-  private async isBoardMember(boardId: string, userId: string): Promise<boolean> {
+  private async isBoardMember(
+    boardId: string,
+    userId: string,
+  ): Promise<boolean> {
     const count = await this.memberRepo.count({ where: { boardId, userId } });
     return count > 0;
   }

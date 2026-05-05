@@ -1,6 +1,8 @@
 'use client';
 
 import { Board, Task } from '@/shared/api/api';
+import { useBoardSocket } from '@/shared/hooks/useBoardSocket';
+import { getSocket } from '@/shared/lib/socket';
 import { useDeleteTask, useUpdateTask } from '@/shared/queries/boards.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
 import {
@@ -59,9 +61,13 @@ const LABEL_PRESETS = [
 ];
 
 const TaskDetailModal = observer(({ board }: Props) => {
+  console.log(board);
+  console.log(board.members);
   const boardUI = useBoardUIStore();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+
+  const socket = getSocket();
 
   const task =
     board.columns
@@ -94,10 +100,15 @@ const TaskDetailModal = observer(({ board }: Props) => {
 
   const handleSave = () => {
     if (!task) return;
-    updateTask.mutate(
-      { id: task.id, data: form, boardId: board.id },
-      { onSuccess: () => setIsDirty(false) },
-    );
+    socket.emit('task:update', {
+      boardId: board.id,
+      taskId: task.id,
+      changes: form,
+    });
+    // updateTask.mutate(
+    //   { id: task.id, data: form, boardId: board.id },
+    //   { onSuccess: () => setIsDirty(false) },
+    // );
   };
 
   const handleDelete = () => {
@@ -233,19 +244,21 @@ const TaskDetailModal = observer(({ board }: Props) => {
               value={form.assigneeId ?? ''}
               onChange={(e) => {
                 const selected = e.target.value as string;
-                const member = board.members?.find((m) => m.userId === selected);
+                const member = board.members?.find(
+                  (m) => m.userId === selected,
+                );
                 patch('assigneeId', selected as any);
-                patch('assigneeName', member?.name ?? '');
+                patch('assigneeName', member?.user?.name ?? '');
               }}
               renderValue={(val) => {
                 const member = board.members?.find((m) => m.userId === val);
-                return member?.name ?? 'Не указан';
+                return member?.user?.name ?? 'Не указан';
               }}
             >
               <MenuItem value="">Не указан</MenuItem>
               {board.members?.map((member) => (
                 <MenuItem key={member.id} value={member.userId}>
-                  {member.name}
+                  {member.user!.name}
                 </MenuItem>
               ))}
             </Select>

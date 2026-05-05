@@ -13,6 +13,7 @@ import { UseGuards } from '@nestjs/common';
 import { WsJwtGuard } from '@/auth/guards/ws-jwt.guard';
 import { Task } from '@/tasks/entities/task.entity';
 import { TasksService } from '@/tasks/tasks.service';
+import { UpdateTaskDto } from '@/tasks/dto/task.dto';
 
 @WebSocketGateway({
   cors: { origin: 'http://localhost:3000', credentials: true },
@@ -52,16 +53,22 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleTaskUpdate(
     @ConnectedSocket() client: Socket,
     @MessageBody()
-    payload: { boardId: string; taskId: string; changes: Partial<Task> },
+    payload: { boardId: string; taskId: string; changes: UpdateTaskDto },
   ) {
-    const userId = (client as any).user.sub;
-    const updated = await this.boardService.update(
-      payload.taskId,
-      payload.changes,
-      userId,
-    );
+    try {
+      const userId = (client as any).user.sub;
+      const updated = await this.tasksService.update(
+        payload.taskId,
+        payload.changes,
+        userId,
+      );
 
-    this.server.to(`board-${payload.boardId}`).emit('task:update', updated);
+      this.server.to(`board-${payload.boardId}`).emit('task:update', updated);
+    } catch (e) {
+      if (e instanceof Error) e = e.message;
+      console.error('task:update error:', e);
+      client.emit('exception', { message: e });
+    }
   }
 
   @UseGuards(WsJwtGuard)
