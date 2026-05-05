@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Board, columnsApi, taskApi } from '@/shared/api/api';
 import { queryKeys } from '@/shared/queries/boards.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
@@ -14,12 +15,20 @@ interface Props {
 }
 
 const KanbanBoard = ({ board }: Props) => {
+  const boardUI = useBoardUIStore();
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
-  const boardUI = useBoardUIStore();
+
+  const [localBoard, setLocalBoard] = useState<Board>(board);
+
+  useEffect(() => {
+    setLocalBoard(board);
+  }, [board]);
 
   const handleDragStart = (start: any) => {
-    if (start.type === 'TASK') boardUI.startDrag(start.draggableId);
+    if (start.type === 'TASK') {
+      boardUI.startDrag(start.draggableId);
+    }
   };
 
   const handleDragEnd = async (result: DropResult) => {
@@ -29,29 +38,32 @@ const KanbanBoard = ({ board }: Props) => {
     if (
       source.droppableId === destination.droppableId &&
       source.index === destination.index
-    )
+    ) {
       return;
+    }
+    const previousBoard = localBoard;
 
     if (type === 'COLUMN') {
-      const cols = Array.from(board.columns ?? []);
+      const cols = Array.from(localBoard.columns ?? []);
       const [moved] = cols.splice(source.index, 1);
       cols.splice(destination.index, 0, moved);
-      const newIds = cols.map((c) => c.id);
 
-      qc.setQueryData<Board>(queryKeys.board(board.id), (old) => {
-        if (!old) return old;
-        const reordered = newIds.map(
-          (id) => old.columns!.find((c) => c.id === id)!,
-        );
-        return { ...old, columns: reordered };
-      });
+      const newBoard = {
+        ...localBoard,
+        columns: cols,
+      };
+
+      setLocalBoard(newBoard);
 
       try {
+        const newIds = cols.map((c) => c.id);
         await columnsApi.reorder(board.id, newIds);
-      } catch {
-        qc.invalidateQueries({ queryKey: queryKeys.board(board.id) });
+        qc.setQueryData(queryKeys.board(board.id), newBoard);
+      } catch (error) {
+        setLocalBoard(previousBoard);
         enqueueSnackbar('Ошибка перемещения колонок', { variant: 'error' });
       }
+
       return;
     }
 
@@ -59,36 +71,39 @@ const KanbanBoard = ({ board }: Props) => {
     const dstColId = destination.droppableId;
     const isSameColumn = srcColId === dstColId;
 
-    qc.setQueryData<Board>(queryKeys.board(board.id), (old) => {
-      if (!old) return old;
-      const columns = old.columns!.map((c) => ({
+    const computeNewBoard = (prev: Board): Board => {
+      const columns = prev.columns!.map((c) => ({
         ...c,
         tasks: Array.from(c.tasks ?? []),
       }));
 
       const srcCol = columns.find((c) => c.id === srcColId);
       const dstCol = columns.find((c) => c.id === dstColId);
-      if (!srcCol || !dstCol) return old;
+
+      if (!srcCol || !dstCol) return prev;
 
       const srcTasks = Array.from(srcCol.tasks ?? []);
       const [movedTask] = srcTasks.splice(source.index, 1);
 
       if (isSameColumn) {
         srcTasks.splice(destination.index, 0, movedTask);
+
         return {
-          ...old,
+          ...prev,
           columns: columns.map((c) =>
             c.id === srcColId ? { ...c, tasks: srcTasks } : c,
           ),
         };
       } else {
         const dstTasks = Array.from(dstCol.tasks ?? []);
+
         dstTasks.splice(destination.index, 0, {
           ...movedTask,
           columnId: dstColId,
         });
+
         return {
-          ...old,
+          ...prev,
           columns: columns.map((c) => {
             if (c.id === srcColId) return { ...c, tasks: srcTasks };
             if (c.id === dstColId) return { ...c, tasks: dstTasks };
@@ -96,16 +111,18 @@ const KanbanBoard = ({ board }: Props) => {
           }),
         };
       }
-    });
+    };
+
+    const newBoard = computeNewBoard(localBoard);
+    setLocalBoard(newBoard);
 
     try {
       if (isSameColumn) {
-        const updatedBoard = qc.getQueryData<Board>(queryKeys.board(board.id));
-        const col = board.columns?.find((c) => c.id === srcColId);
-        if (col) {
+        const col = newBoard.columns?.find((c) => c.id === srcColId);
+        if (col?.tasks) {
           await taskApi.reorder(
             srcColId,
-            col.tasks!.map((t) => t.id),
+            col.tasks.map((t) => t.id),
           );
         }
       } else {
@@ -114,8 +131,9 @@ const KanbanBoard = ({ board }: Props) => {
           order: destination.index,
         });
       }
-    } catch {
-      qc.invalidateQueries({ queryKey: queryKeys.board(board.id) });
+      qc.setQueryData(queryKeys.board(board.id), newBoard);
+    } catch (error) {
+      setLocalBoard(previousBoard);
       enqueueSnackbar('Не удалось переместить задачу', { variant: 'error' });
     }
   };
@@ -133,11 +151,11 @@ const KanbanBoard = ({ board }: Props) => {
             {...provided.droppableProps}
             sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}
           >
-            {(board.columns ?? []).map((col, index) => (
+            {(localBoard.columns ?? []).map((col, index) => (
               <KanbanColumn
                 key={col.id}
                 column={col}
-                board={board}
+                board={localBoard}
                 index={index}
               />
             ))}
@@ -150,26 +168,3 @@ const KanbanBoard = ({ board }: Props) => {
 };
 
 export default KanbanBoard;
-
-// const ColumnsDroppable = ({ board }: { board: Board }) => {
-//   return (
-//     <Droppable droppableId="all-columns" type="COLUMN" direction="horizontal">
-//       {(provided) => (
-//         <div
-//           ref={provided.innerRef}
-//           {...provided.droppableProps}
-//           style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}
-//         >
-//           {(board.columns ?? []).map((col, index) => (
-//             <KanbanColumn
-//               key={col.id}
-//               column={col}
-//               index={index}
-//               board={board}
-//             />
-//           ))}
-//         </div>
-//       )}
-//     </Droppable>
-//   );
-// };
