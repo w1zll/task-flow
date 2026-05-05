@@ -33,7 +33,7 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { MessageDto } from '@/common/dto/message-response.dto';
 
 const REFRESH_COOKIE = 'refresh_token';
-const ACCESS_COOKIE = 'access_token';
+export const ACCESS_COOKIE = 'access_token';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,

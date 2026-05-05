@@ -9,6 +9,8 @@ import { useSnackbar } from 'notistack';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import KanbanColumn from './KanbanColumn';
 import { Box } from '@mui/material';
+import { useBoardSocket } from '@/shared/hooks/useBoardSocket';
+import { getSocket } from '@/shared/lib/socket';
 
 interface Props {
   board: Board;
@@ -18,6 +20,8 @@ const KanbanBoard = ({ board }: Props) => {
   const boardUI = useBoardUIStore();
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
+
+  useBoardSocket(board.id);
 
   const [localBoard, setLocalBoard] = useState<Board>(board);
 
@@ -117,23 +121,36 @@ const KanbanBoard = ({ board }: Props) => {
     const newBoard = computeNewBoard(localBoard);
     setLocalBoard(newBoard);
 
+    const socket = getSocket();
+
     try {
       if (isSameColumn) {
         const col = newBoard.columns?.find((c) => c.id === srcColId);
-        if (col?.tasks) {
-          await taskApi.reorder(
-            srcColId,
-            col.tasks.map((t) => t.id),
-          );
-        }
+        socket.emit('task:reorder', {
+          boardId: board.id,
+          columnId: srcColId,
+          taskIds: col?.tasks?.map((t) => t.id) ?? [],
+        });
+        // if (col?.tasks) {
+        //   await taskApi.reorder(
+        //     srcColId,
+        //     col.tasks.map((t) => t.id),
+        //   );
+        // }
       } else {
-        await taskApi.move(draggableId, {
+        socket.emit('task:move', {
+          boardId: board.id,
+          taskId: draggableId,
           columnId: dstColId,
           order: destination.index,
         });
+        // await taskApi.move(draggableId, {
+        //   columnId: dstColId,
+        //   order: destination.index,
+        // });
       }
-      qc.setQueryData(queryKeys.board(board.id), newBoard);
-      qc.invalidateQueries({ queryKey: queryKeys.board(board.id) });
+      // qc.setQueryData(queryKeys.board(board.id), newBoard);
+      // qc.invalidateQueries({ queryKey: queryKeys.board(board.id) });
     } catch (error) {
       setLocalBoard(previousBoard);
       enqueueSnackbar('Не удалось переместить задачу', { variant: 'error' });

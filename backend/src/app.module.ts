@@ -34,7 +34,7 @@ import { TasksModule } from './tasks/tasks.module';
         database: config.get('DB_NAME'),
         entities: [User, Board, BoardMember, Column, Task, RefreshToken],
         synchronize: config.get('NODE_ENV') !== 'production',
-        logging: config.get('NODE_ENV') === 'development',
+        // logging: config.get('NODE_ENV') === 'development',
       }),
     }),
 

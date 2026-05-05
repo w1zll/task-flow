@@ -46,10 +46,6 @@ const KanbanColumn = observer(({ column, board, index }: Props) => {
     setTitleInput(column.title);
   }, [column.title]);
 
-  useEffect(() => {
-    console.log(isEditingTitle);
-  }, [isEditingTitle]);
-
   const isAddingTask = boardUI.addingTaskInColumnId === column.id;
 
   const handleAddTask = () => {

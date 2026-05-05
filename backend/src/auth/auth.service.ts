@@ -133,7 +133,9 @@ export class AuthService {
   }
 
   async revokeSession(userId: string, sessionId: string) {
-    const session = await this.refreshTokenRepo.findOne({ where: { id: sessionId } });
+    const session = await this.refreshTokenRepo.findOne({
+      where: { id: sessionId },
+    });
     if (!session || session.userId !== userId) {
       throw new UnauthorizedException('Сессия не найдена');
     }
@@ -150,10 +152,7 @@ export class AuthService {
   private async generateTokenPair(user: User) {
     const payload = { sub: user.id, email: user.email };
 
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.config.get('JWT_ACCESS_SECRET'),
-      expiresIn: this.config.get('JWT_ACCESS_EXPIRES_TIME') || '15m',
-    });
+    const accessToken = this.jwtService.sign(payload);
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: this.config.get('JWT_REFRESH_SECRET'),

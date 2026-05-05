@@ -5,10 +5,20 @@ import { BoardMember } from './entities/board-member.entity';
 import { User } from '@/users/entities/user.entity';
 import { BoardsService } from './boards.service';
 import { BoardsController } from './boards.controller';
+import { JwtModule } from '@nestjs/jwt';
+import { Task } from '@/tasks/entities/task.entity';
+import { BoardGateway } from './boards.gateway';
+import { WsJwtGuard } from '@/auth/guards/ws-jwt.guard';
+import { TasksService } from '@/tasks/tasks.service';
+import { Column } from '@/columns/entities/column.entity';
+import { AuthModule } from '@/auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Board, BoardMember, User])],
-  providers: [BoardsService],
+  imports: [
+    TypeOrmModule.forFeature([Board, BoardMember, User, Task, Column]),
+    AuthModule,
+  ],
+  providers: [BoardsService, BoardGateway, WsJwtGuard, TasksService],
   controllers: [BoardsController],
   exports: [BoardsService],
 })

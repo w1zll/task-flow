@@ -45,5 +45,6 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`TaskFlow API running on http://localhost:${port}`);
   console.log(`Swagger docs at http://localhost:${port}/api/docs`);
+  console.log(`OpenAPI spec at http://localhost:${port}/api/docs.json`);
 }
 bootstrap();
