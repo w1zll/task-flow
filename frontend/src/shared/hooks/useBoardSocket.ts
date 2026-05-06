@@ -21,24 +21,34 @@ export const useBoardSocket = (boardId: string) => {
     // socket.emit('board:join', { boardId });
 
     socket.on('board:state', (board: Board) => {
+      if (board.id !== boardId) return;
       qc.setQueryData(queryKeys.board(boardId), board);
     });
 
-    socket.on('task:update', (updatedTask: Task) => {
-      // console.log('task updated', updatedTask);
-      qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          columns: prev.columns?.map((col) => ({
-            ...col,
-            tasks: col.tasks?.map((t) =>
-              t.id === updatedTask.id ? { ...t, ...updatedTask } : t,
-            ),
-          })),
-        };
-      });
-    });
+    socket.on(
+      'task:update',
+      (
+        updatedTask: Task & {
+          column: {
+            boardId: string;
+          };
+        },
+      ) => {
+        if (updatedTask.column.boardId !== boardId) return;
+        qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            columns: prev.columns?.map((col) => ({
+              ...col,
+              tasks: col.tasks?.map((t) =>
+                t.id === updatedTask.id ? { ...t, ...updatedTask } : t,
+              ),
+            })),
+          };
+        });
+      },
+    );
 
     socket.on('task:moved', (updatedTask: Task) => {
       // console.log('task moved', updatedTask);
@@ -83,7 +93,7 @@ export const useBoardSocket = (boardId: string) => {
       socket.off('task:update');
       socket.off('task:moved');
       socket.off('task:reordered');
-      socket.disconnect();
+      // socket.disconnect();
     };
   }, [boardId, qc]);
 };

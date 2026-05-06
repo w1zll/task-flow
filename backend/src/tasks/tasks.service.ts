@@ -120,11 +120,13 @@ export class TasksService {
 
     const task = this.taskRepo.create({
       ...dto,
-      dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+      dueDate: dto.dueDate ? new Date(dto.dueDate) : new Date(),
       completedAt:
-        dto.isCompleted && !dto.completedAt ? new Date() : dto.completedAt
-          ? new Date(dto.completedAt)
-          : undefined,
+        dto.isCompleted && !dto.completedAt
+          ? new Date()
+          : dto.completedAt
+            ? new Date(dto.completedAt)
+            : undefined,
     });
 
     return this.taskRepo.save(task);
@@ -259,10 +261,9 @@ export class TasksService {
       .innerJoin('column.board', 'board')
       .leftJoin('board.members', 'member')
       .where('task.isCompleted = true')
-      .andWhere(
-        '(board.ownerId = :userId OR member.userId = :userId)',
-        { userId },
-      );
+      .andWhere('(board.ownerId = :userId OR member.userId = :userId)', {
+        userId,
+      });
 
     if (query.boardId) {
       qb.andWhere('board.id = :boardId', { boardId: query.boardId });
@@ -279,7 +280,10 @@ export class TasksService {
     }
 
     const raw = await qb
-      .select("TO_CHAR(DATE_TRUNC('day', task.completedAt), 'YYYY-MM-DD')", 'period')
+      .select(
+        "TO_CHAR(DATE_TRUNC('day', task.completedAt), 'YYYY-MM-DD')",
+        'period',
+      )
       .addSelect('COUNT(*)', 'count')
       .groupBy('period')
       .orderBy('period', 'ASC')
@@ -301,10 +305,9 @@ export class TasksService {
       .innerJoin('column.board', 'board')
       .leftJoin('board.members', 'member')
       .where('task.isCompleted = true')
-      .andWhere(
-        '(board.ownerId = :userId OR member.userId = :userId)',
-        { userId },
-      );
+      .andWhere('(board.ownerId = :userId OR member.userId = :userId)', {
+        userId,
+      });
 
     if (query.boardId) {
       qb.andWhere('board.id = :boardId', { boardId: query.boardId });
@@ -321,7 +324,10 @@ export class TasksService {
     }
 
     const raw = await qb
-      .select("TO_CHAR(DATE_TRUNC('month', task.completedAt), 'YYYY-MM')", 'period')
+      .select(
+        "TO_CHAR(DATE_TRUNC('month', task.completedAt), 'YYYY-MM')",
+        'period',
+      )
       .addSelect('COUNT(*)', 'count')
       .groupBy('period')
       .orderBy('period', 'ASC')
@@ -343,10 +349,9 @@ export class TasksService {
       .innerJoin('column.board', 'board')
       .leftJoin('board.members', 'member')
       .where('task.isCompleted = true')
-      .andWhere(
-        '(board.ownerId = :userId OR member.userId = :userId)',
-        { userId },
-      );
+      .andWhere('(board.ownerId = :userId OR member.userId = :userId)', {
+        userId,
+      });
 
     if (query.boardId) {
       qb.andWhere('board.id = :boardId', { boardId: query.boardId });
@@ -365,11 +370,11 @@ export class TasksService {
     const summary = await qb
       .select('COUNT(*)', 'total')
       .addSelect(
-        "SUM(CASE WHEN task.dueDate IS NULL OR task.completedAt <= task.dueDate THEN 1 ELSE 0 END)",
+        'SUM(CASE WHEN task.dueDate IS NULL OR task.completedAt <= task.dueDate THEN 1 ELSE 0 END)',
         'onTime',
       )
       .addSelect(
-        "SUM(CASE WHEN task.dueDate IS NOT NULL AND task.completedAt > task.dueDate THEN 1 ELSE 0 END)",
+        'SUM(CASE WHEN task.dueDate IS NOT NULL AND task.completedAt > task.dueDate THEN 1 ELSE 0 END)',
         'late',
       )
       .getRawOne();

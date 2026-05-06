@@ -15,7 +15,7 @@ export async function generateMetadata({
 }
 
 const BoardPage = ({ params }: { params: { id: string } }) => {
-  return <KanbanBoardPage boardId={params.id} />;
+  return <KanbanBoardPage key={params.id} boardId={params.id} />;
 };
 
 export default BoardPage;

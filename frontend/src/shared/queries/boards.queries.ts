@@ -25,8 +25,13 @@ export const useBoards = () => {
 export const useBoard = (id: string) => {
   return useQuery({
     queryKey: queryKeys.board(id),
-    queryFn: () => boardsApi.getOne(id).then((r) => r.data),
-    staleTime: 60_000,
+    queryFn: async () => {
+      const res = await boardsApi.getOne(id);
+      console.log('REQUEST ID:', id, 'RESPONSE ID:', res.data.id);
+      return res.data;
+      // return boardsApi.getOne(id).then((r) => r.data);
+    },
+    staleTime: 0,
     enabled: !!id,
   });
 };
@@ -178,11 +183,17 @@ export const useDeleteTask = () => {
 export const useShareBoard = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (params: { boardId: string; email?: string; userId?: string }) =>
-      boardsApi.share(params.boardId, {
-        email: params.email,
-        userId: params.userId,
-      }).then((r) => r.data),
+    mutationFn: (params: {
+      boardId: string;
+      email?: string;
+      userId?: string;
+    }) =>
+      boardsApi
+        .share(params.boardId, {
+          email: params.email,
+          userId: params.userId,
+        })
+        .then((r) => r.data),
     onSuccess: (_, { boardId }) => {
       qc.invalidateQueries({ queryKey: queryKeys.board(boardId) });
       qc.invalidateQueries({ queryKey: ['boards'] });
@@ -202,8 +213,13 @@ export const useBoardMembers = (boardId: string) => {
 export const useRevokeBoardMember = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ boardId, memberId }: { boardId: string; memberId: string }) =>
-      boardsApi.revokeMember(boardId, memberId),
+    mutationFn: ({
+      boardId,
+      memberId,
+    }: {
+      boardId: string;
+      memberId: string;
+    }) => boardsApi.revokeMember(boardId, memberId),
     onSuccess: (_, { boardId }) => {
       qc.invalidateQueries({ queryKey: queryKeys.board(boardId) });
       qc.invalidateQueries({ queryKey: ['boards', boardId, 'members'] });
@@ -214,8 +230,7 @@ export const useRevokeBoardMember = () => {
 export const useBoardDailyAnalytics = (boardId?: string) => {
   return useQuery({
     queryKey: ['boards', boardId, 'analytics', 'daily'],
-    queryFn: () =>
-      taskApi.analytics.daily({ boardId }).then((r) => r.data),
+    queryFn: () => taskApi.analytics.daily({ boardId }).then((r) => r.data),
     enabled: !!boardId,
     staleTime: 60_000,
   });
@@ -224,8 +239,7 @@ export const useBoardDailyAnalytics = (boardId?: string) => {
 export const useBoardMonthlyAnalytics = (boardId?: string) => {
   return useQuery({
     queryKey: ['boards', boardId, 'analytics', 'monthly'],
-    queryFn: () =>
-      taskApi.analytics.monthly({ boardId }).then((r) => r.data),
+    queryFn: () => taskApi.analytics.monthly({ boardId }).then((r) => r.data),
     enabled: !!boardId,
     staleTime: 60_000,
   });
@@ -234,8 +248,7 @@ export const useBoardMonthlyAnalytics = (boardId?: string) => {
 export const useTaskCompletionSummary = (boardId?: string) => {
   return useQuery({
     queryKey: ['boards', boardId, 'analytics', 'summary'],
-    queryFn: () =>
-      taskApi.analytics.summary({ boardId }).then((r) => r.data),
+    queryFn: () => taskApi.analytics.summary({ boardId }).then((r) => r.data),
     enabled: !!boardId,
     staleTime: 60_000,
   });

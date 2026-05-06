@@ -25,7 +25,6 @@ import {
   Typography,
 } from '@mui/material';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
@@ -41,7 +40,6 @@ const BOARD_COLORS = [
 ];
 
 const BoardsClientPage = () => {
-  const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
   const { data: boards, isLoading } = useBoards();
   const createBoard = useCreateBoard();
@@ -130,7 +128,7 @@ const BoardsClientPage = () => {
                 }}
               >
                 <CardActionArea
-                  LinkComponent={Link}
+                  component={Link}
                   href={`/boards/${board.id}`}
                   sx={{
                     height: '100%',
@@ -161,6 +159,7 @@ const BoardsClientPage = () => {
                         size="small"
                         sx={{ ml: 1, mt: -0.5 }}
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           setMenuAnchor({ el: e.currentTarget, board });
                         }}

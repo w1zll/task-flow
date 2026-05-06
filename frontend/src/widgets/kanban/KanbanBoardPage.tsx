@@ -27,7 +27,7 @@ import {
 } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Add, ArrowBack } from '@mui/icons-material';
 import NextLink from 'next/link';
 import KanbanBoard from './KanbanBoard';
@@ -53,6 +53,12 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
   const revokeMember = useRevokeBoardMember();
   const summaryAnalytics = useTaskCompletionSummary(boardId);
   const dailyAnalytics = useBoardDailyAnalytics(boardId);
+
+  useEffect(() => {
+    boardUI.closeTask();
+    boardUI.setAddingColumn(false);
+    boardUI.setAddingTaskInColumn(null);
+  }, [boardId, boardUI]);
 
   const handleShareBoard = () => {
     if (!shareEmail.trim()) return;
@@ -205,7 +211,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
             }}
           >
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <KanbanBoard board={board} />
+              <KanbanBoard key={boardId} board={board} />
             </Box>
             <Box
               sx={{
