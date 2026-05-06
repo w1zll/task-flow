@@ -10,6 +10,7 @@ import {
   useTaskCompletionSummary,
 } from '@/shared/queries/boards.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
+import { useAuth } from '@/features/auth/useAuth';
 import {
   Box,
   Breadcrumbs,
@@ -41,6 +42,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
   const { data: board, isLoading, isError } = useBoard(boardId);
   const createColumn = useCreateColumn();
   const boardUI = useBoardUIStore();
+  const { user: currentUser } = useAuth();
 
   const [newColTitle, setNewColTitle] = useState('');
   const [isShareOpen, setShareOpen] = useState(false);
@@ -252,32 +254,72 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                   <Typography variant="body2" color="text.secondary">
                     Загрузка...
                   </Typography>
-                ) : boardMembers.data?.length ? (
+                ) : boardMembers.data && boardMembers.data.length > 0 ? (
                   <Stack spacing={1}>
-                    {boardMembers.data.map(({ user }: any) => (
-                      <Box
-                        key={user.id}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <Typography variant="body2">{user.name}</Typography>
-                        <Button
-                          size="small"
-                          color="error"
-                          onClick={() =>
-                            revokeMember.mutate({
-                              boardId,
-                              memberId: user.id,
-                            })
-                          }
-                        >
-                          Удалить
-                        </Button>
-                      </Box>
-                    ))}
+                    {boardMembers.data
+                      .sort(({ user: userA }: any, { user: userB }: any) => {
+                        // Владелец всегда первым
+                        if (userA.id === board?.ownerId) return -1;
+                        if (userB.id === board?.ownerId) return 1;
+                        return 0;
+                      })
+                      .map(({ user, id: memberId }: any) => {
+                        const isOwner = user.id === board?.ownerId;
+                        const isCurrentUser = user.id === currentUser?.id;
+                        return (
+                          <Box
+                            key={user.id}
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <Typography variant="body2">
+                              {user.name}
+                              {isOwner && (
+                                <Typography
+                                  component="span"
+                                  variant="caption"
+                                  sx={{
+                                    ml: 1,
+                                    color: 'primary.main',
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  (владелец)
+                                </Typography>
+                              )}
+                              {isCurrentUser && (
+                                <Typography
+                                  component="span"
+                                  variant="caption"
+                                  sx={{
+                                    ml: 1,
+                                    color: 'primary.main',
+                                  }}
+                                >
+                                  (вы)
+                                </Typography>
+                              )}
+                            </Typography>
+                            {currentUser?.id === board?.ownerId && !isOwner && (
+                              <Button
+                                size="small"
+                                color="error"
+                                onClick={() =>
+                                  revokeMember.mutate({
+                                    boardId,
+                                    memberId: user.id,
+                                  })
+                                }
+                              >
+                                Удалить
+                              </Button>
+                            )}
+                          </Box>
+                        );
+                      })}
                   </Stack>
                 ) : (
                   <Typography variant="body2" color="text.secondary">

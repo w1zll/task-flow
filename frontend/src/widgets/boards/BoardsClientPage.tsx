@@ -24,6 +24,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
@@ -129,7 +130,8 @@ const BoardsClientPage = () => {
                 }}
               >
                 <CardActionArea
-                  onClick={() => router.push(`/boards/${board.id}`)}
+                  LinkComponent={Link}
+                  href={`/boards/${board.id}`}
                   sx={{
                     height: '100%',
                     p: 2.5,

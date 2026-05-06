@@ -8,11 +8,7 @@ import { Board } from './entities/board.entity';
 import { BoardMember } from './entities/board-member.entity';
 import { User } from '@/users/entities/user.entity';
 import { Repository } from 'typeorm';
-import {
-  CreateBoardDto,
-  ShareBoardDto,
-  UpdateBoardDto,
-} from './dto/board.dto';
+import { CreateBoardDto, ShareBoardDto, UpdateBoardDto } from './dto/board.dto';
 
 @Injectable()
 export class BoardsService {
@@ -131,10 +127,26 @@ export class BoardsService {
       throw new ForbiddenException('Доступ запрещен');
     }
 
-    return this.memberRepo.find({
+    const owner = await this.userRepo.findOne({ where: { id: board.ownerId } });
+    const members = await this.memberRepo.find({
       where: { boardId },
       relations: ['user'],
     });
+    const ownerAsMember = {
+      id: null,
+      boardId,
+      userId: board.ownerId,
+      user: owner,
+    } as unknown as BoardMember;
+    return [ownerAsMember, ...members];
+
+    // return [
+    //   this.userRepo.findOne({ where: { id: userId } }),
+    //   ...this.memberRepo.find({
+    //     where: { boardId },
+    //     relations: ['user'],
+    //   }),
+    // ];
   }
 
   async revokeMember(
