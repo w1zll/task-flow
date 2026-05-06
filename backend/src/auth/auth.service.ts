@@ -1,7 +1,6 @@
 import { User } from '@/users/entities/user.entity';
 import {
   ConflictException,
-  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
