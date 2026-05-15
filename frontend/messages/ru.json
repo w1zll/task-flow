@@ -1,5 +1,176 @@
 {
   "HomePage": {
-    "title": "TaskFlow - Kanban доска для управления задачами"
+    "title": "TaskFlow - Kanban доска для управления задачами",
+    "description": "Простая, красивая, удобная доска для управления вашими проектами и задачами",
+    "hero": {
+      "chip": "Создано на Next.js · NestJS · MobX · TanStack Query",
+      "heading": "Управляйте задачами с ",
+      "headingAccent": "легкостью",
+      "subtitle": "TaskFlow — это прекрасная Kanban доска, которая помогает организовать работу, отслеживать прогресс и быстрее решать важные задачи.",
+      "ctaStart": "Начать",
+      "ctaLogin": "Войти"
+    },
+    "features": {
+      "heading": "Все что вам надо",
+      "subheading": "Fullstack пет-проект NestJS + Next.js + TypeScript",
+      "dragDrop": {
+        "title": "Drag & Drop",
+        "desc": "Перемещайте задачи между столбцами с помощью drag & drop. Меняйте порядок столбцов за считанные секунды."
+      },
+      "fast": {
+        "title": "Невероятно быстро",
+        "desc": "Благодаря оптимистичным обновлениям пользовательский интерфейс работает мгновенно. Не нужно ждать ответа от сервера."
+      },
+      "auth": {
+        "title": "Авторизация",
+        "desc": "JWT-токены хранятся в файлах cookie httpOnly. Автоматическое бесшумное обновление позволяет оставаться авторизованным."
+      },
+      "themes": {
+        "title": "Пользовательские темы",
+        "desc": "Темная и светлая темы с красивой пользовательской палитрой Material UI."
+      },
+      "boards": {
+        "title": "Несколько досок",
+        "desc": "Создавайте столько досок, сколько вам нужно. Используйте цветовую кодировку для удобной навигации."
+      },
+      "ssr": {
+        "title": "SSR + ISR",
+        "desc": "Next.js (App Router) приложение с Server Side Rendering (SSR) и Incremental Static Regeneration (ISR)."
+      }
+    },
+    "footer": "TaskFlow - Next.js · NestJS · MobX · Material UI"
+  },
+  "Auth": {
+    "Login": {
+      "title": "Войти",
+      "description": "Войдите в свою учетную запись",
+      "heading": "Добро пожаловать",
+      "subtitle": "Войдите в свой аккаунт для продолжения",
+      "email": "Email",
+      "password": "Пароль",
+      "submit": "Войти",
+      "loading": "Загрузка...",
+      "noAccount": "Нет аккаунта?",
+      "register": "Зарегистрироваться"
+    },
+    "Register": {
+      "title": "Регистрация",
+      "description": "Создайте новую учетную запись",
+      "heading": "Регистрация",
+      "subtitle": "Начните работу с TaskFlow уже сегодня",
+      "name": "Полное имя",
+      "email": "Email",
+      "password": "Пароль",
+      "submit": "Зарегистрироваться",
+      "loading": "Загрузка...",
+      "haveAccount": "Уже есть аккаунт?",
+      "login": "Войти"
+    }
+  },
+  "Boards": {
+    "title": "Мои доски",
+    "description": "Управление досками",
+    "boardsCount": "{count} досок",
+    "newBoard": "Новая доска",
+    "emptyTitle": "У вас нет досок",
+    "emptyAction": "Создайте свою первую доску",
+    "deleteSuccess": "Доска удалена",
+    "dialogTitle": "Новая доска",
+    "boardTitle": "Название доски",
+    "boardDescription": "Описание (необязательно)",
+    "color": "Цвет",
+    "cancel": "Отмена",
+    "creating": "Создание...",
+    "create": "Создать",
+    "delete": "Удалить"
+  },
+  "BoardPage": {
+    "title": "Доска {id}",
+    "description": "Доска {id}",
+    "notFound": "Доска не найдена",
+    "backToBoards": "Назад к доскам",
+    "boardsLink": "Доски",
+    "share": "Поделиться",
+    "addColumn": "Добавить колонку",
+    "taskStats": "Статистика по задачам",
+    "onTime": "Выполнено в срок: {count}",
+    "late": "Выполнено после срока: {count}",
+    "today": "За сегодня: {count}",
+    "members": "Участники доски",
+    "loading": "Загрузка...",
+    "ownerSuffix": "(владелец)",
+    "youSuffix": "(вы)",
+    "remove": "Удалить",
+    "noMembers": "Нет участников.",
+    "columnTitle": "Название колонки",
+    "shareTitle": "Поделиться доской",
+    "shareDescription": "Отправьте приглашение по электронной почте, чтобы дать доступ к доске.",
+    "shareError": "Не удалось отправить приглашение.",
+    "shareSend": "Отправить",
+    "add": "Добавить",
+    "cancel": "Отмена"
+  },
+  "ProfilePage": {
+    "title": "Активные сессии",
+    "description": "Здесь вы можете увидеть свои устройства и завершить неиспользуемые сессии.",
+    "deviceFallback": "Устройство",
+    "ipUnknown": "IP неизвестен",
+    "browserUnknown": "браузер неизвестен",
+    "currentSession": "Текущая сессия",
+    "inactive": "Не активна",
+    "startedAt": "Начало",
+    "lastActive": "Последняя активность",
+    "endSession": "Завершить сессию",
+    "noSessions": "Активных сессий нет.",
+    "loadingError": "Не удалось загрузить профиль"
+  },
+  "Header": {
+    "myBoards": "Мои доски",
+    "lightTheme": "Светлая тема",
+    "darkTheme": "Темная тема",
+    "signIn": "Войти",
+    "profile": "Профиль",
+    "logout": "Выход"
+  },
+  "KanbanColumn": {
+    "addTask": "Добавить задачу",
+    "taskPlaceholder": "Название задачи",
+    "add": "Добавить",
+    "cancel": "Отмена",
+    "rename": "Переименовать",
+    "delete": "Удалить"
+  },
+  "TaskCard": {
+    "priorityTooltip": "Приоритет: {priority}",
+    "deadlineTooltip": "Срок: {date}",
+    "priority": {
+      "low": "Низкий",
+      "medium": "Средний",
+      "high": "Высокий",
+      "urgent": "Срочный"
+    }
+  },
+  "TaskDetail": {
+    "inColumn": "В колонке: {column}",
+    "title": "Название",
+    "description": "Описание",
+    "descriptionPlaceholder": "Введите описание задачи...",
+    "priority": "Приоритет",
+    "dueDate": "Срок выполнения",
+    "assignee": "Ответственный",
+    "unassigned": "Не указан",
+    "labels": "Метки",
+    "newLabel": "Новая метка",
+    "add": "Добавить",
+    "created": "Создан:",
+    "updated": "Изменен:",
+    "deleteTask": "Удалить задачу",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "saving": "Сохранение…"
+  },
+  "Notifications": {
+    "columnMoveError": "Ошибка перемещения колонок",
+    "taskMoveError": "Не удалось переместить задачу"
   }
 }

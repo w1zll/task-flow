@@ -1,15 +1,19 @@
-import LandingClient from "@/widgets/landing/LandingClient";
-import { Metadata } from "next";
+import LandingClient from '@/widgets/landing/LandingClient';
+import { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-  title: "TaskFlow - Kanban доска для управления задачами",
-  description: "Простая, красивая, удобная доска для управления вашими проектами и задачами",
-}
+export const generateMetadata = async (): Promise<Metadata> => {
+  const t = await getTranslations('HomePage');
+  return {
+    title: t('title'),
+    description: t('description'),
+  };
+};
 
-const HomePage = () => {
-  return <LandingClient/>;
+const HomePage = async () => {
+  return <LandingClient />;
 };
 
 export default HomePage;

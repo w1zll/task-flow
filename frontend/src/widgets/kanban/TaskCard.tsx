@@ -2,6 +2,7 @@
 
 import { Task } from '@/shared/api/api';
 import { useBoardUIStore } from '@/shared/store/root.store';
+import { useTranslations } from 'next-intl';
 import {
   CalendarTodayOutlined,
   FlagOutlined,
@@ -18,6 +19,7 @@ import {
 import dayjs from 'dayjs';
 import { observer } from 'mobx-react-lite';
 import { Draggable } from '@hello-pangea/dnd';
+import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
 
 interface Props {
   task: Task;
@@ -26,15 +28,18 @@ interface Props {
 }
 
 const PRIORITY_CONFIG = {
-  low: { color: '#22c55e', label: 'Низкий' },
-  medium: { color: '#f59e0b', label: 'Средний' },
-  high: { color: '#f97316', label: 'Высокий' },
-  urgent: { color: '#ef4444', label: 'Срочный' },
+  low: { color: '#22c55e', labelKey: 'priority.low' as const },
+  medium: { color: '#f59e0b', labelKey: 'priority.medium' as const },
+  high: { color: '#f97316', labelKey: 'priority.high' as const },
+  urgent: { color: '#ef4444', labelKey: 'priority.urgent' as const },
 } as const;
 
 const TaskCard = observer(({ task, index, boardId }: Props) => {
+  useDayjsLocale();
   const boardUI = useBoardUIStore();
+  const t = useTranslations('TaskCard');
   const priority = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG.medium;
+  const priorityLabel = t(priority.labelKey);
 
   const isOverdue =
     task.dueDate && dayjs(task.dueDate).isBefore(dayjs(), 'day');
@@ -105,7 +110,7 @@ const TaskCard = observer(({ task, index, boardId }: Props) => {
             <Box
               sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 0.5 }}
             >
-              <Tooltip title={`Приоритет: ${priority.label}`}>
+              <Tooltip title={t('priorityTooltip', { priority: priorityLabel })}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
                   <FlagOutlined sx={{ fontSize: 13, color: priority.color }} />
                   <Typography
@@ -116,14 +121,16 @@ const TaskCard = observer(({ task, index, boardId }: Props) => {
                       fontWeight: 600,
                     }}
                   >
-                    {priority.label}
+                    {priorityLabel}
                   </Typography>
                 </Box>
               </Tooltip>
 
               {task.dueDate && (
                 <Tooltip
-                  title={`Срок: ${dayjs(task.dueDate).format('MMM D, YYYY')}`}
+                  title={t('deadlineTooltip', {
+                    date: dayjs(task.dueDate).format('D MMM'),
+                  })}
                 >
                   <Box
                     sx={{
@@ -138,7 +145,7 @@ const TaskCard = observer(({ task, index, boardId }: Props) => {
                       variant="caption"
                       sx={{ fontSize: 11, fontWeight: isOverdue ? 600 : 400 }}
                     >
-                      {dayjs(task.dueDate).format('MMM D')}
+                      {dayjs(task.dueDate).format('D MMM')}
                     </Typography>
                   </Box>
                 </Tooltip>

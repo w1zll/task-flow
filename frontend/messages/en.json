@@ -1,5 +1,176 @@
 {
   "HomePage": {
-    "title": "TaskFlow - Kanban task managment board"
+    "title": "TaskFlow - Kanban task management board",
+    "description": "Simple, beautiful, convenient board for managing your projects and tasks",
+    "hero": {
+      "chip": "Built with Next.js · NestJS · MobX · TanStack Query",
+      "heading": "Manage tasks with ",
+      "headingAccent": "ease",
+      "subtitle": "TaskFlow is a beautiful Kanban board that helps organize work, track progress, and resolve important tasks faster.",
+      "ctaStart": "Get started",
+      "ctaLogin": "Sign in"
+    },
+    "features": {
+      "heading": "Everything you need",
+      "subheading": "Fullstack pet-project NestJS + Next.js + TypeScript",
+      "dragDrop": {
+        "title": "Drag & Drop",
+        "desc": "Move tasks between columns with drag & drop. Reorder columns in seconds."
+      },
+      "fast": {
+        "title": "Incredibly fast",
+        "desc": "Thanks to optimistic updates, the UI responds instantly. No need to wait for a server response."
+      },
+      "auth": {
+        "title": "Authentication",
+        "desc": "JWT tokens stored in httpOnly cookies. Automatic silent refresh keeps you logged in."
+      },
+      "themes": {
+        "title": "Custom themes",
+        "desc": "Dark and light themes with a beautiful custom Material UI palette."
+      },
+      "boards": {
+        "title": "Multiple boards",
+        "desc": "Create as many boards as you need. Use color coding for easy navigation."
+      },
+      "ssr": {
+        "title": "SSR + ISR",
+        "desc": "Next.js (App Router) app with Server Side Rendering (SSR) and Incremental Static Regeneration (ISR)."
+      }
+    },
+    "footer": "TaskFlow - Next.js · NestJS · MobX · Material UI"
+  },
+  "Auth": {
+    "Login": {
+      "title": "Sign in",
+      "description": "Sign in to your account",
+      "heading": "Welcome back",
+      "subtitle": "Sign in to continue",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "loading": "Loading...",
+      "noAccount": "Don't have an account?",
+      "register": "Register"
+    },
+    "Register": {
+      "title": "Register",
+      "description": "Create a new account",
+      "heading": "Register",
+      "subtitle": "Start working with TaskFlow today",
+      "name": "Full name",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Register",
+      "loading": "Loading...",
+      "haveAccount": "Already have an account?",
+      "login": "Sign in"
+    }
+  },
+  "Boards": {
+    "title": "My boards",
+    "description": "Manage your boards",
+    "boardsCount": "{count} boards",
+    "newBoard": "New board",
+    "emptyTitle": "You have no boards",
+    "emptyAction": "Create your first board",
+    "deleteSuccess": "Board deleted",
+    "dialogTitle": "New board",
+    "boardTitle": "Board title",
+    "boardDescription": "Description (optional)",
+    "color": "Color",
+    "cancel": "Cancel",
+    "creating": "Creating...",
+    "create": "Create",
+    "delete": "Delete"
+  },
+  "BoardPage": {
+    "title": "Board {id}",
+    "description": "Board {id}",
+    "notFound": "Board not found",
+    "backToBoards": "Back to boards",
+    "boardsLink": "Boards",
+    "share": "Share",
+    "addColumn": "Add column",
+    "taskStats": "Task statistics",
+    "onTime": "Completed on time: {count}",
+    "late": "Completed late: {count}",
+    "today": "Today: {count}",
+    "members": "Board members",
+    "loading": "Loading...",
+    "ownerSuffix": "(owner)",
+    "youSuffix": "(you)",
+    "remove": "Remove",
+    "noMembers": "No members.",
+    "columnTitle": "Column title",
+    "shareTitle": "Share board",
+    "shareDescription": "Send an invitation by email to give access to the board.",
+    "shareError": "Failed to send invitation.",
+    "shareSend": "Send",
+    "add": "Add",
+    "cancel": "Cancel"
+  },
+  "ProfilePage": {
+    "title": "Active sessions",
+    "description": "See your devices and end unused sessions.",
+    "deviceFallback": "Device",
+    "ipUnknown": "IP unknown",
+    "browserUnknown": "Unknown browser",
+    "currentSession": "Current session",
+    "inactive": "Inactive",
+    "startedAt": "Started",
+    "lastActive": "Last activity",
+    "endSession": "End session",
+    "noSessions": "No active sessions.",
+    "loadingError": "Failed to load profile"
+  },
+  "Header": {
+    "myBoards": "My boards",
+    "lightTheme": "Light theme",
+    "darkTheme": "Dark theme",
+    "signIn": "Sign in",
+    "profile": "Profile",
+    "logout": "Sign out"
+  },
+  "KanbanColumn": {
+    "addTask": "Add task",
+    "taskPlaceholder": "Task title",
+    "add": "Add",
+    "cancel": "Cancel",
+    "rename": "Rename",
+    "delete": "Delete"
+  },
+  "TaskCard": {
+    "priorityTooltip": "Priority: {priority}",
+    "deadlineTooltip": "Due: {date}",
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    }
+  },
+  "TaskDetail": {
+    "inColumn": "In column: {column}",
+    "title": "Title",
+    "description": "Description",
+    "descriptionPlaceholder": "Enter task description...",
+    "priority": "Priority",
+    "dueDate": "Due date",
+    "assignee": "Assignee",
+    "unassigned": "Unassigned",
+    "labels": "Labels",
+    "newLabel": "New label",
+    "add": "Add",
+    "created": "Created:",
+    "updated": "Updated:",
+    "deleteTask": "Delete task",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…"
+  },
+  "Notifications": {
+    "columnMoveError": "Failed to move columns",
+    "taskMoveError": "Failed to move task"
   }
 }

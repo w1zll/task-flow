@@ -59,7 +59,6 @@ apiClient.interceptors.response.use(
           typeof window !== 'undefined' &&
           !window.location.pathname.startsWith('/auth')
         ) {
-          alert('to login');
           window.location.href = '/auth/login';
         }
         return Promise.reject(refreshError);

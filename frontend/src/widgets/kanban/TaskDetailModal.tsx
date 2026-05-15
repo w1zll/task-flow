@@ -32,21 +32,20 @@ import {
   Typography,
 } from '@mui/material';
 import dayjs from 'dayjs';
-import 'dayjs/locale/ru';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
 
 interface Props {
   board: Board;
 }
 
-dayjs.locale('ru');
-
 const PRIORITY_OPTIONS = [
-  { value: 'low', label: 'Низкий', color: '#22c55e' },
-  { value: 'medium', label: 'Средний', color: '#f59e0b' },
-  { value: 'high', label: 'Высокий', color: '#f97316' },
-  { value: 'urgent', label: 'Срочный', color: '#ef4444' },
+  { value: 'low', color: '#22c55e' },
+  { value: 'medium', color: '#f59e0b' },
+  { value: 'high', color: '#f97316' },
+  { value: 'urgent', color: '#ef4444' },
 ] as const;
 
 const LABEL_PRESETS = [
@@ -61,8 +60,11 @@ const LABEL_PRESETS = [
 ];
 
 const TaskDetailModal = observer(({ board }: Props) => {
+  const t = useTranslations('TaskDetail');
+  const tPriority = useTranslations('TaskCard');
   const boardUI = useBoardUIStore();
   const deleteTask = useDeleteTask();
+  useDayjsLocale();
 
   const socket = getSocket();
 
@@ -119,7 +121,7 @@ const TaskDetailModal = observer(({ board }: Props) => {
       changes: form,
     });
     setIsDirty(false);
-    // isUpdating сбросится по событию 'task:update' от сервера
+    // isUpdating will be reset by the 'task:update' socket event
   };
 
   const handleDelete = () => {
@@ -167,7 +169,7 @@ const TaskDetailModal = observer(({ board }: Props) => {
             color="text.secondary"
             sx={{ display: 'block', mb: 0.5 }}
           >
-            В колонке: <b>{columnTitle}</b>
+            {t('inColumn', { column: columnTitle })}
           </Typography>
         </Box>
         <IconButton
@@ -188,7 +190,7 @@ const TaskDetailModal = observer(({ board }: Props) => {
         }}
       >
         <TextField
-          label="Название"
+          label={t('title')}
           fullWidth
           value={form.title ?? ''}
           onChange={(e) => patch('title', e.target.value as any)}
@@ -196,20 +198,20 @@ const TaskDetailModal = observer(({ board }: Props) => {
         />
 
         <TextField
-          label="Описание"
+          label={t('description')}
           fullWidth
           multiline
           rows={3}
           value={form.description ?? ''}
           onChange={(e) => patch('description', e.target.value as any)}
-          placeholder="Введите описание задачи..."
+          placeholder={t('descriptionPlaceholder')}
         />
 
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Приоритет</InputLabel>
+            <InputLabel>{t('priority')}</InputLabel>
             <Select
-              label="Приоритет"
+              label={t('priority')}
               value={form.priority ?? 'medium'}
               onChange={(e) => patch('priority', e.target.value as any)}
               renderValue={(val) => {
@@ -217,7 +219,7 @@ const TaskDetailModal = observer(({ board }: Props) => {
                 return (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Flag sx={{ fontSize: 14, color: opt?.color }} />
-                    <span>{opt?.label}</span>
+                    <span>{opt ? tPriority(`priority.${opt.value}` as const) : ''}</span>
                   </Box>
                 );
               }}
@@ -225,14 +227,14 @@ const TaskDetailModal = observer(({ board }: Props) => {
               {PRIORITY_OPTIONS.map((opt) => (
                 <MenuItem key={opt.value} value={opt.value}>
                   <Flag sx={{ fontSize: 14, color: opt.color, mr: 1 }} />
-                  {opt.label}
+                  {tPriority(`priority.${opt.value}` as const)}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
 
           <TextField
-            label="Срок выполнения"
+            label={t('dueDate')}
             type="date"
             size="small"
             sx={{ minWidth: 160 }}
@@ -249,9 +251,9 @@ const TaskDetailModal = observer(({ board }: Props) => {
           />
 
           <FormControl size="small" sx={{ minWidth: 180, flex: 1 }}>
-            <InputLabel>Ответственный</InputLabel>
+            <InputLabel>{t('assignee')}</InputLabel>
             <Select
-              label="Ответственный"
+              label={t('assignee')}
               value={form.assigneeId ?? ''}
               onChange={(e) => {
                 const selected = e.target.value as string;
@@ -263,10 +265,10 @@ const TaskDetailModal = observer(({ board }: Props) => {
               }}
               renderValue={(val) => {
                 const member = board.members?.find((m) => m.userId === val);
-                return member?.user?.name ?? 'Не указан';
+                return member?.user?.name ?? t('unassigned');
               }}
             >
-              <MenuItem value="">Не указан</MenuItem>
+              <MenuItem value="">{t('unassigned')}</MenuItem>
               {board.members?.map((member) => (
                 <MenuItem key={member.id} value={member.userId}>
                   {member.user.name}
@@ -282,7 +284,7 @@ const TaskDetailModal = observer(({ board }: Props) => {
             color="text.secondary"
             sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}
           >
-            <Label sx={{ fontSize: 14 }} /> Метки
+            <Label sx={{ fontSize: 14 }} /> {t('labels')}
           </Typography>
 
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
@@ -307,7 +309,7 @@ const TaskDetailModal = observer(({ board }: Props) => {
           <Box sx={{ display: 'flex', gap: 1 }}>
             <TextField
               size="small"
-              placeholder="Новая метка"
+              placeholder={t('newLabel')}
               value={labelInput}
               onChange={(e) => setLabelInput(e.target.value)}
               onKeyDown={(e) => {
@@ -323,7 +325,7 @@ const TaskDetailModal = observer(({ board }: Props) => {
               variant="outlined"
               onClick={() => addLabel(labelInput)}
             >
-              Добавить
+              {t('add')}
             </Button>
           </Box>
 
@@ -349,11 +351,10 @@ const TaskDetailModal = observer(({ board }: Props) => {
 
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Typography variant="caption" color="text.secondary">
-            {/* сделать чтобы месяц был на русском языке */}
-            Создан: {dayjs(task.createdAt).format('D MMMM, YYYY')}
+            {t('created')} {dayjs(task.createdAt).format('D MMM')}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Изменен: {dayjs(task.updatedAt).format('D MMMM, YYYY')}
+            {t('updated')} {dayjs(task.updatedAt).format('D MMM')}
           </Typography>
         </Box>
       </DialogContent>
@@ -367,11 +368,11 @@ const TaskDetailModal = observer(({ board }: Props) => {
           onClick={handleDelete}
           size="small"
         >
-          Удалить задачу
+          {t('deleteTask')}
         </Button>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button onClick={() => boardUI.closeTask()} size="small">
-            Отмена
+            {t('cancel')}
           </Button>
           <Button
             variant="contained"
@@ -380,7 +381,7 @@ const TaskDetailModal = observer(({ board }: Props) => {
             disabled={!isDirty || isUpdating}
             size="small"
           >
-            {isUpdating ? 'Сохранение…' : 'Сохранить'}
+            {isUpdating ? t('saving') : t('save')}
           </Button>
         </Box>
       </DialogActions>

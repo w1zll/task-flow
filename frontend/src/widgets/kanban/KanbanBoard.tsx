@@ -6,6 +6,7 @@ import { queryKeys } from '@/shared/queries/boards.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
+import { useTranslations } from 'next-intl';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import KanbanColumn from './KanbanColumn';
 import { Box } from '@mui/material';
@@ -17,6 +18,7 @@ interface Props {
 }
 
 const KanbanBoard = ({ board }: Props) => {
+  const t = useTranslations('Notifications');
   const boardUI = useBoardUIStore();
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
@@ -66,7 +68,7 @@ const KanbanBoard = ({ board }: Props) => {
         qc.invalidateQueries({ queryKey: queryKeys.board(board.id) });
       } catch (error) {
         setLocalBoard(previousBoard);
-        enqueueSnackbar('Ошибка перемещения колонок', { variant: 'error' });
+        enqueueSnackbar(t('columnMoveError'), { variant: 'error' });
       }
 
       return;
@@ -153,7 +155,7 @@ const KanbanBoard = ({ board }: Props) => {
       // qc.invalidateQueries({ queryKey: queryKeys.board(board.id) });
     } catch (error) {
       setLocalBoard(previousBoard);
-      enqueueSnackbar('Не удалось переместить задачу', { variant: 'error' });
+      enqueueSnackbar(t('taskMoveError'), { variant: 'error' });
     }
   };
 

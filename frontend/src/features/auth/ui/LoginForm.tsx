@@ -5,8 +5,10 @@ import { useAuth } from "../useAuth";
 import { alpha, Box, Button, Card, CardContent, Divider, IconButton, InputAdornment, Link, TextField, Typography } from "@mui/material";
 import { ViewKanban, Visibility, VisibilityOff } from "@mui/icons-material";
 import NextLink from 'next/link';
+import { useTranslations } from 'next-intl';
 
 const LoginForm = () => {
+  const t = useTranslations('Auth.Login');
   const { login, isLoginLoading } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -54,10 +56,10 @@ const LoginForm = () => {
           </Box>
 
           <Typography variant="h5" sx={{ fontWeight: 700 }} gutterBottom>
-            Добро пожаловать
+            {t('heading')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Войдите в свой аккаунт для продолжения
+            {t('subtitle')}
           </Typography>
 
           <Box
@@ -66,7 +68,7 @@ const LoginForm = () => {
             sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
           >
             <TextField
-              label="Email"
+              label={t('email')}
               type="email"
               value={form.email}
               onChange={(e) =>
@@ -77,7 +79,7 @@ const LoginForm = () => {
               autoComplete="email"
             />
             <TextField
-              label="Пароль"
+              label={t('password')}
               type={showPassword ? 'text' : 'password'}
               value={form.password}
               onChange={(e) =>
@@ -107,16 +109,16 @@ const LoginForm = () => {
               disabled={isLoginLoading}
               sx={{ mt: 1, py: 1.5 }}
             >
-              {isLoginLoading ? 'Загрузка...' : 'Войти'}
+              {isLoginLoading ? t('loading') : t('submit')}
             </Button>
           </Box>
 
           <Divider sx={{ my: 3 }} />
 
           <Typography variant="body2" textAlign="center" color="text.secondary">
-            Нет аккаунта?{' '}
+            {t('noAccount')}{' '}
             <Link component={NextLink} href="/auth/register" fontWeight={600}>
-              Зарегистрироваться
+              {t('register')}
             </Link>
           </Typography>
         </CardContent>

@@ -25,6 +25,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useTranslations } from 'next-intl';
 import { observer } from 'mobx-react-lite';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -38,6 +39,7 @@ interface Props {
 }
 
 const KanbanBoardPage = observer(({ boardId }: Props) => {
+  const t = useTranslations('BoardPage');
   const router = useRouter();
   const { data: board, isLoading, isError } = useBoard(boardId);
   const createColumn = useCreateColumn();
@@ -101,14 +103,14 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
           }}
         >
           <Typography variant="h5" color="text.secondary">
-            Доска не найдена
+            {t('notFound')}
           </Typography>
           <Button
             variant="contained"
             startIcon={<ArrowBack />}
             onClick={() => router.push('/boards')}
           >
-            Назад к доскам
+            {t('backToBoards')}
           </Button>
         </Box>
       </Box>
@@ -166,7 +168,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                 underline="hover"
                 sx={{ fontSize: 12 }}
               >
-                Доски
+                {t('boardsLink')}
               </Link>
               <Typography color="text.primary" sx={{ fontSize: 12 }}>
                 {board?.title}
@@ -181,7 +183,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
             size="small"
             onClick={() => setShareOpen(true)}
           >
-            Поделиться
+            {t('share')}
           </Button>
           <Button
             variant="outlined"
@@ -189,7 +191,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
             startIcon={<Add />}
             onClick={() => boardUI.setAddingColumn(true)}
           >
-            Добавить колонку
+            {t('addColumn')}
           </Button>
         </Stack>
       </Box>
@@ -232,16 +234,16 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                 }}
               >
                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-                  Статистика по задачам
+                  {t('taskStats')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Выполнено в срок: {summaryAnalytics.data?.onTime ?? '-'}
+                  {t('onTime', { count: summaryAnalytics.data?.onTime ?? '-' })}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Выполнено после срока: {summaryAnalytics.data?.late ?? '-'}
+                  {t('late', { count: summaryAnalytics.data?.late ?? '-' })}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  За сегодня: {dailyAnalytics.data?.length ?? 0}
+                  {t('today', { count: dailyAnalytics.data?.length ?? 0 })}
                 </Typography>
               </Box>
               <Box
@@ -254,17 +256,17 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                 }}
               >
                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-                  Участники доски
+                  {t('members')}
                 </Typography>
                 {boardMembers.isLoading ? (
                   <Typography variant="body2" color="text.secondary">
-                    Загрузка...
+                    {t('loading')}
                   </Typography>
                 ) : boardMembers.data && boardMembers.data.length > 0 ? (
                   <Stack spacing={1}>
                     {boardMembers.data
                       .sort(({ user: userA }: any, { user: userB }: any) => {
-                        // Владелец всегда первым
+                        // Owner is always first
                         if (userA.id === board?.ownerId) return -1;
                         if (userB.id === board?.ownerId) return 1;
                         return 0;
@@ -293,7 +295,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                                     fontWeight: 600,
                                   }}
                                 >
-                                  (владелец)
+                                  {t('ownerSuffix')}
                                 </Typography>
                               )}
                               {isCurrentUser && (
@@ -305,7 +307,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                                     color: 'primary.main',
                                   }}
                                 >
-                                  (вы)
+                                  {t('youSuffix')}
                                 </Typography>
                               )}
                             </Typography>
@@ -320,7 +322,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                                   })
                                 }
                               >
-                                Удалить
+                                {t('remove')}
                               </Button>
                             )}
                           </Box>
@@ -329,7 +331,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                   </Stack>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
-                    Нет участников.
+                    {t('noMembers')}
                   </Typography>
                 )}
               </Box>
@@ -349,7 +351,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                     autoFocus
                     size="small"
                     fullWidth
-                    placeholder="Название колонки"
+                    placeholder={t('columnTitle')}
                     value={newColTitle}
                     onChange={(e) => setNewColTitle(e.target.value)}
                     onKeyDown={(e) => {
@@ -365,13 +367,13 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                       onClick={handleAddColumn}
                       disabled={createColumn.isPending}
                     >
-                      Добавить
+                      {t('add')}
                     </Button>
                     <Button
                       size="small"
                       onClick={() => boardUI.setAddingColumn(false)}
                     >
-                      Отмена
+                      {t('cancel')}
                     </Button>
                   </Box>
                 </Box>
@@ -382,7 +384,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
       </Box>
 
       <Dialog open={isShareOpen} onClose={() => setShareOpen(false)}>
-        <DialogTitle>Поделиться доской</DialogTitle>
+        <DialogTitle>{t('shareTitle')}</DialogTitle>
         <DialogContent
           sx={{
             display: 'flex',
@@ -393,8 +395,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
           }}
         >
           <Typography variant="body2" color="text.secondary">
-            Отправьте приглашение по электронной почте, чтобы дать доступ к
-            доске.
+            {t('shareDescription')}
           </Typography>
           <TextField
             label="Email"
@@ -406,18 +407,18 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
           />
           {shareBoard.isError && (
             <Typography variant="body2" color="error">
-              Не удалось отправить приглашение.
+              {t('shareError')}
             </Typography>
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setShareOpen(false)}>Отмена</Button>
+          <Button onClick={() => setShareOpen(false)}>{t('cancel')}</Button>
           <Button
             variant="contained"
             onClick={handleShareBoard}
             disabled={shareBoard.isPending || !shareEmail.trim()}
           >
-            Отправить
+            {t('shareSend')}
           </Button>
         </DialogActions>
       </Dialog>

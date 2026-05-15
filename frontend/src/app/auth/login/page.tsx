@@ -1,9 +1,15 @@
 import LoginForm from '@/features/auth/ui/LoginForm';
+import { getTranslations } from 'next-intl/server';
+import { Metadata } from 'next';
 
-export const metadata = {
-  title: 'Вход в систему',
-  description: 'Вход в систему',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('Auth.Login');
+
+  return {
+    title: t('title'),
+    description: t('description'),
+  };
+}
 
 const LoginPage = () => {
   return <LoginForm />;

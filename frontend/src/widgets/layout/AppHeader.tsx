@@ -18,12 +18,14 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useTranslations } from 'next-intl';
 import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 import NextLink from 'next/link';
 import LocaleSwitcher from './LocaleSwitcher';
 
 const AppHeader = observer(() => {
+  const t = useTranslations('Header');
   const { user, logout, isLoading } = useAuth();
   const themeStore = useThemeStore();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -86,13 +88,13 @@ const AppHeader = observer(() => {
             component={NextLink}
             href="/boards"
           >
-            Мои доски
+            {t('myBoards')}
           </Link>
         </Box>
 
         <Box sx={{ display: 'flex', marginLeft: 'auto', gap: 1 }}>
           <LocaleSwitcher />
-          <Tooltip title={themeStore.isDark ? 'Светлая тема' : 'Темная тема'}>
+          <Tooltip title={themeStore.isDark ? t('lightTheme') : t('darkTheme')}>
             <IconButton onClick={() => themeStore.toggle()}>
               {themeStore.isDark ? <LightMode /> : <DarkMode />}
             </IconButton>
@@ -108,7 +110,7 @@ const AppHeader = observer(() => {
                   textDecoration: 'none',
                 }}
               >
-                Войти
+                {t('signIn')}
               </Button>
             ) : (
               <Tooltip title={user?.name ?? 'Account'}>
@@ -142,7 +144,6 @@ const AppHeader = observer(() => {
               }}
             />
           )}
-          {}
 
           <Menu
             anchorEl={anchorEl}
@@ -167,7 +168,7 @@ const AppHeader = observer(() => {
               onClick={() => setAnchorEl(null)}
               sx={{ gap: 1 }}
             >
-              Профиль
+              {t('profile')}
             </MenuItem>
             <MenuItem
               onClick={() => {
@@ -176,7 +177,7 @@ const AppHeader = observer(() => {
               }}
               sx={{ color: 'error.main', gap: 1 }}
             >
-              <Logout fontSize="small" /> Выход
+              <Logout fontSize="small" /> {t('logout')}
             </MenuItem>
           </Menu>
         </Box>

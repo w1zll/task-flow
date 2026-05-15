@@ -1,4 +1,5 @@
 import KanbanBoardPage from '@/widgets/kanban/KanbanBoardPage';
+import { getTranslations } from 'next-intl/server';
 import { Metadata } from 'next/types';
 
 export const revalidate = 60;
@@ -8,9 +9,11 @@ export async function generateMetadata({
 }: {
   params: { id: string };
 }): Promise<Metadata> {
+  const t = await getTranslations('BoardPage');
+
   return {
-    title: `Доска ${params.id}`,
-    description: 'Доска ${params.id}',
+    title: t('title', { id: params.id }),
+    description: t('description', { id: params.id }),
   };
 }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRevokeSession, useSessions } from '@/shared/queries/auth.queries';
 import {
   Box,
@@ -15,16 +16,17 @@ import {
 } from '@mui/material';
 
 const ProfilePage = () => {
+  const t = useTranslations('ProfilePage');
   const sessionsQuery = useSessions();
   const revokeSession = useRevokeSession();
 
   return (
     <Box sx={{ p: 3, minHeight: '100vh', bgcolor: 'background.default' }}>
       <Typography variant="h5" fontWeight={700} gutterBottom>
-        Активные сессии
+        {t('title')}
       </Typography>
       <Typography variant="body2" color="text.secondary" gutterBottom>
-        Здесь вы можете увидеть свои устройства и завершить неиспользуемые сессии.
+        {t('description')}
       </Typography>
 
       {sessionsQuery.isLoading ? (
@@ -33,7 +35,7 @@ const ProfilePage = () => {
         </Box>
       ) : sessionsQuery.isError ? (
         <Typography color="error" sx={{ mt: 3 }}>
-          Не удалось загрузить сессии.
+          {t('loadingError')}
         </Typography>
       ) : (
         <Stack spacing={2} sx={{ mt: 2 }}>
@@ -52,15 +54,15 @@ const ProfilePage = () => {
                   >
                     <Box>
                       <Typography variant="subtitle1" fontWeight={600}>
-                        {session.deviceName ?? 'Устройство'}
+                        {session.deviceName ?? t('deviceFallback')}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {session.ipAddress ?? 'IP неизвестен'} •{' '}
-                        {session.userAgent ?? 'браузер неизвестен'}
+                        {session.ipAddress ?? t('ipUnknown')} •{' '}
+                        {session.userAgent ?? t('browserUnknown')}
                       </Typography>
                     </Box>
                     <Chip
-                      label={session.current ? 'Текущая сессия' : 'Не активна'}
+                      label={session.current ? t('currentSession') : t('inactive')}
                       color={session.current ? 'success' : 'default'}
                       size="small"
                     />
@@ -69,10 +71,10 @@ const ProfilePage = () => {
                   <Divider sx={{ my: 2 }} />
 
                   <Typography variant="body2" color="text.secondary">
-                    Начало: {session.createdAt ?? '—'}
+                    {t('startedAt')}: {session.createdAt ?? '—'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Последняя активность: {session.updatedAt ?? '—'}
+                    {t('lastActive')}: {session.updatedAt ?? '—'}
                   </Typography>
                 </CardContent>
                 <CardActions>
@@ -82,14 +84,14 @@ const ProfilePage = () => {
                     disabled={session.current || revokeSession.isPending}
                     onClick={() => revokeSession.mutate(session.id)}
                   >
-                    Завершить сессию
+                    {t('endSession')}
                   </Button>
                 </CardActions>
               </Card>
             ))
           ) : (
             <Typography color="text.secondary" sx={{ mt: 2 }}>
-              Активных сессий нет.
+              {t('noSessions')}
             </Typography>
           )}
         </Stack>

@@ -24,41 +24,41 @@ import { observer } from 'mobx-react-lite';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
-const FEATURES = [
-  {
-    icon: <DragIndicator />,
-    title: 'Drag & Drop',
-    desc: 'Перемещайте задачи между столбцами с помощью drag & drop. Меняйте порядок столбцов за считанные секунды.',
-  },
-  {
-    icon: <Speed />,
-    title: 'Невероятно быстро',
-    desc: 'Благодаря оптимистичным обновлениям пользовательский интерфейс работает мгновенно. Не нужно ждать ответа от сервера.',
-  },
-  {
-    icon: <Security />,
-    title: 'Авторизация',
-    desc: 'JWT-токены хранятся в файлах cookie httpOnly. Автоматическое бесшумное обновление позволяет оставаться авторизованным.',
-  },
-  {
-    icon: <Palette />,
-    title: 'Пользовательские темы',
-    desc: 'Темная и светлая темы с красивой пользовательской палитрой Material UI.',
-  },
-  {
-    icon: <ViewKanban />,
-    title: 'Несколько досок',
-    desc: 'Создавайте столько досок, сколько вам нужно. Используйте цветовую кодировку для удобной навигации.',
-  },
-  {
-    icon: <Devices />,
-    title: 'SSR + ISR',
-    desc: 'Next.js (App Router) приложение с Server Side Rendering(SSR) и Incremental Static Regeneration(ISR).',
-  },
-];
-
 const LandingClient = observer(() => {
   const t = useTranslations('HomePage');
+
+  const FEATURES = [
+    {
+      icon: <DragIndicator />,
+      title: t('features.dragDrop.title'),
+      desc: t('features.dragDrop.desc'),
+    },
+    {
+      icon: <Speed />,
+      title: t('features.fast.title'),
+      desc: t('features.fast.desc'),
+    },
+    {
+      icon: <Security />,
+      title: t('features.auth.title'),
+      desc: t('features.auth.desc'),
+    },
+    {
+      icon: <Palette />,
+      title: t('features.themes.title'),
+      desc: t('features.themes.desc'),
+    },
+    {
+      icon: <ViewKanban />,
+      title: t('features.boards.title'),
+      desc: t('features.boards.desc'),
+    },
+    {
+      icon: <Devices />,
+      title: t('features.ssr.title'),
+      desc: t('features.ssr.desc'),
+    },
+  ];
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -75,7 +75,7 @@ const LandingClient = observer(() => {
       >
         <Container maxWidth="md">
           <Chip
-            label="Built with Next.js · NestJS · MobX · TanStack Query"
+            label={t('hero.chip')}
             size="small"
             sx={{ mb: 3, fontWeight: 500 }}
           />
@@ -89,9 +89,9 @@ const LandingClient = observer(() => {
               mb: 2.5,
             }}
           >
-            Управляйте задачами с{' '}
+            {t('hero.heading')}
             <Box component="span" sx={{ color: 'primary.main' }}>
-              легкостью
+              {t('hero.headingAccent')}
             </Box>
           </Typography>
           <Typography
@@ -100,29 +100,17 @@ const LandingClient = observer(() => {
             fontWeight={400}
             sx={{ mb: 5, maxWidth: 520, mx: 'auto', lineHeight: 1.6 }}
           >
-            <span style={{ color: 'red' }}>{t('title')}</span>
-            <br />
-            TaskFlow - это прекрасная Kanban доска, которая помогает
-            организовать работу, отслеживать прогресс, и быстрее решать важные
-            задачи.
+            {t('hero.subtitle')}
           </Typography>
           <Stack direction="row" spacing={2} justifyContent="center">
             <Link href="/auth/register">
-              <Button
-                variant="contained"
-                size="large"
-                sx={{ px: 4, py: 1.5 }}
-              >
-                Начать
+              <Button variant="contained" size="large" sx={{ px: 4, py: 1.5 }}>
+                {t('hero.ctaStart')}
               </Button>
             </Link>
             <Link href="/auth/login">
-              <Button
-                variant="outlined"
-                size="large"
-                sx={{ px: 4, py: 1.5 }}
-              >
-                Войти
+              <Button variant="outlined" size="large" sx={{ px: 4, py: 1.5 }}>
+                {t('hero.ctaLogin')}
               </Button>
             </Link>
           </Stack>
@@ -136,7 +124,7 @@ const LandingClient = observer(() => {
           textAlign="center"
           sx={{ mb: 1 }}
         >
-          Все что вам надо
+          {t('features.heading')}
         </Typography>
         <Typography
           variant="body1"
@@ -144,7 +132,7 @@ const LandingClient = observer(() => {
           textAlign="center"
           sx={{ mb: 6 }}
         >
-          Fullstack пет-проект NestJS + Next.js + TypeScript
+          {t('features.subheading')}
         </Typography>
 
         <Grid container spacing={3}>
@@ -201,7 +189,7 @@ const LandingClient = observer(() => {
         }}
       >
         <Typography variant="body2" color="text.secondary">
-          TaskFlow - Next.js · NestJS · MobX · Material UI
+          {t('footer')}
         </Typography>
       </Box>
     </Box>

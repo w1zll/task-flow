@@ -20,6 +20,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useTranslations } from 'next-intl';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
@@ -32,6 +33,7 @@ interface Props {
 }
 
 const KanbanColumn = observer(({ column, board, index }: Props) => {
+  const t = useTranslations('KanbanColumn');
   const boardUI = useBoardUIStore();
   const createTask = useCreateTask();
   const deleteColumn = useDeleteColumn();
@@ -186,7 +188,7 @@ const KanbanColumn = observer(({ column, board, index }: Props) => {
             )}
 
             <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
-              <Tooltip title="Добвить задачу">
+              <Tooltip title={t('addTask')}>
                 <IconButton
                   size="small"
                   onClick={() => boardUI.setAddingTaskInColumn(column.id)}
@@ -247,7 +249,7 @@ const KanbanColumn = observer(({ column, board, index }: Props) => {
                 fullWidth
                 multiline
                 maxRows={4}
-                placeholder="Название задачи"
+                placeholder={t('taskPlaceholder')}
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 onKeyDown={(e) => {
@@ -266,13 +268,13 @@ const KanbanColumn = observer(({ column, board, index }: Props) => {
                   onClick={handleAddTask}
                   disabled={createTask.isPending}
                 >
-                  Добавить
+                  {t('add')}
                 </Button>
                 <Button
                   size="small"
                   onClick={() => boardUI.setAddingTaskInColumn(null)}
                 >
-                  Отмена
+                  {t('cancel')}
                 </Button>
               </Box>
             </Box>
@@ -288,7 +290,7 @@ const KanbanColumn = observer(({ column, board, index }: Props) => {
                   color: 'text.secondary',
                 }}
               >
-                Добавить задачу
+                {t('addTask')}
               </Button>
             </Box>
           )}
@@ -304,10 +306,10 @@ const KanbanColumn = observer(({ column, board, index }: Props) => {
                 setIsEditingTitle(true);
               }}
             >
-              <Edit fontSize="small" sx={{ mr: 1 }} /> Переименовать
+              <Edit fontSize="small" sx={{ mr: 1 }} /> {t('rename')}
             </MenuItem>
             <MenuItem onClick={handleDeleteColumn} sx={{ color: 'error.main' }}>
-              <Delete fontSize="small" sx={{ mr: 1 }} /> Удалить колонку
+              <Delete fontSize="small" sx={{ mr: 1 }} /> {t('delete')}
             </MenuItem>
           </Menu>
         </Paper>

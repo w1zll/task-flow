@@ -25,6 +25,7 @@ import {
   Typography,
 } from '@mui/material';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
@@ -40,6 +41,7 @@ const BOARD_COLORS = [
 ];
 
 const BoardsClientPage = () => {
+  const t = useTranslations('Boards');
   const { enqueueSnackbar } = useSnackbar();
   const { data: boards, isLoading } = useBoards();
   const createBoard = useCreateBoard();
@@ -69,7 +71,7 @@ const BoardsClientPage = () => {
   const handleDelete = (id: string) => {
     setMenuAnchor(null);
     deleteBoard.mutate(id, {
-      onSuccess: () => enqueueSnackbar('Доска удалена', { variant: 'success' }),
+      onSuccess: () => enqueueSnackbar(t('deleteSuccess'), { variant: 'success' }),
     });
   };
 
@@ -86,10 +88,10 @@ const BoardsClientPage = () => {
         >
           <Box>
             <Typography variant="h4" fontWeight={700}>
-              Мои доски
+              {t('title')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {boards?.length ?? 0} досок
+              {t('boardsCount', { count: boards?.length ?? 0 })}
             </Typography>
           </Box>
           <Button
@@ -97,7 +99,7 @@ const BoardsClientPage = () => {
             startIcon={<Add />}
             onClick={() => setCreateOpen(true)}
           >
-            Новая доска
+            {t('newBoard')}
           </Button>
         </Box>
 
@@ -208,7 +210,7 @@ const BoardsClientPage = () => {
                   sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }}
                 />
                 <Typography variant="h6" color="text.secondary" gutterBottom>
-                  У вас нет досок
+                  {t('emptyTitle')}
                 </Typography>
                 <Button
                   variant="contained"
@@ -216,7 +218,7 @@ const BoardsClientPage = () => {
                   onClick={() => setCreateOpen(true)}
                   sx={{ mt: 1 }}
                 >
-                  Создайте свою первую доску
+                  {t('emptyAction')}
                 </Button>
               </Box>
             </Grid>
@@ -233,7 +235,7 @@ const BoardsClientPage = () => {
           onClick={() => handleDelete(menuAnchor!.board.id)}
           sx={{ color: 'error.main' }}
         >
-          <Delete fontSize="small" sx={{ mr: 1 }} /> Удалить
+          <Delete fontSize="small" sx={{ mr: 1 }} /> {t('delete')}
         </MenuItem>
       </Menu>
 
@@ -243,7 +245,7 @@ const BoardsClientPage = () => {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle fontWeight={600}>Новая доска</DialogTitle>
+        <DialogTitle fontWeight={600}>{t('dialogTitle')}</DialogTitle>
         <DialogContent
           sx={{
             display: 'flex',
@@ -253,14 +255,14 @@ const BoardsClientPage = () => {
           }}
         >
           <TextField
-            label="Название доски"
+            label={t('boardTitle')}
             fullWidth
             required
             value={form.title}
             onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
           />
           <TextField
-            label="Описание (необязательно)"
+            label={t('boardDescription')}
             fullWidth
             multiline
             rows={2}
@@ -275,7 +277,7 @@ const BoardsClientPage = () => {
               color="text.secondary"
               sx={{ mb: 1, display: 'block' }}
             >
-              Цвет
+              {t('color')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               {BOARD_COLORS.map((c) => (
@@ -301,13 +303,13 @@ const BoardsClientPage = () => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setCreateOpen(false)}>Отмена</Button>
+          <Button onClick={() => setCreateOpen(false)}>{t('cancel')}</Button>
           <Button
             variant="contained"
             onClick={handleCreate}
             disabled={createBoard.isPending}
           >
-            {createBoard.isPending ? 'Создание...' : 'Создать'}
+            {createBoard.isPending ? t('creating') : t('create')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -3,6 +3,7 @@
 import NextLink from 'next/link';
 import { useAuth } from '../useAuth';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   alpha,
   Box,
@@ -16,6 +17,7 @@ import {
 import { ViewKanban } from '@mui/icons-material';
 
 const RegisterForm = () => {
+  const t = useTranslations('Auth.Register');
   const { register, isRegisterLoading } = useAuth();
   const [form, setForm] = useState({ email: '', name: '', password: '' });
 
@@ -67,10 +69,10 @@ const RegisterForm = () => {
           </Box>
 
           <Typography variant="h5" fontWeight={700} gutterBottom>
-            Регистрация
+            {t('heading')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Начните работу с TaskFlow уже сегодня
+            {t('subtitle')}
           </Typography>
 
           <Box
@@ -79,14 +81,14 @@ const RegisterForm = () => {
             sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
           >
             <TextField
-              label="Полное имя"
+              label={t('name')}
               required
               fullWidth
               autoComplete="name"
               {...field('name')}
             />
             <TextField
-              label="Email"
+              label={t('email')}
               type="email"
               required
               fullWidth
@@ -94,7 +96,7 @@ const RegisterForm = () => {
               {...field('email')}
             />
             <TextField
-              label="Пароль"
+              label={t('password')}
               type="password"
               required
               fullWidth
@@ -111,7 +113,7 @@ const RegisterForm = () => {
               disabled={isRegisterLoading}
               sx={{ mt: 1, py: 1.5 }}
             >
-              {isRegisterLoading ? 'Загрузка...' : 'Зарегистрироваться'}
+              {isRegisterLoading ? t('loading') : t('submit')}
             </Button>
           </Box>
 
@@ -121,9 +123,9 @@ const RegisterForm = () => {
             textAlign="center"
             sx={{ mt: 3 }}
           >
-            Уже есть аккаунт?{' '}
+            {t('haveAccount')}{' '}
             <Link component={NextLink} href="/auth/login" fontWeight={600}>
-              Войти
+              {t('login')}
             </Link>
           </Typography>
         </CardContent>
