@@ -7,6 +7,7 @@ const AUTH_ENDPOINTS = [
   '/api/auth/register',
   '/api/auth/refresh',
   '/api/auth/logout',
+  '/api/auth/me',
 ];
 
 export const apiClient: AxiosInstance = axios.create({
@@ -57,8 +58,10 @@ apiClient.interceptors.response.use(
         if (
           typeof window !== 'undefined' &&
           !window.location.pathname.startsWith('/auth')
-        )
+        ) {
+          alert('to login');
           window.location.href = '/auth/login';
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

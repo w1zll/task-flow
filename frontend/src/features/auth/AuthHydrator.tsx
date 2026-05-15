@@ -10,7 +10,7 @@ const AuthHydrator = () => {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname.startsWith('/auth')) return;
+    if (pathname.startsWith('/auth')) authStore.hydrate(null);
     if (!authStore.isLoading) return;
 
     authApi

@@ -7,11 +7,13 @@ import {
   AppBar,
   Avatar,
   Box,
+  Button,
   Divider,
   IconButton,
   Link,
   Menu,
   MenuItem,
+  Skeleton,
   Toolbar,
   Tooltip,
   Typography,
@@ -19,21 +21,14 @@ import {
 import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 import NextLink from 'next/link';
+import LocaleSwitcher from './LocaleSwitcher';
 
 const AppHeader = observer(() => {
   const { user, logout, isLoading } = useAuth();
-  // console.log(user)
   const themeStore = useThemeStore();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
-  const initials = user?.name
-    ? user.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : '?';
+  const initials = user?.name ? user.name[0].toUpperCase() : '?';
 
   return (
     <AppBar
@@ -57,7 +52,6 @@ const AppHeader = observer(() => {
               gap: 1,
               cursor: 'pointer',
               textDecoration: 'none',
-              // flex: 1,
             }}
           >
             <Box
@@ -97,29 +91,58 @@ const AppHeader = observer(() => {
         </Box>
 
         <Box sx={{ display: 'flex', marginLeft: 'auto', gap: 1 }}>
+          <LocaleSwitcher />
           <Tooltip title={themeStore.isDark ? 'Светлая тема' : 'Темная тема'}>
             <IconButton onClick={() => themeStore.toggle()}>
               {themeStore.isDark ? <LightMode /> : <DarkMode />}
             </IconButton>
           </Tooltip>
-          <Tooltip title={user?.name ?? 'Account'}>
-            <IconButton
-              onClick={(e) => setAnchorEl(e.currentTarget)}
-              sx={{ p: 0.5 }}
-            >
-              <Avatar
+          {!isLoading ? (
+            !user ? (
+              <Button
+                component={NextLink}
+                variant="contained"
+                href="/auth/login"
                 sx={{
-                  width: 34,
-                  height: 34,
-                  bgcolor: 'primary.main',
-                  fontSize: 13,
-                  fontWeight: 700,
+                  fontWeight: 600,
+                  textDecoration: 'none',
                 }}
               >
-                {initials}
-              </Avatar>
-            </IconButton>
-          </Tooltip>
+                Войти
+              </Button>
+            ) : (
+              <Tooltip title={user?.name ?? 'Account'}>
+                <IconButton
+                  onClick={(e) => setAnchorEl(e.currentTarget)}
+                  sx={{ p: 0.5 }}
+                >
+                  <Avatar
+                    sx={{
+                      width: 34,
+                      height: 34,
+                      bgcolor: 'primary.main',
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {initials}
+                  </Avatar>
+                </IconButton>
+              </Tooltip>
+            )
+          ) : (
+            <Skeleton
+              variant="circular"
+              width={34}
+              height={34}
+              sx={{
+                fontSize: 13,
+                fontWeight: 700,
+                margin: 0.5,
+              }}
+            />
+          )}
+          {}
 
           <Menu
             anchorEl={anchorEl}

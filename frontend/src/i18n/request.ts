@@ -1,0 +1,30 @@
+import { getRequestConfig } from 'next-intl/server';
+import { cookies, headers } from 'next/headers';
+
+export type Locale = 'en' | 'ru';
+export const locales: Locale[] = ['en', 'ru'];
+export const defaultLocale: Locale = 'ru';
+
+function detectLocale(): Locale {
+  const cookieStore = cookies();
+  const cookieLocale = cookieStore.get('locale')?.value;
+  if (cookieLocale && locales.includes(cookieLocale as Locale)) {
+    return cookieLocale as Locale;
+  }
+
+  const acceptLanguage = headers().get('accept-language') ?? '';
+  const preferred = acceptLanguage.split(',')[0].split('-')[0].toLowerCase();
+  if (locales.includes(preferred as Locale)) {
+    return preferred as Locale;
+  }
+  return defaultLocale;
+}
+
+export default getRequestConfig(async () => {
+  const locale = detectLocale();
+
+  return {
+    locale,
+    messages: (await import(`../../messages/${locale}.json`)).default,
+  };
+});

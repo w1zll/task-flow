@@ -9,6 +9,7 @@ import { Box, CssBaseline } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { observer } from 'mobx-react-lite';
+import { Locale, NextIntlClientProvider } from 'next-intl';
 import { SnackbarProvider } from 'notistack';
 
 const queryClient = new QueryClient({
@@ -39,16 +40,26 @@ const ThemedApp = observer(({ children }: { children: React.ReactNode }) => {
   );
 });
 
-const Providers = ({ children }: { children: React.ReactNode }) => {
+const Providers = ({
+  children,
+  messages,
+  locale,
+}: {
+  children: React.ReactNode;
+  messages: any;
+  locale: Locale;
+}) => {
   return (
     <StoreContext.Provider value={rootStore}>
       <QueryClientProvider client={queryClient}>
-        <ThemedApp>
-          <Box sx={{ minHeight: '100vh' }}>
-            <AppHeader />
-            {children}
-          </Box>
-        </ThemedApp>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ThemedApp>
+            <Box sx={{ minHeight: '100vh' }}>
+              <AppHeader />
+              {children}
+            </Box>
+          </ThemedApp>
+        </NextIntlClientProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </StoreContext.Provider>

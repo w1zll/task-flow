@@ -1,11 +1,8 @@
 'use client';
 
-import { useThemeStore } from '@/shared/store/root.store';
 import {
-  DarkMode,
   Devices,
   DragIndicator,
-  LightMode,
   Palette,
   Security,
   Speed,
@@ -20,14 +17,12 @@ import {
   Chip,
   Container,
   Grid,
-  IconButton,
   Stack,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import { observer } from 'mobx-react-lite';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 const FEATURES = [
   {
@@ -63,70 +58,10 @@ const FEATURES = [
 ];
 
 const LandingClient = observer(() => {
-  const router = useRouter();
-  const themeStore = useThemeStore();
+  const t = useTranslations('HomePage');
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      {/* <Box
-        component="nav"
-        sx={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          bgcolor: 'background.paper',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          backdropFilter: 'blur(12px)',
-        }}
-      >
-        <Container maxWidth="lg">
-          <Box
-            sx={{ display: 'flex', alignItems: 'center', height: 64, gap: 2 }}
-          >
-            <Box
-              sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}
-            >
-              <Box
-                sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 1.5,
-                  bgcolor: 'primary.main',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <ViewKanban sx={{ color: 'white', fontSize: 18 }} />
-              </Box>
-              <Typography variant="h6" fontWeight={700}>
-                TaskFlow
-              </Typography>
-            </Box>
-            <Tooltip title={themeStore.isDark ? 'Светлая тема' : 'Темная тема'}>
-              <IconButton onClick={() => themeStore.toggle()}>
-                {themeStore.isDark ? <LightMode /> : <DarkMode />}
-              </IconButton>
-            </Tooltip>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => router.push('/auth/login')}
-            >
-              Войти
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={() => router.push('/auth/register')}
-            >
-              Зарегистрироваться
-            </Button>
-          </Box>
-        </Container>
-      </Box> */}
-
       <Box
         sx={{
           pt: { xs: 8, md: 14 },
@@ -165,6 +100,8 @@ const LandingClient = observer(() => {
             fontWeight={400}
             sx={{ mb: 5, maxWidth: 520, mx: 'auto', lineHeight: 1.6 }}
           >
+            <span style={{ color: 'red' }}>{t('title')}</span>
+            <br />
             TaskFlow - это прекрасная Kanban доска, которая помогает
             организовать работу, отслеживать прогресс, и быстрее решать важные
             задачи.
@@ -174,7 +111,6 @@ const LandingClient = observer(() => {
               <Button
                 variant="contained"
                 size="large"
-                // onClick={() => router.push('/auth/register')}
                 sx={{ px: 4, py: 1.5 }}
               >
                 Начать
@@ -184,7 +120,6 @@ const LandingClient = observer(() => {
               <Button
                 variant="outlined"
                 size="large"
-                // onClick={() => router.push('/auth/login')}
                 sx={{ px: 4, py: 1.5 }}
               >
                 Войти
