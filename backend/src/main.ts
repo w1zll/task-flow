@@ -18,11 +18,12 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: '*',
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
     credentials: true,
     methods: '*',
     allowedHeaders: '*',
   });
+  console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
 
   const config = new DocumentBuilder()
     .setTitle('TaskFlow API')
