@@ -42,7 +42,7 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT ?? 3001;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   console.log(`TaskFlow API running on host:${port}`);
   console.log(`Swagger docs at host:${port}/api/docs`);
   console.log(`OpenAPI spec at host:${port}/api/docs.json`);
