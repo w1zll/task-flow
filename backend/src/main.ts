@@ -21,11 +21,16 @@ async function bootstrap() {
     origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
     credentials: true,
     methods: '*',
-    allowedHeaders: '*',
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
     preflightContinue: false,
     optionsSuccessStatus: 204,
   });
-  console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
 
   const config = new DocumentBuilder()
     .setTitle('TaskFlow API')
