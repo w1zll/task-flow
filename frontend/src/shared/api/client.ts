@@ -11,7 +11,7 @@ const AUTH_ENDPOINTS = [
 ];
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: API_URL,
+  baseURL: typeof window === 'undefined' ? API_URL : '',
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
