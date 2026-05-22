@@ -14,11 +14,6 @@ const nextConfig = {
       },
     ];
   },
-
-  // ISR revalidation config
-  experimental: {
-    serverActions: true,
-  },
 };
 
 module.exports = withNextIntl(nextConfig);
