@@ -37,8 +37,8 @@ export const ACCESS_COOKIE = 'access_token';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  secure: true,
+  sameSite: 'none' as const,
   path: '/',
 };
 
@@ -135,10 +135,7 @@ export class AuthController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Завершить активную сессию' })
-  async revokeSession(
-    @Param('id') id: string,
-    @CurrentUser() user: User,
-  ) {
+  async revokeSession(@Param('id') id: string, @CurrentUser() user: User) {
     await this.authService.revokeSession(user.id, id);
   }
 
