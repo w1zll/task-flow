@@ -7,10 +7,12 @@ const nextConfig = {
 
   // Proxy API requests to backend in development
   async rewrites() {
+    const apiUrl = process.env.API_URL || 'http://localhost:3001';
+    console.log('Rewrite destination:', apiUrl);
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/:path*`,
+        destination: `${apiUrl}/api/:path*`,
       },
     ];
   },
