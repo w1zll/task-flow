@@ -25,17 +25,22 @@ import { TasksModule } from './tasks/tasks.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get('DB_HOST'),
-        port: config.get<number>('DB_PORT'),
-        username: config.get('DB_USERNAME'),
-        password: config.get('DB_PASSWORD'),
-        database: config.get('DB_NAME'),
-        entities: [User, Board, BoardMember, Column, Task, RefreshToken],
-        synchronize: config.get('NODE_ENV') !== 'production',
-        // logging: config.get('NODE_ENV') === 'development',
-      }),
+      useFactory: (config: ConfigService) => {
+        const databaseUrl = config.get('DATABASE_URL');
+
+        return {
+          type: 'postgres',
+          url: databaseUrl ?? undefined,
+          host: config.get('DB_HOST'),
+          port: config.get<number>('DB_PORT'),
+          username: config.get('DB_USERNAME'),
+          password: config.get('DB_PASSWORD'),
+          database: config.get('DB_NAME'),
+          entities: [User, Board, BoardMember, Column, Task, RefreshToken],
+          synchronize: false,
+          // logging: config.get('NODE_ENV') === 'development',
+        };
+      },
     }),
 
     AuthModule,
