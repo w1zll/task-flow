@@ -14,6 +14,7 @@
     "start:prod": "node dist/main",
     "test": "jest",
     "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate src/migrations/Migration -d src/data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
     "migration:run:prod": "typeorm migration:run -d dist/data-source.js"
   },
