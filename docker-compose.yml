@@ -24,7 +24,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: taskflow-backend
     restart: unless-stopped
     depends_on:
@@ -36,8 +36,8 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: taskflow
-      JWT_ACCESS_SECRET: change-me-access-secret
-      JWT_REFRESH_SECRET: change-me-refresh-secret
+      JWT_ACCESS_SECRET: JWT_ACCESS_SECRET
+      JWT_REFRESH_SECRET: JWT_REFRESH_SECRET
       JWT_ACCESS_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
       PORT: 3001
@@ -50,7 +50,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: taskflow-frontend
     restart: unless-stopped
     depends_on:
