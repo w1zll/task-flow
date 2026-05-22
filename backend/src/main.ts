@@ -22,6 +22,8 @@ async function bootstrap() {
     credentials: true,
     methods: '*',
     allowedHeaders: '*',
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
   console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
 
