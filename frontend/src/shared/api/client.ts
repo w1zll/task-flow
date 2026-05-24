@@ -1,7 +1,5 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
 const AUTH_ENDPOINTS = [
   '/api/auth/login',
   '/api/auth/register',
@@ -11,7 +9,7 @@ const AUTH_ENDPOINTS = [
 ];
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: typeof window === 'undefined' ? API_URL : '',
+  baseURL: '',
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
