@@ -8,7 +8,8 @@
       "headingAccent": "ease",
       "subtitle": "TaskFlow is a beautiful Kanban board that helps organize work, track progress, and resolve important tasks faster.",
       "ctaStart": "Get started",
-      "ctaLogin": "Sign in"
+      "ctaLogin": "Sign in",
+      "scroll": "Scroll down"
     },
     "features": {
       "heading": "Everything you need",
