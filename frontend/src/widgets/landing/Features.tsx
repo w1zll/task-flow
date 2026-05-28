@@ -40,7 +40,7 @@ const Features = ({
         variant="h4"
         fontWeight={700}
         textAlign="center"
-        sx={{ mb: 1, visibility: 'hidden' }}
+        sx={{ mb: 1, opacity: 0 }}
       >
         {t('heading')}
       </Typography>
@@ -49,7 +49,7 @@ const Features = ({
         variant="body1"
         color="text.secondary"
         textAlign="center"
-        sx={{ mb: 6, visibility: 'hidden' }}
+        sx={{ mb: 6, opacity: 0 }}
       >
         {t('subheading')}
       </Typography>
@@ -64,7 +64,7 @@ const Features = ({
               sx={{
                 height: '100%',
                 p: 0.5,
-                visibility: 'hidden',
+                opacity: 0,
               }}
             >
               <CardContent>

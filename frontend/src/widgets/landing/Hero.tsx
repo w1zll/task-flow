@@ -52,7 +52,7 @@ const Hero = ({
           ref={badgeRef}
           label={t('chip')}
           size="small"
-          sx={{ mb: 3, fontWeight: 500, visibility: 'hidden' }}
+          sx={{ mb: 3, fontWeight: 500, opacity: 0 }}
         />
         <Typography
           variant="h2"
@@ -64,10 +64,7 @@ const Hero = ({
             mb: 2.5,
           }}
         >
-          <span
-            ref={titleRef}
-            style={{ display: 'inline-block', visibility: 'hidden' }}
-          >
+          <span ref={titleRef} style={{ display: 'inline-block', opacity: 0 }}>
             {t('heading')}
           </span>
           <Box
@@ -76,7 +73,7 @@ const Hero = ({
             sx={{
               color: 'primary.main',
               display: 'inline-block',
-              visibility: 'hidden',
+              opacity: 0,
             }}
           >
             {t('headingAccent')}
@@ -92,7 +89,7 @@ const Hero = ({
             maxWidth: 520,
             mx: 'auto',
             lineHeight: 1.6,
-            visibility: 'hidden',
+            opacity: 0,
           }}
         >
           {t('subtitle')}
@@ -102,7 +99,7 @@ const Hero = ({
           direction="row"
           spacing={2}
           justifyContent="center"
-          sx={{ visibility: 'hidden' }}
+          sx={{ opacity: 0 }}
         >
           <Link href="/auth/register">
             <Button variant="contained" size="large" sx={{ px: 4, py: 1.5 }}>
