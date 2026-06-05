@@ -32,6 +32,8 @@ const Hero = ({
   featuresRef,
 }: Props) => {
   const t = useTranslations('HomePage.hero');
+  const heading = t('heading');
+
   return (
     <Box
       sx={{
@@ -64,8 +66,26 @@ const Hero = ({
             mb: 2.5,
           }}
         >
-          <span ref={titleRef} style={{ display: 'inline-block', opacity: 0 }}>
-            {t('heading')}
+          <span
+            ref={titleRef}
+            aria-label={heading}
+            style={{ display: 'inline-block', opacity: 0 }}
+          >
+            {Array.from(heading).map((char, index) => (
+              <span
+                key={`${char}-${index}`}
+                aria-hidden="true"
+                style={{
+                  display: 'inline-block',
+                  overflow: 'hidden',
+                  verticalAlign: 'top',
+                }}
+              >
+                <span data-hero-char style={{ display: 'inline-block' }}>
+                  {char === ' ' ? '\u00a0' : char}
+                </span>
+              </span>
+            ))}
           </span>
           <Box
             ref={accentRef}

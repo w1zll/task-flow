@@ -3,14 +3,19 @@
 import { setLocaleAction } from '@/shared/actions/locale.action';
 import { Button, ButtonGroup } from '@mui/material';
 import { Locale, useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
 const LocaleSwitcher = () => {
   const locale = useLocale();
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const handleChange = (newLocale: Locale) => {
-    startTransition(() => setLocaleAction(newLocale));
+    startTransition(async () => {
+      await setLocaleAction(newLocale);
+      router.refresh();
+    });
   };
 
   return (

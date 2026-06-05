@@ -19,19 +19,6 @@ export const useLandingGSAP = () => {
   const featuresTitleRef = useRef<HTMLHeadElement>(null);
   const featuresSubtitleRef = useRef<HTMLParagraphElement>(null);
 
-  const splitText = (text: string) => {
-    return text
-      .split('')
-      .map((char) => {
-        return char === ' '
-          ? `<span style="display:inline-block vertical-align:top;">&nbsp;</span>`
-          : `<span style="display:inline-block; overflow:hidden; vertical-align:top;">
-                <span style="display:inline-block">${char}</span>
-               </span>`;
-      })
-      .join('');
-  };
-
   useGSAP(() => {
     const cleanups: (() => void)[] = [];
 
@@ -43,14 +30,6 @@ export const useLandingGSAP = () => {
       repeat: -1,
       delay: 2,
     });
-
-    if (titleRef.current) {
-      const alreadySplit = titleRef.current.querySelector('span');
-      if (!alreadySplit) {
-        const originalText = titleRef.current.textContent ?? '';
-        titleRef.current.innerHTML = splitText(originalText);
-      }
-    }
 
     const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
 
@@ -69,7 +48,7 @@ export const useLandingGSAP = () => {
 
     if (titleRef.current) {
       const chars =
-        titleRef.current.querySelectorAll<HTMLSpanElement>('span > span');
+        titleRef.current.querySelectorAll<HTMLSpanElement>('[data-hero-char]');
       chars.forEach((char) => {
         char.style.opacity = '0';
       });

@@ -2,8 +2,6 @@ import LandingClient from '@/widgets/landing/LandingClient';
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-export const dynamic = 'force-static';
-
 export const generateMetadata = async (): Promise<Metadata> => {
   const t = await getTranslations('HomePage');
   return {
