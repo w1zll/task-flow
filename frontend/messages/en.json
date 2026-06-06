@@ -3,7 +3,7 @@
     "title": "TaskFlow - Kanban task management board",
     "description": "Simple, beautiful, convenient board for managing your projects and tasks",
     "hero": {
-      "chip": "Built with Next.js · NestJS · MobX · TanStack Query",
+      "chip": "Built with Next.js · NestJS · Zustand · TanStack Query",
       "heading": "Manage tasks with ",
       "headingAccent": "ease",
       "subtitle": "TaskFlow is a beautiful Kanban board that helps organize work, track progress, and resolve important tasks faster.",
@@ -39,7 +39,7 @@
         "desc": "Next.js (App Router) app with Server Side Rendering (SSR) and Incremental Static Regeneration (ISR)."
       }
     },
-    "footer": "TaskFlow - Next.js · NestJS · MobX · Material UI"
+    "footer": "TaskFlow - Next.js · NestJS · Zustand · Material UI"
   },
   "Auth": {
     "Login": {

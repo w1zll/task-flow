@@ -32,7 +32,6 @@ import {
   Typography,
 } from '@mui/material';
 import dayjs from 'dayjs';
-import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
@@ -59,7 +58,7 @@ const LABEL_PRESETS = [
   'test',
 ];
 
-const TaskDetailModal = observer(({ board }: Props) => {
+const TaskDetailModal = ({ board }: Props) => {
   const t = useTranslations('TaskDetail');
   const tPriority = useTranslations('TaskCard');
   const boardUI = useBoardUIStore();
@@ -387,6 +386,6 @@ const TaskDetailModal = observer(({ board }: Props) => {
       </DialogActions>
     </Dialog>
   );
-});
+};
 
 export default TaskDetailModal;
