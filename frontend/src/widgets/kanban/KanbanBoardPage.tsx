@@ -26,7 +26,6 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { observer } from 'mobx-react-lite';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Add, ArrowBack } from '@mui/icons-material';
@@ -38,12 +37,17 @@ interface Props {
   boardId: string;
 }
 
-const KanbanBoardPage = observer(({ boardId }: Props) => {
+const KanbanBoardPage = ({ boardId }: Props) => {
   const t = useTranslations('BoardPage');
   const router = useRouter();
   const { data: board, isLoading, isError } = useBoard(boardId);
   const createColumn = useCreateColumn();
-  const boardUI = useBoardUIStore();
+  const isAddingColumn = useBoardUIStore((state) => state.isAddingColumn);
+  const closeTask = useBoardUIStore((state) => state.closeTask);
+  const setAddingColumn = useBoardUIStore((state) => state.setAddingColumn);
+  const setAddingTaskInColumn = useBoardUIStore(
+    (state) => state.setAddingTaskInColumn,
+  );
   const { user: currentUser } = useAuth();
 
   const [newColTitle, setNewColTitle] = useState('');
@@ -57,10 +61,10 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
   const dailyAnalytics = useBoardDailyAnalytics(boardId);
 
   useEffect(() => {
-    boardUI.closeTask();
-    boardUI.setAddingColumn(false);
-    boardUI.setAddingTaskInColumn(null);
-  }, [boardId, boardUI]);
+    closeTask();
+    setAddingColumn(false);
+    setAddingTaskInColumn(null);
+  }, [boardId, closeTask, setAddingColumn, setAddingTaskInColumn]);
 
   const handleShareBoard = () => {
     if (!shareEmail.trim()) return;
@@ -83,7 +87,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
       {
         onSuccess: () => {
           setNewColTitle('');
-          boardUI.setAddingColumn(false);
+          setAddingColumn(false);
         },
       },
     );
@@ -189,7 +193,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
             variant="outlined"
             size="small"
             startIcon={<Add />}
-            onClick={() => boardUI.setAddingColumn(true)}
+            onClick={() => setAddingColumn(true)}
           >
             {t('addColumn')}
           </Button>
@@ -335,7 +339,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                   </Typography>
                 )}
               </Box>
-              {boardUI.isAddingColumn ? (
+              {isAddingColumn ? (
                 <Box
                   sx={{
                     width: 280,
@@ -356,7 +360,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                     onChange={(e) => setNewColTitle(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleAddColumn();
-                      if (e.key === 'Escape') boardUI.setAddingColumn(false);
+                      if (e.key === 'Escape') setAddingColumn(false);
                     }}
                     sx={{ mb: 1 }}
                   />
@@ -371,7 +375,7 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
                     </Button>
                     <Button
                       size="small"
-                      onClick={() => boardUI.setAddingColumn(false)}
+                      onClick={() => setAddingColumn(false)}
                     >
                       {t('cancel')}
                     </Button>
@@ -426,6 +430,6 @@ const KanbanBoardPage = observer(({ boardId }: Props) => {
       {board && <TaskDetailModal board={board} />}
     </Box>
   );
-});
+};
 
 export default KanbanBoardPage;

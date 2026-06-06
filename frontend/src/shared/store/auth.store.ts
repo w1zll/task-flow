@@ -1,6 +1,6 @@
 'use client';
 
-import { makeAutoObservable, runInAction } from 'mobx';
+import { create } from 'zustand';
 
 export interface AuthUser {
   id: string;
@@ -9,34 +9,27 @@ export interface AuthUser {
   avatar?: string;
 }
 
-export class AuthStore {
-  user: AuthUser | null = null;
-  isLoading = true;
-
-  constructor() {
-    makeAutoObservable(this);
-  }
-
-  get isAuthenticated() {
-    return this.user !== null;
-  }
-
-  setUser(user: AuthUser | null) {
-    this.user = user;
-  }
-
-  setLoading(loading: boolean) {
-    this.isLoading = loading;
-  }
-
-  hydrate(user: AuthUser | null) {
-    runInAction(() => {
-      this.user = user;
-      this.isLoading = false;
-    });
-  }
-
-  logout() {
-    this.user = null;
-  }
+interface AuthState {
+  user: AuthUser | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  setUser: (user: AuthUser | null) => void;
+  setLoading: (loading: boolean) => void;
+  hydrate: (user: AuthUser | null) => void;
+  logout: () => void;
 }
+
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  isLoading: true,
+  isAuthenticated: false,
+  setUser: (user) => set({ user, isAuthenticated: user !== null }),
+  setLoading: (loading) => set({ isLoading: loading }),
+  hydrate: (user) =>
+    set({
+      user,
+      isLoading: false,
+      isAuthenticated: user !== null,
+    }),
+  logout: () => set({ user: null, isAuthenticated: false }),
+}));

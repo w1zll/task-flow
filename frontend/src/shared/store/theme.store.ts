@@ -1,29 +1,36 @@
 'use client';
 
-import { makeAutoObservable } from 'mobx';
+import { create } from 'zustand';
 
 type ThemeMode = 'light' | 'dark';
 
-export class ThemeStore {
-  mode: ThemeMode = 'dark';
-
-  constructor() {
-    makeAutoObservable(this);
-
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('theme') as ThemeMode | null;
-      if (saved) this.mode = saved;
-    }
-  }
-
-  toggle() {
-    this.mode = this.mode === 'light' ? 'dark' : 'light';
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('theme', this.mode);
-    }
-  }
-
-  get isDark() {
-    return this.mode === 'dark';
-  }
+interface ThemeState {
+  mode: ThemeMode;
+  isDark: boolean;
+  toggle: () => void;
 }
+
+const getInitialMode = (): ThemeMode => {
+  if (typeof window === 'undefined') return 'dark';
+
+  const saved = localStorage.getItem('theme') as ThemeMode | null;
+  return saved ?? 'dark';
+};
+
+export const useThemeStore = create<ThemeState>((set, get) => {
+  const mode = getInitialMode();
+
+  return {
+    mode,
+    isDark: mode === 'dark',
+    toggle: () => {
+      const nextMode = get().mode === 'light' ? 'dark' : 'light';
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('theme', nextMode);
+      }
+
+      set({ mode: nextMode, isDark: nextMode === 'dark' });
+    },
+  };
+});

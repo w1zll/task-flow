@@ -9,7 +9,6 @@ import {
   ViewKanban,
 } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
-import { observer } from 'mobx-react-lite';
 import { useTranslations } from 'next-intl';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -20,7 +19,7 @@ import { useLandingGSAP } from './hooks/useLandingGSAP';
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-const LandingClient = observer(() => {
+const LandingClient = () => {
   const t = useTranslations('HomePage');
 
   const FEATURES = [
@@ -90,6 +89,6 @@ const LandingClient = observer(() => {
       </Box>
     </Box>
   );
-});
+};
 
 export default LandingClient;
