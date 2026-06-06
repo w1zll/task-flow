@@ -17,7 +17,6 @@ import {
   Typography,
 } from '@mui/material';
 import dayjs from 'dayjs';
-import { observer } from 'mobx-react-lite';
 import { Draggable } from '@hello-pangea/dnd';
 import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
 
@@ -34,7 +33,7 @@ const PRIORITY_CONFIG = {
   urgent: { color: '#ef4444', labelKey: 'priority.urgent' as const },
 } as const;
 
-const TaskCard = observer(({ task, index, boardId }: Props) => {
+const TaskCard = ({ task, index, boardId }: Props) => {
   useDayjsLocale();
   const boardUI = useBoardUIStore();
   const t = useTranslations('TaskCard');
@@ -189,6 +188,6 @@ const TaskCard = observer(({ task, index, boardId }: Props) => {
       )}
     </Draggable>
   );
-});
+};
 
 export default TaskCard;

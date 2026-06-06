@@ -21,7 +21,6 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
 import TaskCard from './TaskCard';
@@ -32,7 +31,7 @@ interface Props {
   index: number;
 }
 
-const KanbanColumn = observer(({ column, board, index }: Props) => {
+const KanbanColumn = ({ column, board, index }: Props) => {
   const t = useTranslations('KanbanColumn');
   const boardUI = useBoardUIStore();
   const createTask = useCreateTask();
@@ -316,6 +315,6 @@ const KanbanColumn = observer(({ column, board, index }: Props) => {
       )}
     </Draggable>
   );
-});
+};
 
 export default KanbanColumn;

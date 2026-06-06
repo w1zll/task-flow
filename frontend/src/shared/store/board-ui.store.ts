@@ -1,41 +1,32 @@
 'use client';
 
-import { makeAutoObservable } from 'mobx';
+import { create } from 'zustand';
 
-export class BoardUIStore {
-  isDragging = false;
-  draggingTaskId: string | null = null;
-  openTaskId: string | null = null;
-  isAddingColumn = false;
-  addingTaskInColumnId: string | null = null;
-
-  constructor() {
-    makeAutoObservable(this);
-  }
-
-  startDrag(taskId: string) {
-    this.isDragging = true;
-    this.draggingTaskId = taskId;
-  }
-
-  endDrag() {
-    this.isDragging = false;
-    this.draggingTaskId = null;
-  }
-
-  openTask(taskId: string) {
-    this.openTaskId = taskId;
-  }
-
-  closeTask() {
-    this.openTaskId = null;
-  }
-
-  setAddingColumn(value: boolean) {
-    this.isAddingColumn = value;
-  }
-
-  setAddingTaskInColumn(columnId: string | null) {
-    this.addingTaskInColumnId = columnId;
-  }
+interface BoardUIState {
+  isDragging: boolean;
+  draggingTaskId: string | null;
+  openTaskId: string | null;
+  isAddingColumn: boolean;
+  addingTaskInColumnId: string | null;
+  startDrag: (taskId: string) => void;
+  endDrag: () => void;
+  openTask: (taskId: string) => void;
+  closeTask: () => void;
+  setAddingColumn: (value: boolean) => void;
+  setAddingTaskInColumn: (columnId: string | null) => void;
 }
+
+export const useBoardUIStore = create<BoardUIState>((set) => ({
+  isDragging: false,
+  draggingTaskId: null,
+  openTaskId: null,
+  isAddingColumn: false,
+  addingTaskInColumnId: null,
+  startDrag: (taskId) => set({ isDragging: true, draggingTaskId: taskId }),
+  endDrag: () => set({ isDragging: false, draggingTaskId: null }),
+  openTask: (taskId) => set({ openTaskId: taskId }),
+  closeTask: () => set({ openTaskId: null }),
+  setAddingColumn: (value) => set({ isAddingColumn: value }),
+  setAddingTaskInColumn: (columnId) =>
+    set({ addingTaskInColumnId: columnId }),
+}));

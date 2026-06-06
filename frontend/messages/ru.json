@@ -3,7 +3,7 @@
     "title": "TaskFlow - Kanban доска для управления задачами",
     "description": "Простая, красивая, удобная доска для управления вашими проектами и задачами",
     "hero": {
-      "chip": "Создано на Next.js · NestJS · MobX · TanStack Query",
+      "chip": "Создано на Next.js · NestJS · Zustand · TanStack Query",
       "heading": "Управляйте задачами с ",
       "headingAccent": "легкостью",
       "subtitle": "TaskFlow — это прекрасная Kanban доска, которая помогает организовать работу, отслеживать прогресс и быстрее решать важные задачи.",
@@ -39,7 +39,7 @@
         "desc": "Next.js (App Router) приложение с Server Side Rendering (SSR) и Incremental Static Regeneration (ISR)."
       }
     },
-    "footer": "TaskFlow - Next.js · NestJS · MobX · Material UI"
+    "footer": "TaskFlow - Next.js · NestJS · Zustand · Material UI"
   },
   "Auth": {
     "Login": {

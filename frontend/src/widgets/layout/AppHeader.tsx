@@ -19,12 +19,11 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 import NextLink from 'next/link';
 import LocaleSwitcher from './LocaleSwitcher';
 
-const AppHeader = observer(() => {
+const AppHeader = () => {
   const t = useTranslations('Header');
   const { user, logout, isLoading } = useAuth();
   const themeStore = useThemeStore();
@@ -184,6 +183,6 @@ const AppHeader = observer(() => {
       </Toolbar>
     </AppBar>
   );
-});
+};
 
 export default AppHeader;

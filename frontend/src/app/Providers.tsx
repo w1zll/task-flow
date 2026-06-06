@@ -1,14 +1,13 @@
 'use client';
 
 import AuthHydrator from '@/features/auth/AuthHydrator';
-import { getRootStore, StoreContext } from '@/shared/store/root.store';
+import { useThemeStore } from '@/shared/store/root.store';
 import { darkTheme, lightTheme } from '@/shared/theme/theme';
 import AppHeader from '@/widgets/layout/AppHeader';
 import { ThemeProvider } from '@emotion/react';
 import { Box, CssBaseline } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { observer } from 'mobx-react-lite';
 import { Locale, NextIntlClientProvider } from 'next-intl';
 import { SnackbarProvider } from 'notistack';
 
@@ -21,10 +20,9 @@ const queryClient = new QueryClient({
   },
 });
 
-const rootStore = getRootStore();
-
-const ThemedApp = observer(({ children }: { children: React.ReactNode }) => {
-  const theme = rootStore.theme.isDark ? darkTheme : lightTheme;
+const ThemedApp = ({ children }: { children: React.ReactNode }) => {
+  const isDark = useThemeStore((state) => state.isDark);
+  const theme = isDark ? darkTheme : lightTheme;
 
   return (
     <ThemeProvider theme={theme}>
@@ -38,7 +36,7 @@ const ThemedApp = observer(({ children }: { children: React.ReactNode }) => {
       </SnackbarProvider>
     </ThemeProvider>
   );
-});
+};
 
 const Providers = ({
   children,
@@ -50,19 +48,17 @@ const Providers = ({
   locale: Locale;
 }) => {
   return (
-    <StoreContext.Provider value={rootStore}>
-      <QueryClientProvider client={queryClient}>
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <ThemedApp>
-            <Box sx={{ minHeight: '100vh' }}>
-              <AppHeader />
-              {children}
-            </Box>
-          </ThemedApp>
-        </NextIntlClientProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
-    </StoreContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <NextIntlClientProvider locale={locale} messages={messages}>
+        <ThemedApp>
+          <Box sx={{ minHeight: '100vh' }}>
+            <AppHeader />
+            {children}
+          </Box>
+        </ThemedApp>
+      </NextIntlClientProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 };
 
