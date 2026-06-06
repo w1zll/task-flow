@@ -33,6 +33,7 @@ import NextLink from 'next/link';
 import KanbanBoard from './KanbanBoard';
 import TaskDetailModal from './TaskDetailModal';
 
+
 interface Props {
   boardId: string;
 }
