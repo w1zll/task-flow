@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { getSocket, refreshSocketAuth } from '../lib/socket';
+import { getSocket } from '../lib/socket';
 import { Board, Task } from '../api/api';
 import { queryKeys } from '../queries/boards.queries';
 
@@ -9,40 +9,16 @@ export const useBoardSocket = (boardId: string) => {
 
   useEffect(() => {
     const socket = getSocket();
-    let isActive = true;
-    let isRefreshingAuth = false;
-
     const onConnect = () => {
       socket.emit('board:join', { boardId });
     };
-
-    const connectWithToken = async () => {
-      if (isRefreshingAuth) return;
-      isRefreshingAuth = true;
-
-      try {
-        await refreshSocketAuth(socket);
-        if (!isActive) return;
-        socket.connect();
-      } catch (error) {
-        console.error('socket auth error:', error);
-      } finally {
-        isRefreshingAuth = false;
-      }
-    };
-
-    const onConnectError = () => {
-      void connectWithToken();
-    };
-
     socket.on('connect', onConnect);
-    socket.on('connect_error', onConnectError);
+    socket.connect();
 
     if (socket.connected) {
       socket.emit('board:join', { boardId });
-    } else {
-      void connectWithToken();
     }
+    // socket.emit('board:join', { boardId });
 
     socket.on('board:state', (board: Board) => {
       if (board.id !== boardId) return;
@@ -112,10 +88,7 @@ export const useBoardSocket = (boardId: string) => {
     );
 
     return () => {
-      isActive = false;
       socket.emit('board:leave', { boardId });
-      socket.off('connect', onConnect);
-      socket.off('connect_error', onConnectError);
       socket.off('board:state');
       socket.off('task:update');
       socket.off('task:moved');
