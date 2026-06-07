@@ -60,9 +60,9 @@ const Hero = ({
         />
         <Typography
           variant="h2"
-          fontWeight={800}
           sx={{
             fontSize: { xs: '2.2rem', md: '3.5rem' },
+            fontWeight: 800,
             letterSpacing: '-0.03em',
             lineHeight: 1,
             mb: 2.5,
@@ -106,11 +106,11 @@ const Hero = ({
           ref={subtitleRef}
           variant="h6"
           color="text.secondary"
-          fontWeight={400}
           sx={{
             mb: 5,
             maxWidth: 520,
             mx: 'auto',
+            fontWeight: 400,
             lineHeight: 1.6,
             opacity: 0,
           }}
@@ -121,8 +121,7 @@ const Hero = ({
           ref={buttonsRef}
           direction="row"
           spacing={2}
-          justifyContent="center"
-          sx={{ opacity: 0 }}
+          sx={{ opacity: 0, justifyContent: 'center' }}
         >
           <Link href="/auth/register">
             <Button variant="contained" size="large" sx={{ px: 4, py: 1.5 }}>

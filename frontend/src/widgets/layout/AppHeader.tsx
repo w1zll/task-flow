@@ -79,8 +79,7 @@ const AppHeader = ({
             </Box>
             <Typography
               variant="h6"
-              fontWeight={700}
-              sx={{ letterSpacing: '-0.02em' }}
+              sx={{ letterSpacing: '-0.02em', fontWeight: 700 }}
             >
               TaskFlow
             </Typography>
@@ -159,10 +158,10 @@ const AppHeader = ({
             onClose={() => setAnchorEl(null)}
             transformOrigin={{ horizontal: 'right', vertical: 'top' }}
             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            PaperProps={{ sx: { minWidth: 200, mt: 1 } }}
+            slotProps={{ paper: { sx: { minWidth: 200, mt: 1 } } }}
           >
             <Box sx={{ px: 2, py: 1.5 }}>
-              <Typography variant="subtitle2" fontWeight={600}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                 {user?.name}
               </Typography>
               <Typography variant="caption" color="text.secondary">

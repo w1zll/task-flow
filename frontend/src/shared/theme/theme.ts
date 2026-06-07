@@ -47,11 +47,11 @@ export const lightTheme = createTheme({
           textTransform: 'none',
           fontWeight: 600,
           borderRadius: 10,
-        },
-        containedPrimary: {
-          boxShadow: `0 4px 14px ${alpha('#6366f1', 0.4)}`,
-          '&:hover': {
-            boxShadow: `0 6px 20px ${alpha('#6366f1', 0.5)}`,
+          '&.MuiButton-containedPrimary': {
+            boxShadow: `0 4px 14px ${alpha('#6366f1', 0.4)}`,
+            '&:hover': {
+              boxShadow: `0 6px 20px ${alpha('#6366f1', 0.5)}`,
+            },
           },
         },
       },
