@@ -157,7 +157,7 @@ const TaskDetailModal = ({ board }: Props) => {
       onClose={() => boardUI.closeTask()}
       maxWidth="sm"
       fullWidth
-      PaperProps={{ sx: { borderRadius: 2 } }}
+      slotProps={{ paper: { sx: { borderRadius: 2 } } }}
     >
       <DialogTitle
         sx={{ pb: 1, display: 'flex', alignItems: 'flex-start', gap: 1 }}
@@ -193,7 +193,7 @@ const TaskDetailModal = ({ board }: Props) => {
           fullWidth
           value={form.title ?? ''}
           onChange={(e) => patch('title', e.target.value as any)}
-          inputProps={{ style: { fontWeight: 600 } }}
+          slotProps={{ htmlInput: { style: { fontWeight: 600 } } }}
         />
 
         <TextField
@@ -239,13 +239,15 @@ const TaskDetailModal = ({ board }: Props) => {
             sx={{ minWidth: 160 }}
             value={form.dueDate ?? ''}
             onChange={(e) => patch('dueDate', e.target.value as any)}
-            InputLabelProps={{ shrink: true }}
-            InputProps={{
-              startAdornment: (
-                <CalendarToday
-                  sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }}
-                />
-              ),
+            slotProps={{
+              inputLabel: { shrink: true },
+              input: {
+                startAdornment: (
+                  <CalendarToday
+                    sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }}
+                  />
+                ),
+              },
             }}
           />
 

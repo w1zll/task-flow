@@ -87,7 +87,7 @@ const BoardsClientPage = () => {
           }}
         >
           <Box>
-            <Typography variant="h4" fontWeight={700}>
+            <Typography variant="h4" sx={{ fontWeight: 700 }}>
               {t('title')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -106,13 +106,13 @@ const BoardsClientPage = () => {
         <Grid container spacing={2}>
           {isLoading &&
             Array.from({ length: 6 }).map((_, i) => (
-              <Grid item xs={12} sm={6} md={4} key={i}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
                 <Skeleton variant="rounded" height={160} />
               </Grid>
             ))}
 
           {boards?.map((board) => (
-            <Grid item xs={12} sm={6} md={4} key={board.id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={board.id}>
               <Card
                 sx={{
                   height: 160,
@@ -152,8 +152,7 @@ const BoardsClientPage = () => {
                     >
                       <Typography
                         variant="h6"
-                        fontWeight={600}
-                        sx={{ lineHeight: 1.3, flex: 1 }}
+                        sx={{ lineHeight: 1.3, flex: 1, fontWeight: 600 }}
                       >
                         {board.title}
                       </Typography>
@@ -204,7 +203,7 @@ const BoardsClientPage = () => {
           ))}
 
           {!isLoading && boards?.length === 0 && (
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Box sx={{ textAlign: 'center', py: 8 }}>
                 <ViewKanban
                   sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }}
@@ -245,7 +244,7 @@ const BoardsClientPage = () => {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle fontWeight={600}>{t('dialogTitle')}</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>{t('dialogTitle')}</DialogTitle>
         <DialogContent
           sx={{
             display: 'flex',

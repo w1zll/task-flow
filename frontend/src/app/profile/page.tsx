@@ -22,7 +22,7 @@ const ProfilePage = () => {
 
   return (
     <Box sx={{ p: 3, minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Typography variant="h5" fontWeight={700} gutterBottom>
+      <Typography variant="h5" sx={{ fontWeight: 700 }} gutterBottom>
         {t('title')}
       </Typography>
       <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -53,7 +53,7 @@ const ProfilePage = () => {
                     }}
                   >
                     <Box>
-                      <Typography variant="subtitle1" fontWeight={600}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                         {session.deviceName ?? t('deviceFallback')}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">

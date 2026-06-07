@@ -160,7 +160,7 @@ const KanbanBoardPage = ({ boardId }: Props) => {
             {isLoading ? (
               <Skeleton width={200} height={32} />
             ) : (
-              <Typography variant="h6" fontWeight={700} noWrap>
+              <Typography variant="h6" sx={{ fontWeight: 700 }} noWrap>
                 {board?.title}
               </Typography>
             )}
@@ -237,7 +237,7 @@ const KanbanBoardPage = ({ boardId }: Props) => {
                   borderColor: 'divider',
                 }}
               >
-                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
                   {t('taskStats')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -259,7 +259,7 @@ const KanbanBoardPage = ({ boardId }: Props) => {
                   borderColor: 'divider',
                 }}
               >
-                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
                   {t('members')}
                 </Typography>
                 {boardMembers.isLoading ? (

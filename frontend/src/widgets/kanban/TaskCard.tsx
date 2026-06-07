@@ -80,8 +80,11 @@ const TaskCard = ({ task, index, boardId }: Props) => {
           >
             <Typography
               variant="body2"
-              fontWeight={500}
-              sx={{ lineHeight: 1.4, mb: task.labels?.length ? 1 : 0 }}
+              sx={{
+                lineHeight: 1.4,
+                mb: task.labels?.length ? 1 : 0,
+                fontWeight: 500,
+              }}
             >
               {task.title}
             </Typography>
