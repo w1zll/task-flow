@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { getSocket } from '../lib/socket';
+import { getSocket, refreshSocketAuth } from '../lib/socket';
 import { Board, Task } from '../api/api';
 import { queryKeys } from '../queries/boards.queries';
 
@@ -9,14 +9,52 @@ export const useBoardSocket = (boardId: string) => {
 
   useEffect(() => {
     const socket = getSocket();
+    let isActive = true;
+    let isRefreshingAuth = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const connectWithToken = async () => {
+      if (isRefreshingAuth || !isActive) return;
+      isRefreshingAuth = true;
+
+      try {
+        await refreshSocketAuth(socket);
+        if (!isActive) return;
+        // Убеждаемся, что сокет не в процессе подключения
+        if (!socket.active) {
+          socket.connect();
+        }
+      } catch (error) {
+        console.error('socket auth error:', error);
+      } finally {
+        isRefreshingAuth = false;
+      }
+    };
+
     const onConnect = () => {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
       socket.emit('board:join', { boardId });
     };
+
+    const onConnectError = (error: Error) => {
+      console.error('[WS] connect_error:', error.message);
+      // Задержка перед повтором — предотвращает шторм запросов
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => {
+        void connectWithToken();
+      }, 2000);
+    };
     socket.on('connect', onConnect);
+    socket.on('connect_error', onConnectError);
     socket.connect();
 
     if (socket.connected) {
       socket.emit('board:join', { boardId });
+    } else {
+      void connectWithToken();
     }
     // socket.emit('board:join', { boardId });
 
@@ -88,12 +126,15 @@ export const useBoardSocket = (boardId: string) => {
     );
 
     return () => {
+      isActive = false;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       socket.emit('board:leave', { boardId });
+      socket.off('connect', onConnect);
+      socket.off('connect_error', onConnectError);
       socket.off('board:state');
       socket.off('task:update');
       socket.off('task:moved');
       socket.off('task:reordered');
-      // socket.disconnect();
     };
   }, [boardId, qc]);
 };
