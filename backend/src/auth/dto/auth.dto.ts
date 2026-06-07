@@ -48,6 +48,13 @@ export class AuthResponseDto {
   user: UserDto;
 }
 
+export class WsTokenResponseDto {
+  @ApiProperty({
+    description: 'Short-lived JWT used only for Socket.IO authentication',
+  })
+  token: string;
+}
+
 export class SessionDto {
   @ApiProperty({ example: 'session-uuid' })
   id: string;

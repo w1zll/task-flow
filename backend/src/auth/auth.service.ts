@@ -148,6 +148,19 @@ export class AuthService {
     return user;
   }
 
+  generateWebSocketToken(user: User): string {
+    return this.jwtService.sign(
+      {
+        sub: user.id,
+        email: user.email,
+        tokenUse: 'websocket',
+      },
+      {
+        expiresIn: this.config.get('JWT_WS_EXPIRES_IN') || '2m',
+      },
+    );
+  }
+
   private async generateTokenPair(user: User) {
     const payload = { sub: user.id, email: user.email };
 

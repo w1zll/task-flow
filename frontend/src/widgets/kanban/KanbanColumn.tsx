@@ -29,9 +29,17 @@ interface Props {
   column: BoardColumn;
   board: Board;
   index: number;
+  pendingTaskId?: string | null;
+  isTaskDragDisabled?: boolean;
 }
 
-const KanbanColumn = ({ column, board, index }: Props) => {
+const KanbanColumn = ({
+  column,
+  board,
+  index,
+  pendingTaskId,
+  isTaskDragDisabled = false,
+}: Props) => {
   const t = useTranslations('KanbanColumn');
   const addingTaskInColumnId = useBoardUIStore(
     (state) => state.addingTaskInColumnId,
@@ -86,7 +94,11 @@ const KanbanColumn = ({ column, board, index }: Props) => {
   };
 
   return (
-    <Draggable draggableId={column.id} index={index}>
+    <Draggable
+      draggableId={column.id}
+      index={index}
+      isDragDisabled={isTaskDragDisabled}
+    >
       {(provided, snapshot) => (
         <Paper
           ref={provided.innerRef}
@@ -119,7 +131,7 @@ const KanbanColumn = ({ column, board, index }: Props) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              cursor: 'grab',
+              cursor: isTaskDragDisabled ? 'default' : 'grab',
             }}
           >
             {isEditingTitle ? (
@@ -234,6 +246,8 @@ const KanbanColumn = ({ column, board, index }: Props) => {
                     task={task}
                     index={taskIndex}
                     boardId={board.id}
+                    isPending={task.id === pendingTaskId}
+                    isDragDisabled={isTaskDragDisabled}
                   />
                 ))}
                 {provided.placeholder}
