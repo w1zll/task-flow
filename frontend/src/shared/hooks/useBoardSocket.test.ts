@@ -28,6 +28,7 @@ const createMockSocket = () => ({
   emit: jest.fn(),
   connect: jest.fn(),
   disconnect: jest.fn(),
+  active: false,
 });
 
 describe('useBoardSocket', () => {

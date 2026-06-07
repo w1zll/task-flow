@@ -11,19 +11,19 @@ export const useBoardSocket = (boardId: string) => {
     const socket = getSocket();
     let isActive = true;
     let isRefreshingAuth = false;
-
-    const onConnect = () => {
-      socket.emit('board:join', { boardId });
-    };
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
     const connectWithToken = async () => {
-      if (isRefreshingAuth) return;
+      if (isRefreshingAuth || !isActive) return;
       isRefreshingAuth = true;
 
       try {
         await refreshSocketAuth(socket);
         if (!isActive) return;
-        socket.connect();
+        // Убеждаемся, что сокет не в процессе подключения
+        if (!socket.active) {
+          socket.connect();
+        }
       } catch (error) {
         console.error('socket auth error:', error);
       } finally {
@@ -31,10 +31,22 @@ export const useBoardSocket = (boardId: string) => {
       }
     };
 
-    const onConnectError = () => {
-      void connectWithToken();
+    const onConnect = () => {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      socket.emit('board:join', { boardId });
     };
 
+    const onConnectError = (error: Error) => {
+      console.error('[WS] connect_error:', error.message);
+      // Задержка перед повтором — предотвращает шторм запросов
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => {
+        void connectWithToken();
+      }, 2000);
+    };
     socket.on('connect', onConnect);
     socket.on('connect_error', onConnectError);
 
@@ -43,6 +55,7 @@ export const useBoardSocket = (boardId: string) => {
     } else {
       void connectWithToken();
     }
+    // socket.emit('board:join', { boardId });
 
     socket.on('board:state', (board: Board) => {
       if (board.id !== boardId) return;
@@ -113,6 +126,7 @@ export const useBoardSocket = (boardId: string) => {
 
     return () => {
       isActive = false;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       socket.emit('board:leave', { boardId });
       socket.off('connect', onConnect);
       socket.off('connect_error', onConnectError);
@@ -120,7 +134,6 @@ export const useBoardSocket = (boardId: string) => {
       socket.off('task:update');
       socket.off('task:moved');
       socket.off('task:reordered');
-      // socket.disconnect();
     };
   }, [boardId, qc]);
 };
