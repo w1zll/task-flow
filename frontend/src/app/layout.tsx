@@ -1,9 +1,19 @@
 import { getLocale, getMessages } from 'next-intl/server';
+import { cookies } from 'next/headers';
 import Providers from './Providers';
+
+type ThemeMode = 'light' | 'dark';
+
+const getInitialThemeMode = (): ThemeMode => {
+  const theme = cookies().get('theme')?.value;
+
+  return theme === 'light' || theme === 'dark' ? theme : 'dark';
+};
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const messages = await getMessages();
   const locale = await getLocale();
+  const initialThemeMode = getInitialThemeMode();
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -21,7 +31,11 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body>
-        <Providers messages={messages} locale={locale}>
+        <Providers
+          messages={messages}
+          locale={locale}
+          initialThemeMode={initialThemeMode}
+        >
           {children}
         </Providers>
       </body>
