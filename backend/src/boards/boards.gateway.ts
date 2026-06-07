@@ -11,9 +11,10 @@ import { Server, Socket } from 'socket.io';
 import { BoardsService } from './boards.service';
 import { UseGuards } from '@nestjs/common';
 import { WsJwtGuard } from '@/auth/guards/ws-jwt.guard';
-import { Task } from '@/tasks/entities/task.entity';
 import { TasksService } from '@/tasks/tasks.service';
 import { UpdateTaskDto } from '@/tasks/dto/task.dto';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 @WebSocketGateway({
   cors: {
