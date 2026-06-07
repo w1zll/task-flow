@@ -4,7 +4,9 @@ let socket: Socket | null = null;
 
 export const getSocket = (): Socket => {
   if (!socket) {
-    socket = io('http://localhost:3001/boards', {
+    const socketUrl =
+      process.env.NEXT_PUBLIC_SOCKET_URL ?? 'http://localhost:3001';
+    socket = io(`${socketUrl}/boards`, {
       withCredentials: true,
       autoConnect: false,
     });

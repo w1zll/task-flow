@@ -16,7 +16,10 @@ import { TasksService } from '@/tasks/tasks.service';
 import { UpdateTaskDto } from '@/tasks/dto/task.dto';
 
 @WebSocketGateway({
-  cors: { origin: 'http://localhost:3000', credentials: true },
+  cors: {
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    credentials: true,
+  },
   namespace: '/boards',
 })
 export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
