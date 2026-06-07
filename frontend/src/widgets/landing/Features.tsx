@@ -39,9 +39,7 @@ const Features = ({
       <Typography
         ref={featuresTitleRef}
         variant="h4"
-        fontWeight={700}
-        textAlign="center"
-        sx={{ mb: 1, opacity: 0 }}
+        sx={{ mb: 1, opacity: 0, fontWeight: 700, textAlign: 'center' }}
       >
         {t('heading')}
       </Typography>
@@ -49,15 +47,14 @@ const Features = ({
         ref={featuresSubtitleRef}
         variant="body1"
         color="text.secondary"
-        textAlign="center"
-        sx={{ mb: 6, opacity: 0 }}
+        sx={{ mb: 6, opacity: 0, textAlign: 'center' }}
       >
         {t('subheading')}
       </Typography>
 
       <Grid container spacing={3}>
         {features.map((f, i) => (
-          <Grid item xs={12} sm={6} md={4} key={f.id}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={f.id}>
             <Card
               ref={(el) => {
                 if (el) {
@@ -88,7 +85,7 @@ const Features = ({
                 >
                   {f.icon}
                 </Box>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }} gutterBottom>
                   {f.title}
                 </Typography>
                 <Typography

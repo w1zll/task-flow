@@ -1,5 +1,6 @@
 import {
   ConnectedSocket,
+  Ack,
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -11,12 +12,17 @@ import { Server, Socket } from 'socket.io';
 import { BoardsService } from './boards.service';
 import { UseGuards } from '@nestjs/common';
 import { WsJwtGuard } from '@/auth/guards/ws-jwt.guard';
-import { Task } from '@/tasks/entities/task.entity';
 import { TasksService } from '@/tasks/tasks.service';
 import { UpdateTaskDto } from '@/tasks/dto/task.dto';
+import { corsOrigin } from '@/common/cors/cors-origin';
+
+type SocketAck = (response: { ok: boolean; message?: string }) => void;
 
 @WebSocketGateway({
-  cors: { origin: 'http://localhost:3000', credentials: true },
+  cors: {
+    origin: corsOrigin,
+    credentials: true,
+  },
   namespace: '/boards',
 })
 export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -82,18 +88,27 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
       columnId: string;
       order: number;
     },
+    @Ack() ack?: SocketAck,
   ) {
-    const userId = (client as any).user.sub;
-    const updated = await this.tasksService.move(
-      payload.taskId,
-      {
-        columnId: payload.columnId,
-        order: payload.order,
-      },
-      userId,
-    );
+    try {
+      const userId = (client as any).user.sub;
+      const updated = await this.tasksService.move(
+        payload.taskId,
+        {
+          columnId: payload.columnId,
+          order: payload.order,
+        },
+        userId,
+      );
 
-    this.server.to(`board-${payload.boardId}`).emit('task:moved', updated);
+      this.server.to(`board-${payload.boardId}`).emit('task:moved', updated);
+      ack?.({ ok: true });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Failed to move task';
+      console.error('task:move error:', message);
+      client.emit('exception', { message });
+      ack?.({ ok: false, message });
+    }
   }
 
   @UseGuards(WsJwtGuard)
@@ -106,13 +121,23 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
       columnId: string;
       taskIds: string[];
     },
+    @Ack() ack?: SocketAck,
   ) {
-    const userId = (client as any).user.sub;
-    await this.tasksService.reorder(payload, payload.columnId, userId);
+    try {
+      const userId = (client as any).user.sub;
+      await this.tasksService.reorder(payload, payload.columnId, userId);
 
-    this.server.to(`board-${payload.boardId}`).emit('task:reordered', {
-      columnId: payload.columnId,
-      taskIds: payload.taskIds,
-    });
+      this.server.to(`board-${payload.boardId}`).emit('task:reordered', {
+        columnId: payload.columnId,
+        taskIds: payload.taskIds,
+      });
+      ack?.({ ok: true });
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : 'Failed to reorder tasks';
+      console.error('task:reorder error:', message);
+      client.emit('exception', { message });
+      ack?.({ ok: false, message });
+    }
   }
 }

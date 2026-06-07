@@ -1,4 +1,5 @@
 const createNextIntlPlugin = require('next-intl/plugin');
+const { withPigment } = require('@pigment-css/nextjs-plugin');
 const withNextIntl = createNextIntlPlugin();
 
 /** @type {import('next').NextConfig} */
@@ -18,4 +19,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withNextIntl(nextConfig);
+module.exports = withPigment(withNextIntl(nextConfig));

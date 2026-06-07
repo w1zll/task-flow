@@ -29,9 +29,17 @@ interface Props {
   column: BoardColumn;
   board: Board;
   index: number;
+  pendingTaskId?: string | null;
+  isTaskDragDisabled?: boolean;
 }
 
-const KanbanColumn = ({ column, board, index }: Props) => {
+const KanbanColumn = ({
+  column,
+  board,
+  index,
+  pendingTaskId,
+  isTaskDragDisabled = false,
+}: Props) => {
   const t = useTranslations('KanbanColumn');
   const addingTaskInColumnId = useBoardUIStore(
     (state) => state.addingTaskInColumnId,
@@ -86,7 +94,11 @@ const KanbanColumn = ({ column, board, index }: Props) => {
   };
 
   return (
-    <Draggable draggableId={column.id} index={index}>
+    <Draggable
+      draggableId={column.id}
+      index={index}
+      isDragDisabled={isTaskDragDisabled}
+    >
       {(provided, snapshot) => (
         <Paper
           ref={provided.innerRef}
@@ -119,7 +131,7 @@ const KanbanColumn = ({ column, board, index }: Props) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              cursor: 'grab',
+              cursor: isTaskDragDisabled ? 'default' : 'grab',
             }}
           >
             {isEditingTitle ? (
@@ -136,29 +148,31 @@ const KanbanColumn = ({ column, board, index }: Props) => {
                   }
                 }}
                 sx={{ flex: 1, mr: 1 }}
-                inputProps={{ style: { fontWeight: 600 } }}
-                InputProps={{
-                  endAdornment: (
-                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                      <IconButton
-                        size="small"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={handleRenameColumn}
-                      >
-                        <Check fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => {
-                          setTitleInput(column.title);
-                          setIsEditingTitle(false);
-                        }}
-                      >
-                        <Close fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  ),
+                slotProps={{
+                  htmlInput: { style: { fontWeight: 600 } },
+                  input: {
+                    endAdornment: (
+                      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                        <IconButton
+                          size="small"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={handleRenameColumn}
+                        >
+                          <Check fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            setTitleInput(column.title);
+                            setIsEditingTitle(false);
+                          }}
+                        >
+                          <Close fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    ),
+                  },
                 }}
               />
             ) : (
@@ -171,7 +185,7 @@ const KanbanColumn = ({ column, board, index }: Props) => {
                   minWidth: 0,
                 }}
               >
-                <Typography variant="subtitle2" fontWeight={600} noWrap>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }} noWrap>
                   {column.title}
                 </Typography>
                 <Typography
@@ -232,6 +246,8 @@ const KanbanColumn = ({ column, board, index }: Props) => {
                     task={task}
                     index={taskIndex}
                     boardId={board.id}
+                    isPending={task.id === pendingTaskId}
+                    isDragDisabled={isTaskDragDisabled}
                   />
                 ))}
                 {provided.placeholder}

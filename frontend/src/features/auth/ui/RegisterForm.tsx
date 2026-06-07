@@ -1,9 +1,9 @@
 'use client';
 
-import NextLink from 'next/link';
 import { useAuth } from '../useAuth';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import NextLink from 'next/link';
 import {
   alpha,
   Box,
@@ -63,12 +63,12 @@ const RegisterForm = () => {
             >
               <ViewKanban sx={{ color: 'white', fontSize: 22 }} />
             </Box>
-            <Typography variant="h5" fontWeight={700}>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
               TaskFlow
             </Typography>
           </Box>
 
-          <Typography variant="h5" fontWeight={700} gutterBottom>
+          <Typography variant="h5" sx={{ fontWeight: 700 }} gutterBottom>
             {t('heading')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -101,8 +101,10 @@ const RegisterForm = () => {
               required
               fullWidth
               autoComplete="new-password"
-              inputProps={{
-                minLength: 6,
+              slotProps={{
+                htmlInput: {
+                  minLength: 6,
+                },
               }}
               {...field('password')}
             />
@@ -120,11 +122,10 @@ const RegisterForm = () => {
           <Typography
             variant="body2"
             color="text.secondary"
-            textAlign="center"
-            sx={{ mt: 3 }}
+            sx={{ mt: 3, textAlign: 'center' }}
           >
             {t('haveAccount')}{' '}
-            <Link component={NextLink} href="/auth/login" fontWeight={600}>
+            <Link component={NextLink} href="/auth/login" sx={{ fontWeight: 600 }}>
               {t('login')}
             </Link>
           </Typography>

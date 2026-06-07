@@ -9,9 +9,9 @@ import {
   LabelOutlined,
 } from '@mui/icons-material';
 import {
+  alpha,
   Box,
   Card,
-  CardActionArea,
   Chip,
   Tooltip,
   Typography,
@@ -19,11 +19,14 @@ import {
 import dayjs from 'dayjs';
 import { Draggable } from '@hello-pangea/dnd';
 import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
+import { useRef } from 'react';
 
 interface Props {
   task: Task;
   index: number;
   boardId: string;
+  isPending?: boolean;
+  isDragDisabled?: boolean;
 }
 
 const PRIORITY_CONFIG = {
@@ -33,34 +36,56 @@ const PRIORITY_CONFIG = {
   urgent: { color: '#ef4444', labelKey: 'priority.urgent' as const },
 } as const;
 
-const TaskCard = ({ task, index, boardId }: Props) => {
+const TaskCard = ({
+  task,
+  index,
+  boardId,
+  isPending = false,
+  isDragDisabled = false,
+}: Props) => {
   useDayjsLocale();
   const openTask = useBoardUIStore((state) => state.openTask);
   const t = useTranslations('TaskCard');
   const priority = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG.medium;
   const priorityLabel = t(priority.labelKey);
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const isOverdue =
     task.dueDate && dayjs(task.dueDate).isBefore(dayjs(), 'day');
 
   return (
-    <Draggable draggableId={task.id} index={index}>
+    <Draggable
+      draggableId={task.id}
+      index={index}
+      isDragDisabled={isPending || isDragDisabled}
+    >
       {(provided, snapshot) => (
         <Card
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           elevation={snapshot.isDragging ? 8 : 0}
+          aria-busy={isPending}
+          aria-disabled={isPending || isDragDisabled}
+          onClickCapture={(event) => {
+            const { consumeSuppressedTaskClick } = useBoardUIStore.getState();
+            const shouldSuppressClick = consumeSuppressedTaskClick(task.id);
+            if (isPending || shouldSuppressClick) {
+              event.preventDefault();
+              event.stopPropagation();
+            }
+          }}
           sx={{
             mb: 1,
             border: '1px solid',
             borderColor: snapshot.isDragging ? 'primary.main' : 'divider',
-            cursor: 'grab',
-            '&:active': { cursor: 'grabbing' },
+            cursor: isPending ? 'progress' : 'grab',
+            '&:active': { cursor: isPending ? 'progress' : 'grabbing' },
             transform: snapshot.isDragging ? 'rotate(2deg)' : 'none',
             transition: 'transform 0.15s, box-shadow 0.15s',
             position: 'relative',
-            overflow: 'visible',
+            overflow: isPending ? 'hidden' : 'visible',
+            opacity: isPending ? 0.78 : 1,
             '&::before': {
               content: '""',
               position: 'absolute',
@@ -71,17 +96,56 @@ const TaskCard = ({ task, index, boardId }: Props) => {
               bgcolor: priority.color,
               borderRadius: '0 2px 2px 0',
             },
+            '&::after': isPending
+              ? {
+                  content: '""',
+                  position: 'absolute',
+                  inset: 0,
+                  pointerEvents: 'none',
+                  background: (theme) =>
+                    `linear-gradient(90deg, transparent 0%, ${alpha(
+                      theme.palette.action.hover,
+                      0.9,
+                    )} 50%, transparent 100%)`,
+                  transform: 'translateX(-100%)',
+                  animation: 'taskCardPending 1.35s ease-in-out infinite',
+                }
+              : undefined,
+            '@keyframes taskCardPending': {
+              '0%': { transform: 'translateX(-100%)' },
+              '100%': { transform: 'translateX(100%)' },
+            },
           }}
         >
           <Box
-            onClick={() => openTask(task.id)}
+            onPointerDown={(event) => {
+              pointerStartRef.current = {
+                x: event.clientX,
+                y: event.clientY,
+              };
+            }}
+            onPointerUp={(event) => {
+              const pointerStart = pointerStartRef.current;
+              pointerStartRef.current = null;
+              if (!pointerStart || isPending) return;
+
+              const deltaX = event.clientX - pointerStart.x;
+              const deltaY = event.clientY - pointerStart.y;
+              const distance = Math.hypot(deltaX, deltaY);
+              if (distance > 6) return;
+
+              openTask(task.id);
+            }}
             onMouseDown={(e) => e.stopPropagation()}
-            sx={{ p: 1.5, pl: 2 }}
+            sx={{ p: 1.5, pl: 2, pointerEvents: isPending ? 'none' : 'auto' }}
           >
             <Typography
               variant="body2"
-              fontWeight={500}
-              sx={{ lineHeight: 1.4, mb: task.labels?.length ? 1 : 0 }}
+              sx={{
+                lineHeight: 1.4,
+                mb: task.labels?.length ? 1 : 0,
+                fontWeight: 500,
+              }}
             >
               {task.title}
             </Typography>

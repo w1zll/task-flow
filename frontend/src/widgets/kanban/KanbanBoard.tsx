@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Board, columnsApi, taskApi } from '@/shared/api/api';
+import { Board, columnsApi } from '@/shared/api/api';
 import { queryKeys } from '@/shared/queries/boards.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
 import { useQueryClient } from '@tanstack/react-query';
@@ -17,30 +17,81 @@ interface Props {
   board: Board;
 }
 
+type SocketAckResponse = {
+  ok: boolean;
+  message?: string;
+};
+
+type BoardSocketEvent = 'task:move' | 'task:reorder';
+
+const SOCKET_ACK_TIMEOUT_MS = 5000;
+
+const emitBoardMutation = <TPayload,>(
+  event: BoardSocketEvent,
+  payload: TPayload,
+) =>
+  new Promise<void>((resolve, reject) => {
+    const socket = getSocket();
+
+    if (!socket.connected) {
+      reject(new Error('Socket is not connected'));
+      return;
+    }
+
+    socket
+      .timeout(SOCKET_ACK_TIMEOUT_MS)
+      .emit(
+        event,
+        payload,
+        (error: Error | null, response?: SocketAckResponse) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          if (!response?.ok) {
+            reject(new Error(response?.message ?? 'Socket operation failed'));
+            return;
+          }
+
+          resolve();
+        },
+      );
+  });
+
 const KanbanBoard = ({ board }: Props) => {
   const t = useTranslations('Notifications');
   const startDrag = useBoardUIStore((state) => state.startDrag);
   const endDrag = useBoardUIStore((state) => state.endDrag);
+  const suppressNextTaskClick = useBoardUIStore(
+    (state) => state.suppressNextTaskClick,
+  );
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
 
   useBoardSocket(board.id);
 
   const [localBoard, setLocalBoard] = useState<Board>(board);
+  const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalBoard(board);
   }, [board]);
 
   const handleDragStart = (start: any) => {
+    if (pendingTaskId) return;
     if (start.type === 'TASK') {
       startDrag(start.draggableId);
     }
   };
 
   const handleDragEnd = async (result: DropResult) => {
-    endDrag();
     const { source, destination, type, draggableId } = result;
+    if (type === 'TASK') {
+      suppressNextTaskClick(draggableId);
+    }
+    endDrag();
+
     if (!destination) return;
     if (
       source.droppableId === destination.droppableId &&
@@ -66,7 +117,10 @@ const KanbanBoard = ({ board }: Props) => {
         const newIds = cols.map((c) => c.id);
         await columnsApi.reorder(board.id, newIds);
         qc.setQueryData(queryKeys.board(board.id), newBoard);
-        qc.invalidateQueries({ queryKey: queryKeys.board(board.id) });
+        qc.invalidateQueries({
+          queryKey: queryKeys.board(board.id),
+          exact: true,
+        });
       } catch (error) {
         setLocalBoard(previousBoard);
         enqueueSnackbar(t('columnMoveError'), { variant: 'error' });
@@ -122,14 +176,13 @@ const KanbanBoard = ({ board }: Props) => {
     };
 
     const newBoard = computeNewBoard(localBoard);
+    setPendingTaskId(draggableId);
     setLocalBoard(newBoard);
-
-    const socket = getSocket();
 
     try {
       if (isSameColumn) {
         const col = newBoard.columns?.find((c) => c.id === srcColId);
-        socket.emit('task:reorder', {
+        await emitBoardMutation('task:reorder', {
           boardId: board.id,
           columnId: srcColId,
           taskIds: col?.tasks?.map((t) => t.id) ?? [],
@@ -141,7 +194,7 @@ const KanbanBoard = ({ board }: Props) => {
         //   );
         // }
       } else {
-        socket.emit('task:move', {
+        await emitBoardMutation('task:move', {
           boardId: board.id,
           taskId: draggableId,
           columnId: dstColId,
@@ -152,11 +205,13 @@ const KanbanBoard = ({ board }: Props) => {
         //   order: destination.index,
         // });
       }
-      // qc.setQueryData(queryKeys.board(board.id), newBoard);
-      // qc.invalidateQueries({ queryKey: queryKeys.board(board.id) });
+      qc.setQueryData(queryKeys.board(board.id), newBoard);
     } catch (error) {
       setLocalBoard(previousBoard);
+      qc.setQueryData(queryKeys.board(board.id), previousBoard);
       enqueueSnackbar(t('taskMoveError'), { variant: 'error' });
+    } finally {
+      setPendingTaskId(null);
     }
   };
 
@@ -179,6 +234,8 @@ const KanbanBoard = ({ board }: Props) => {
                 column={col}
                 board={localBoard}
                 index={index}
+                pendingTaskId={pendingTaskId}
+                isTaskDragDisabled={!!pendingTaskId}
               />
             ))}
             {provided.placeholder}

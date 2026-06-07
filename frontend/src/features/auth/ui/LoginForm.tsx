@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useAuth } from "../useAuth";
 import { alpha, Box, Button, Card, CardContent, Divider, IconButton, InputAdornment, Link, TextField, Typography } from "@mui/material";
 import { ViewKanban, Visibility, VisibilityOff } from "@mui/icons-material";
-import NextLink from 'next/link';
 import { useTranslations } from 'next-intl';
+import NextLink from 'next/link';
 
 const LoginForm = () => {
   const t = useTranslations('Auth.Login');
@@ -88,17 +88,19 @@ const LoginForm = () => {
               required
               fullWidth
               autoComplete="current-password"
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword((s) => !s)}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((s) => !s)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
             <Button
@@ -115,9 +117,13 @@ const LoginForm = () => {
 
           <Divider sx={{ my: 3 }} />
 
-          <Typography variant="body2" textAlign="center" color="text.secondary">
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ textAlign: 'center' }}
+          >
             {t('noAccount')}{' '}
-            <Link component={NextLink} href="/auth/register" fontWeight={600}>
+            <Link component={NextLink} href="/auth/register" sx={{ fontWeight: 600 }}>
               {t('register')}
             </Link>
           </Typography>
