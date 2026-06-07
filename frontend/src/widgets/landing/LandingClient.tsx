@@ -58,7 +58,13 @@ const LandingClient = () => {
   const refs = useLandingGSAP();
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        color: 'text.primary',
+      }}
+    >
       <Hero
         badgeRef={refs.badgeRef}
         titleRef={refs.titleRef}

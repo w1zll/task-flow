@@ -35,7 +35,7 @@ const PRIORITY_CONFIG = {
 
 const TaskCard = ({ task, index, boardId }: Props) => {
   useDayjsLocale();
-  const boardUI = useBoardUIStore();
+  const openTask = useBoardUIStore((state) => state.openTask);
   const t = useTranslations('TaskCard');
   const priority = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG.medium;
   const priorityLabel = t(priority.labelKey);
@@ -74,7 +74,7 @@ const TaskCard = ({ task, index, boardId }: Props) => {
           }}
         >
           <Box
-            onClick={() => boardUI.openTask(task.id)}
+            onClick={() => openTask(task.id)}
             onMouseDown={(e) => e.stopPropagation()}
             sx={{ p: 1.5, pl: 2 }}
           >

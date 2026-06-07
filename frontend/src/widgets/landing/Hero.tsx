@@ -43,10 +43,12 @@ const Hero = ({
         alignItems: 'center',
         pb: 15,
         textAlign: 'center',
+        bgcolor: 'background.default',
+        color: 'text.primary',
         background: (theme) =>
           theme.palette.mode === 'dark'
-            ? `radial-gradient(ellipse 80% 50% at 50% -10%, ${alpha('#6366f1', 0.3)} 0%, transparent 70%)`
-            : `radial-gradient(ellipse 80% 50% at 50% -10%, ${alpha('#6366f1', 0.12)} 0%, transparent 70%)`,
+            ? `radial-gradient(ellipse 80% 50% at 50% -10%, ${alpha(theme.palette.primary.main, 0.3)} 0%, transparent 70%), ${theme.palette.background.default}`
+            : `radial-gradient(ellipse 80% 50% at 50% -10%, ${alpha(theme.palette.primary.main, 0.12)} 0%, transparent 70%), ${theme.palette.background.default}`,
       }}
     >
       <Container maxWidth="md">
@@ -64,6 +66,7 @@ const Hero = ({
             letterSpacing: '-0.03em',
             lineHeight: 1,
             mb: 2.5,
+            color: 'text.primary',
           }}
         >
           <span

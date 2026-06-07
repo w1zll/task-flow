@@ -19,7 +19,8 @@ interface Props {
 
 const KanbanBoard = ({ board }: Props) => {
   const t = useTranslations('Notifications');
-  const boardUI = useBoardUIStore();
+  const startDrag = useBoardUIStore((state) => state.startDrag);
+  const endDrag = useBoardUIStore((state) => state.endDrag);
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -33,12 +34,12 @@ const KanbanBoard = ({ board }: Props) => {
 
   const handleDragStart = (start: any) => {
     if (start.type === 'TASK') {
-      boardUI.startDrag(start.draggableId);
+      startDrag(start.draggableId);
     }
   };
 
   const handleDragEnd = async (result: DropResult) => {
-    boardUI.endDrag();
+    endDrag();
     const { source, destination, type, draggableId } = result;
     if (!destination) return;
     if (

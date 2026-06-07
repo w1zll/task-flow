@@ -4,8 +4,9 @@ import Providers from './Providers';
 
 type ThemeMode = 'light' | 'dark';
 
-const getInitialThemeMode = (): ThemeMode => {
-  const theme = cookies().get('theme')?.value;
+const getInitialThemeMode = async (): Promise<ThemeMode> => {
+  const cookieStore = await cookies();
+  const theme = cookieStore.get('theme')?.value;
 
   return theme === 'light' || theme === 'dark' ? theme : 'dark';
 };
@@ -13,7 +14,7 @@ const getInitialThemeMode = (): ThemeMode => {
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const messages = await getMessages();
   const locale = await getLocale();
-  const initialThemeMode = getInitialThemeMode();
+  const initialThemeMode = await getInitialThemeMode();
 
   return (
     <html lang={locale} suppressHydrationWarning>

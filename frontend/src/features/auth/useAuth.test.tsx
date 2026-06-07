@@ -84,7 +84,7 @@ describe('useAuth', () => {
         user: { id: '1', email: 'test@example.com', name: 'Test' },
       };
 
-      // @ts-ignore
+      // @ts-expect-error Mocked response intentionally omits Axios metadata.
       mockAuthApi.login.mockResolvedValue({ data: response });
 
       const { result } = renderHook(() => useAuth(), { wrapper });

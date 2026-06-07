@@ -200,7 +200,7 @@ const KanbanBoardPage = ({ boardId }: Props) => {
         </Stack>
       </Box>
 
-      <Box sx={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', p: 2 }}>
+      <Box sx={{ flex: 1, overflowX: 'auto', overflowY: 'visible', p: 2 }}>
         {isLoading ? (
           <Box sx={{ display: 'flex', gap: 2, height: '100%' }}>
             {Array.from({ length: 3 }).map((_, i) => (
