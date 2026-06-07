@@ -3,6 +3,7 @@ import { ApiBody, ApiResponse } from './types';
 
 export type AuthResponse = ApiResponse<'/api/auth/register', 'post'>;
 export type AuthUser = ApiResponse<'/api/auth/me', 'get'>;
+export type WsTokenResponse = { token: string };
 export type Board = ApiResponse<'/api/boards/{id}', 'get'>;
 // export type BoardColumn = NonNullable<
 //   ApiResponse<'/api/boards/{id}', 'get'>['columns']
@@ -35,6 +36,8 @@ export const authApi = {
     ),
 
   me: () => apiClient.get<ApiResponse<'/api/auth/me', 'get'>>('/api/auth/me'),
+
+  wsToken: () => apiClient.get<WsTokenResponse>('/api/auth/ws-token'),
 
   getSessions: () =>
     apiClient.get<ApiResponse<'/api/auth/sessions', 'get'>>(

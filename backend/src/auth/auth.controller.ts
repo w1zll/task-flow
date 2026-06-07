@@ -25,6 +25,7 @@ import {
   RegisterDto,
   SessionDto,
   UserDto,
+  WsTokenResponseDto,
 } from './dto/auth.dto';
 import type { Request, Response } from 'express';
 import { User } from '@/users/entities/user.entity';
@@ -113,6 +114,17 @@ export class AuthController {
       email: user.email,
       name: user.name,
       avatar: user.avatar,
+    };
+  }
+
+  @Get('ws-token')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Получить короткоживущий токен для WebSocket' })
+  @ApiOkResponse({ type: WsTokenResponseDto })
+  async wsToken(@CurrentUser() user: User): Promise<WsTokenResponseDto> {
+    return {
+      token: this.authService.generateWebSocketToken(user),
     };
   }
 

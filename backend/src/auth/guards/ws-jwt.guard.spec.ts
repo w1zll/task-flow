@@ -15,9 +15,15 @@ describe('WsJwtGuard', () => {
   };
 
   // Хелпер для создания мок-контекста с нужными куками
-  const createMockContext = (cookie?: string): ExecutionContext => {
+  const createMockContext = (
+    cookie?: string,
+    auth?: Record<string, unknown>,
+    user?: unknown,
+  ): ExecutionContext => {
     const client = {
+      user,
       handshake: {
+        auth: auth ?? {},
         headers: {
           cookie,
         },
@@ -55,6 +61,30 @@ describe('WsJwtGuard', () => {
     expect(result).toBe(true);
     expect(client.user).toEqual(payload);
     expect(mockJwtService.verify).toHaveBeenCalledWith('valid-token');
+  });
+
+  it('should prefer a token from Socket.IO auth payload', () => {
+    const payload = { sub: '1', email: 'test@example.com' };
+    mockJwtService.verify.mockReturnValue(payload);
+
+    const context = createMockContext(`${ACCESS_COOKIE}=cookie-token`, {
+      token: 'handshake-token',
+    });
+
+    const result = guard.canActivate(context);
+
+    expect(result).toBe(true);
+    expect(mockJwtService.verify).toHaveBeenCalledWith('handshake-token');
+  });
+
+  it('should reuse user already attached to the socket', () => {
+    const user = { sub: '1', email: 'test@example.com' };
+    const context = createMockContext(undefined, undefined, user);
+
+    const result = guard.canActivate(context);
+
+    expect(result).toBe(true);
+    expect(mockJwtService.verify).not.toHaveBeenCalled();
   });
 
   it('should throw WsException if cookie header is missing', () => {

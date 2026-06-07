@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { authApi } from '../api/api';
 
 let socket: Socket | null = null;
 
@@ -9,6 +10,14 @@ export const getSocket = (): Socket => {
     socket = io(`${socketUrl}/boards`, {
       withCredentials: true,
       autoConnect: false,
+      auth: async (callback) => {
+        try {
+          const { data } = await authApi.wsToken();
+          callback({ token: data.token });
+        } catch {
+          callback({});
+        }
+      },
     });
     // socket.onAnyOutgoing((event, ...args) => {
     //   console.log('[WS OUT]', event, args);
