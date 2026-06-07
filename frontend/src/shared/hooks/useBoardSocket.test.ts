@@ -115,6 +115,7 @@ describe('useBoardSocket', () => {
       id: 'task-1',
       title: 'Updated',
       columnId: 'col-1',
+      column: { boardId: 'board-1' },
       order: 0,
     };
     const handler = mockSocket.on.mock.calls.find(
@@ -144,7 +145,7 @@ describe('useBoardSocket', () => {
     const handler = mockSocket.on.mock.calls.find(
       ([e]) => e === 'task:update',
     )![1];
-    handler({ id: 'task-1', title: 'X' });
+    handler({ id: 'task-1', title: 'X', column: { boardId: 'board-1' } });
 
     const updaterFn = mockSetQueryData.mock.calls[0][1];
     expect(updaterFn(undefined)).toBeUndefined();
@@ -270,10 +271,12 @@ describe('useBoardSocket', () => {
     expect(mockSocket.off).toHaveBeenCalledWith('task:update');
     expect(mockSocket.off).toHaveBeenCalledWith('task:moved');
     expect(mockSocket.off).toHaveBeenCalledWith('task:reordered');
-    expect(mockSocket.disconnect).toHaveBeenCalledTimes(1);
+    expect(mockSocket.disconnect).not.toHaveBeenCalled();
   });
 
   it('should re-subscribe when boardId changes', () => {
+    mockSocket.connected = true;
+
     const { rerender } = renderHook(({ id }) => useBoardSocket(id), {
       initialProps: { id: 'board-1' },
     });

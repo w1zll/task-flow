@@ -33,7 +33,12 @@ interface Props {
 
 const KanbanColumn = ({ column, board, index }: Props) => {
   const t = useTranslations('KanbanColumn');
-  const boardUI = useBoardUIStore();
+  const addingTaskInColumnId = useBoardUIStore(
+    (state) => state.addingTaskInColumnId,
+  );
+  const setAddingTaskInColumn = useBoardUIStore(
+    (state) => state.setAddingTaskInColumn,
+  );
   const createTask = useCreateTask();
   const deleteColumn = useDeleteColumn();
   const updateColumn = useUpdateColumn();
@@ -47,7 +52,7 @@ const KanbanColumn = ({ column, board, index }: Props) => {
     setTitleInput(column.title);
   }, [column.title]);
 
-  const isAddingTask = boardUI.addingTaskInColumnId === column.id;
+  const isAddingTask = addingTaskInColumnId === column.id;
 
   const handleAddTask = () => {
     const title = newTaskTitle.trim();
@@ -57,7 +62,7 @@ const KanbanColumn = ({ column, board, index }: Props) => {
       {
         onSuccess: () => {
           setNewTaskTitle('');
-          boardUI.setAddingTaskInColumn(null);
+          setAddingTaskInColumn(null);
         },
       },
     );
@@ -102,7 +107,6 @@ const KanbanColumn = ({ column, board, index }: Props) => {
             borderRadius: 2,
             display: 'flex',
             flexDirection: 'column',
-            maxHeight: 'calc(100vh - 180px)',
             transition: 'border-color 0.15s',
           }}
         >
@@ -190,7 +194,7 @@ const KanbanColumn = ({ column, board, index }: Props) => {
               <Tooltip title={t('addTask')}>
                 <IconButton
                   size="small"
-                  onClick={() => boardUI.setAddingTaskInColumn(column.id)}
+                  onClick={() => setAddingTaskInColumn(column.id)}
                 >
                   <Add fontSize="small" />
                 </IconButton>
@@ -210,8 +214,8 @@ const KanbanColumn = ({ column, board, index }: Props) => {
                 ref={provided.innerRef}
                 {...provided.droppableProps}
                 sx={{
-                  flex: 1,
-                  overflowY: 'auto',
+                  flex: '0 1 auto',
+                  overflow: 'visible',
                   px: 1.5,
                   pb: 1,
                   minHeight: 60,
@@ -220,11 +224,6 @@ const KanbanColumn = ({ column, board, index }: Props) => {
                     : 'transparent',
                   transition: 'background-color 0.15s',
                   borderRadius: 1,
-                  '&::-webkit-scrollbar': { width: 4 },
-                  '&::-webkit-scrollbar-thumb': {
-                    bgcolor: 'divider',
-                    borderRadius: 2,
-                  },
                 }}
               >
                 {(column.tasks ?? []).map((task, taskIndex) => (
@@ -256,7 +255,7 @@ const KanbanColumn = ({ column, board, index }: Props) => {
                     e.preventDefault();
                     handleAddTask();
                   }
-                  if (e.key === 'Escape') boardUI.setAddingTaskInColumn(null);
+                  if (e.key === 'Escape') setAddingTaskInColumn(null);
                 }}
                 sx={{ mb: 1 }}
               />
@@ -271,7 +270,7 @@ const KanbanColumn = ({ column, board, index }: Props) => {
                 </Button>
                 <Button
                   size="small"
-                  onClick={() => boardUI.setAddingTaskInColumn(null)}
+                  onClick={() => setAddingTaskInColumn(null)}
                 >
                   {t('cancel')}
                 </Button>
@@ -282,7 +281,7 @@ const KanbanColumn = ({ column, board, index }: Props) => {
               <Button
                 size="small"
                 startIcon={<Add />}
-                onClick={() => boardUI.setAddingTaskInColumn(column.id)}
+                onClick={() => setAddingTaskInColumn(column.id)}
                 sx={{
                   width: '100%',
                   justifyContent: 'flex-start',

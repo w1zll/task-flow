@@ -11,6 +11,7 @@ import { useTranslations } from 'next-intl';
 import React, { ReactNode, RefObject } from 'react';
 
 interface Feature {
+  id: string;
   icon: ReactNode;
   title: string;
   desc: string;
@@ -56,10 +57,14 @@ const Features = ({
 
       <Grid container spacing={3}>
         {features.map((f, i) => (
-          <Grid item xs={12} sm={6} md={4} key={f.title}>
+          <Grid item xs={12} sm={6} md={4} key={f.id}>
             <Card
               ref={(el) => {
-                if (el) cardsRef.current![i] = el as HTMLDivElement;
+                if (el) {
+                  cardsRef.current![i] = el as HTMLDivElement;
+                } else {
+                  delete cardsRef.current![i];
+                }
               }}
               sx={{
                 height: '100%',

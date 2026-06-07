@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/features/auth/useAuth';
 import { useThemeStore } from '@/shared/store/root.store';
+import type { ThemeMode } from '@/shared/store/theme.store';
 import { DarkMode, LightMode, Logout, ViewKanban } from '@mui/icons-material';
 import {
   AppBar,
@@ -23,11 +24,19 @@ import { useState } from 'react';
 import NextLink from 'next/link';
 import LocaleSwitcher from './LocaleSwitcher';
 
-const AppHeader = () => {
+const AppHeader = ({
+  initialThemeMode,
+}: {
+  initialThemeMode: ThemeMode;
+}) => {
   const t = useTranslations('Header');
   const { user, logout, isLoading } = useAuth();
   const themeStore = useThemeStore();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const themeMode = themeStore.hasHydrated
+    ? themeStore.mode
+    : initialThemeMode;
+  const isDark = themeMode === 'dark';
 
   const initials = user?.name ? user.name[0].toUpperCase() : '?';
 
@@ -93,9 +102,9 @@ const AppHeader = () => {
 
         <Box sx={{ display: 'flex', marginLeft: 'auto', gap: 1 }}>
           <LocaleSwitcher />
-          <Tooltip title={themeStore.isDark ? t('lightTheme') : t('darkTheme')}>
-            <IconButton onClick={() => themeStore.toggle()}>
-              {themeStore.isDark ? <LightMode /> : <DarkMode />}
+          <Tooltip title={isDark ? t('lightTheme') : t('darkTheme')}>
+            <IconButton onClick={() => themeStore.toggle(themeMode)}>
+              {isDark ? <LightMode /> : <DarkMode />}
             </IconButton>
           </Tooltip>
           {!isLoading ? (
