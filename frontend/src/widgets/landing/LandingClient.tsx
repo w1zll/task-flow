@@ -24,31 +24,37 @@ const LandingClient = () => {
 
   const FEATURES = [
     {
+      id: 'drag-drop',
       icon: <DragIndicator />,
       title: t('features.dragDrop.title'),
       desc: t('features.dragDrop.desc'),
     },
     {
+      id: 'fast',
       icon: <Speed />,
       title: t('features.fast.title'),
       desc: t('features.fast.desc'),
     },
     {
+      id: 'auth',
       icon: <Security />,
       title: t('features.auth.title'),
       desc: t('features.auth.desc'),
     },
     {
+      id: 'themes',
       icon: <Palette />,
       title: t('features.themes.title'),
       desc: t('features.themes.desc'),
     },
     {
+      id: 'boards',
       icon: <ViewKanban />,
       title: t('features.boards.title'),
       desc: t('features.boards.desc'),
     },
     {
+      id: 'ssr',
       icon: <Devices />,
       title: t('features.ssr.title'),
       desc: t('features.ssr.desc'),
