@@ -49,7 +49,6 @@ export const useBoardSocket = (boardId: string) => {
     };
     socket.on('connect', onConnect);
     socket.on('connect_error', onConnectError);
-    socket.connect();
 
     if (socket.connected) {
       socket.emit('board:join', { boardId });

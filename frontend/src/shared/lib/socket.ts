@@ -3,23 +3,20 @@ import { authApi } from '../api/api';
 
 let socket: Socket | null = null;
 
+const getSocketUrl = () =>
+  (process.env.NEXT_PUBLIC_SOCKET_URL ?? 'http://localhost:3001').replace(
+    /\/+$/,
+    '',
+  );
+
 export const getSocket = (): Socket => {
   if (!socket) {
-    const socketUrl =
-      process.env.NEXT_PUBLIC_SOCKET_URL ?? 'http://localhost:3001';
+    const socketUrl = getSocketUrl();
     socket = io(`${socketUrl}/boards`, {
       withCredentials: true,
       autoConnect: false,
       reconnection: false,
       transports: ['websocket', 'polling'],
-      auth: async (callback) => {
-        try {
-          const { data } = await authApi.wsToken();
-          callback({ token: data.token });
-        } catch {
-          callback({});
-        }
-      },
     });
     // socket.onAnyOutgoing((event, ...args) => {
     //   console.log('[WS OUT]', event, args);

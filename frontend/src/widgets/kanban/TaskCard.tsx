@@ -19,6 +19,7 @@ import {
 import dayjs from 'dayjs';
 import { Draggable } from '@hello-pangea/dnd';
 import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
+import { useRef } from 'react';
 
 interface Props {
   task: Task;
@@ -47,6 +48,7 @@ const TaskCard = ({
   const t = useTranslations('TaskCard');
   const priority = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG.medium;
   const priorityLabel = t(priority.labelKey);
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const isOverdue =
     task.dueDate && dayjs(task.dueDate).isBefore(dayjs(), 'day');
@@ -116,8 +118,23 @@ const TaskCard = ({
           }}
         >
           <Box
-            onClick={() => {
-              if (!isPending) openTask(task.id);
+            onPointerDown={(event) => {
+              pointerStartRef.current = {
+                x: event.clientX,
+                y: event.clientY,
+              };
+            }}
+            onPointerUp={(event) => {
+              const pointerStart = pointerStartRef.current;
+              pointerStartRef.current = null;
+              if (!pointerStart || isPending) return;
+
+              const deltaX = event.clientX - pointerStart.x;
+              const deltaY = event.clientY - pointerStart.y;
+              const distance = Math.hypot(deltaX, deltaY);
+              if (distance > 6) return;
+
+              openTask(task.id);
             }}
             onMouseDown={(e) => e.stopPropagation()}
             sx={{ p: 1.5, pl: 2, pointerEvents: isPending ? 'none' : 'auto' }}

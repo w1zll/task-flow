@@ -14,8 +14,6 @@ export class WsJwtGuard implements CanActivate {
 
     const token =
       this.getHandshakeAuthToken(client) ?? this.getCookieAccessToken(client);
-    console.log('WS auth token exists:', Boolean(token));
-    console.log('WS namespace:', client.nsp.name);
     if (!token) throw new WsException('Unauthorized');
 
     try {

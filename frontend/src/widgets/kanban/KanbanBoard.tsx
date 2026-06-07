@@ -117,7 +117,10 @@ const KanbanBoard = ({ board }: Props) => {
         const newIds = cols.map((c) => c.id);
         await columnsApi.reorder(board.id, newIds);
         qc.setQueryData(queryKeys.board(board.id), newBoard);
-        qc.invalidateQueries({ queryKey: queryKeys.board(board.id) });
+        qc.invalidateQueries({
+          queryKey: queryKeys.board(board.id),
+          exact: true,
+        });
       } catch (error) {
         setLocalBoard(previousBoard);
         enqueueSnackbar(t('columnMoveError'), { variant: 'error' });
@@ -203,7 +206,6 @@ const KanbanBoard = ({ board }: Props) => {
         // });
       }
       qc.setQueryData(queryKeys.board(board.id), newBoard);
-      qc.invalidateQueries({ queryKey: queryKeys.board(board.id) });
     } catch (error) {
       setLocalBoard(previousBoard);
       qc.setQueryData(queryKeys.board(board.id), previousBoard);

@@ -1,7 +1,7 @@
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBoardSocket } from '../hooks/useBoardSocket';
-import { getSocket } from '../lib/socket';
+import { getSocket, refreshSocketAuth } from '../lib/socket';
 
 // --- моки ---
 jest.mock('@tanstack/react-query', () => ({
@@ -10,6 +10,7 @@ jest.mock('@tanstack/react-query', () => ({
 
 jest.mock('../lib/socket', () => ({
   getSocket: jest.fn(),
+  refreshSocketAuth: jest.fn(),
 }));
 
 jest.mock('../queries/boards.queries', () => ({
@@ -27,6 +28,7 @@ const createMockSocket = () => ({
   emit: jest.fn(),
   connect: jest.fn(),
   disconnect: jest.fn(),
+  active: false,
 });
 
 describe('useBoardSocket', () => {
@@ -36,6 +38,7 @@ describe('useBoardSocket', () => {
   beforeEach(() => {
     mockSocket = createMockSocket();
     (getSocket as jest.Mock).mockReturnValue(mockSocket);
+    (refreshSocketAuth as jest.Mock).mockResolvedValue(undefined);
 
     mockSetQueryData = jest.fn();
     (useQueryClient as jest.Mock).mockReturnValue({
@@ -49,9 +52,11 @@ describe('useBoardSocket', () => {
 
   // ─── подключение ───────────────────────────────────────────────────────────
 
-  it('should call socket.connect on mount', () => {
+  it('should refresh socket auth before connecting on mount', async () => {
     renderHook(() => useBoardSocket('board-1'));
-    expect(mockSocket.connect).toHaveBeenCalledTimes(1);
+
+    await waitFor(() => expect(mockSocket.connect).toHaveBeenCalledTimes(1));
+    expect(refreshSocketAuth).toHaveBeenCalledWith(mockSocket);
   });
 
   it('should emit board:join immediately if socket is already connected', () => {
@@ -271,6 +276,11 @@ describe('useBoardSocket', () => {
     expect(mockSocket.off).toHaveBeenCalledWith('task:update');
     expect(mockSocket.off).toHaveBeenCalledWith('task:moved');
     expect(mockSocket.off).toHaveBeenCalledWith('task:reordered');
+    expect(mockSocket.off).toHaveBeenCalledWith('connect', expect.any(Function));
+    expect(mockSocket.off).toHaveBeenCalledWith(
+      'connect_error',
+      expect.any(Function),
+    );
     expect(mockSocket.disconnect).not.toHaveBeenCalled();
   });
 
