@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { corsOrigin } from './common/cors/cors-origin';
+import { corsOptions } from './config/cors.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,20 +19,21 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors({
-    origin: corsOrigin,
-    credentials: true,
-    methods: '*',
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'Accept',
-      'Origin',
-      'X-Requested-With',
-    ],
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-  });
+  // app.enableCors({
+  //   origin: corsOrigin,
+  //   credentials: true,
+  //   methods: '*',
+  //   allowedHeaders: [
+  //     'Content-Type',
+  //     'Authorization',
+  //     'Accept',
+  //     'Origin',
+  //     'X-Requested-With',
+  //   ],
+  //   preflightContinue: false,
+  //   optionsSuccessStatus: 204,
+  // });
+  app.enableCors(corsOptions);
 
   const config = new DocumentBuilder()
     .setTitle('TaskFlow API')

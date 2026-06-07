@@ -15,15 +15,24 @@ import { WsJwtGuard } from '@/auth/guards/ws-jwt.guard';
 import { TasksService } from '@/tasks/tasks.service';
 import { UpdateTaskDto } from '@/tasks/dto/task.dto';
 import { corsOrigin } from '@/common/cors/cors-origin';
+import { isOriginAllowed } from '@/config/cors.config';
 
 type SocketAck = (response: { ok: boolean; message?: string }) => void;
 
 @WebSocketGateway({
-  cors: {
-    origin: corsOrigin,
-    credentials: true,
-  },
   namespace: '/boards',
+  cors: {
+    origin: (origin: string, callback: Function) => {
+      if (!origin) return callback(null, true);
+      if (isOriginAllowed(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin not allowed: ${origin}`));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST'],
+  },
 })
 export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
