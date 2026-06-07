@@ -20,31 +20,33 @@ export const useLandingGSAP = () => {
   const featuresSubtitleRef = useRef<HTMLParagraphElement>(null);
 
   useGSAP(() => {
-    const cleanups: (() => void)[] = [];
+      const cleanups: (() => void)[] = [];
 
-    gsap.to(scrollArrowRef.current, {
-      y: 8,
-      duration: 0.8,
-      ease: 'sine.inOut',
-      yoyo: true,
-      repeat: -1,
-      delay: 2,
-    });
+      cardsRef.current = cardsRef.current.filter(Boolean);
 
-    const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+      gsap.to(scrollArrowRef.current, {
+        y: 8,
+        duration: 0.8,
+        ease: 'sine.inOut',
+        yoyo: true,
+        repeat: -1,
+        delay: 2,
+      });
 
-    tl.fromTo(
-      badgeRef.current,
-      {
-        y: -30,
-        opacity: 0,
-      },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.5,
-      },
-    );
+      const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+
+      tl.fromTo(
+        badgeRef.current,
+        {
+          y: -30,
+          opacity: 0,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.5,
+        },
+      );
 
     if (titleRef.current) {
       const chars =
