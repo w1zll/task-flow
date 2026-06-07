@@ -7,18 +7,21 @@ export const revalidate = 60;
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
+  const { id } = await params;
   const t = await getTranslations('BoardPage');
 
   return {
-    title: t('title', { id: params.id }),
-    description: t('description', { id: params.id }),
+    title: t('title', { id }),
+    description: t('description', { id }),
   };
 }
 
-const BoardPage = ({ params }: { params: { id: string } }) => {
-  return <KanbanBoardPage key={params.id} boardId={params.id} />;
+const BoardPage = async ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
+
+  return <KanbanBoardPage key={id} boardId={id} />;
 };
 
 export default BoardPage;

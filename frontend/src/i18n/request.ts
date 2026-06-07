@@ -6,14 +6,15 @@ export type Locale = 'en' | 'ru';
 export const locales: Locale[] = ['en', 'ru'];
 export const defaultLocale: Locale = 'ru';
 
-function detectLocale(): Locale {
-  const cookieStore = cookies();
+async function detectLocale(): Promise<Locale> {
+  const cookieStore = await cookies();
   const cookieLocale = cookieStore.get('locale')?.value;
   if (cookieLocale && locales.includes(cookieLocale as Locale)) {
     return cookieLocale as Locale;
   }
 
-  const acceptLanguage = headers().get('accept-language') ?? '';
+  const headersList = await headers();
+  const acceptLanguage = headersList.get('accept-language') ?? '';
   const preferred = acceptLanguage.split(',')[0].split('-')[0].toLowerCase();
   if (locales.includes(preferred as Locale)) {
     return preferred as Locale;
@@ -22,7 +23,7 @@ function detectLocale(): Locale {
 }
 
 export default getRequestConfig(async () => {
-  const locale = detectLocale();
+  const locale = await detectLocale();
 
   return {
     locale,

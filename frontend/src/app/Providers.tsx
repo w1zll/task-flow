@@ -6,6 +6,7 @@ import { useThemeStore } from '@/shared/store/root.store';
 import type { ThemeMode } from '@/shared/store/theme.store';
 import { darkTheme, lightTheme } from '@/shared/theme/theme';
 import AppHeader from '@/widgets/layout/AppHeader';
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import { Box, CssBaseline, ThemeProvider } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -65,21 +66,29 @@ const Providers = ({
   initialThemeMode: ThemeMode;
 }) => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <NextIntlClientProvider
-        locale={locale}
-        messages={messages}
-        timeZone={defaultTimeZone}
-      >
-        <ThemedApp initialThemeMode={initialThemeMode}>
-          <Box sx={{ minHeight: '100vh' }}>
-            <AppHeader initialThemeMode={initialThemeMode} />
-            {children}
-          </Box>
-        </ThemedApp>
-      </NextIntlClientProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <AppRouterCacheProvider>
+      <QueryClientProvider client={queryClient}>
+        <NextIntlClientProvider
+          locale={locale}
+          messages={messages}
+          timeZone={defaultTimeZone}
+        >
+          <ThemedApp initialThemeMode={initialThemeMode}>
+            <Box
+              sx={{
+                minHeight: '100vh',
+                bgcolor: 'background.default',
+                color: 'text.primary',
+              }}
+            >
+              <AppHeader initialThemeMode={initialThemeMode} />
+              {children}
+            </Box>
+          </ThemedApp>
+        </NextIntlClientProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </AppRouterCacheProvider>
   );
 };
 
