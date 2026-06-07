@@ -13,12 +13,11 @@ import { UseGuards } from '@nestjs/common';
 import { WsJwtGuard } from '@/auth/guards/ws-jwt.guard';
 import { TasksService } from '@/tasks/tasks.service';
 import { UpdateTaskDto } from '@/tasks/dto/task.dto';
-import * as dotenv from 'dotenv';
-dotenv.config();
+import { corsOrigin } from '@/common/cors/cors-origin';
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    origin: corsOrigin,
     credentials: true,
   },
   namespace: '/boards',
