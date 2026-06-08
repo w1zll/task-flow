@@ -37,6 +37,33 @@ export const updateTaskInBoard = (
   };
 };
 
+export const moveTaskToColumnEndInBoard = (
+  board: Board | undefined,
+  updatedTask: Task,
+): Board | undefined => {
+  if (!board) return board;
+
+  return {
+    ...board,
+    columns: board.columns?.map((column) => {
+      const tasks = column.tasks ?? [];
+      const currentTask = tasks.find((task) => task.id === updatedTask.id);
+
+      if (!currentTask) return column;
+
+      const reorderedTasks = [
+        ...tasks.filter((task) => task.id !== updatedTask.id),
+        { ...currentTask, ...updatedTask },
+      ].map((task, order) => ({ ...task, order }));
+
+      return {
+        ...column,
+        tasks: reorderedTasks,
+      };
+    }),
+  };
+};
+
 export const useBoards = () => {
   return useQuery({
     queryKey: queryKeys.boards,

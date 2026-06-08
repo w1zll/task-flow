@@ -4,6 +4,7 @@ import { getSocket, refreshSocketAuth } from '../lib/socket';
 import { Board, Task } from '../api/api';
 import {
   findTaskInBoard,
+  moveTaskToColumnEndInBoard,
   queryKeys,
   updateTaskInBoard,
 } from '../queries/boards.queries';
@@ -83,6 +84,10 @@ export const useBoardSocket = (boardId: string) => {
           didCompletionChange =
             currentTask?.isCompleted !== undefined &&
             currentTask.isCompleted !== updatedTask.isCompleted;
+
+          if (didCompletionChange && updatedTask.isCompleted) {
+            return moveTaskToColumnEndInBoard(prev, updatedTask);
+          }
 
           return updateTaskInBoard(prev, updatedTask);
         });

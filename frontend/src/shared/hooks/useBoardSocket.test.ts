@@ -18,6 +18,26 @@ jest.mock('../queries/boards.queries', () => ({
     board?.columns
       ?.flatMap((column: any) => column.tasks ?? [])
       .find((task: any) => task.id === taskId),
+  moveTaskToColumnEndInBoard: (board: any, updatedTask: any) => {
+    if (!board) return board;
+    return {
+      ...board,
+      columns: board.columns?.map((column: any) => {
+        const tasks = column.tasks ?? [];
+        const currentTask = tasks.find((task: any) => task.id === updatedTask.id);
+
+        if (!currentTask) return column;
+
+        return {
+          ...column,
+          tasks: [
+            ...tasks.filter((task: any) => task.id !== updatedTask.id),
+            { ...currentTask, ...updatedTask },
+          ].map((task: any, order: number) => ({ ...task, order })),
+        };
+      }),
+    };
+  },
   queryKeys: {
     board: (id: string) => ['board', id],
     boardAnalytics: (id?: string) => ['boards', id, 'analytics'],
@@ -214,6 +234,57 @@ describe('useBoardSocket', () => {
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: ['boards', 'board-1', 'analytics'],
     });
+  });
+
+  it('should move task to the end of its column on completion update', () => {
+    renderHook(() => useBoardSocket('board-1'));
+
+    const handler = mockSocket.on.mock.calls.find(
+      ([e]) => e === 'task:update',
+    )![1];
+    handler({
+      id: 'task-1',
+      title: 'Task 1',
+      columnId: 'col-1',
+      column: { boardId: 'board-1' },
+      order: 2,
+      isCompleted: true,
+    });
+
+    const updaterFn = mockSetQueryData.mock.calls[0][1];
+    const result = updaterFn({
+      id: 'board-1',
+      columns: [
+        {
+          id: 'col-1',
+          tasks: [
+            {
+              id: 'task-1',
+              title: 'Task 1',
+              columnId: 'col-1',
+              order: 0,
+              isCompleted: false,
+            },
+            {
+              id: 'task-2',
+              title: 'Task 2',
+              columnId: 'col-1',
+              order: 1,
+              isCompleted: false,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.columns[0].tasks.map((task: any) => task.id)).toEqual([
+      'task-2',
+      'task-1',
+    ]);
+    expect(result.columns[0].tasks.map((task: any) => task.order)).toEqual([
+      0,
+      1,
+    ]);
   });
 
   // ─── task:moved ────────────────────────────────────────────────────────────
