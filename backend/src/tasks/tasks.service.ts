@@ -134,6 +134,7 @@ export class TasksService {
 
   async update(id: string, dto: UpdateTaskDto, userId: string): Promise<Task> {
     const task = await this.verifyTaskAccess(id, userId);
+    const { completedAt, dueDate, ...taskChanges } = dto;
 
     if (dto.assigneeId) {
       const assignee = await this.validateAssignee(
@@ -143,18 +144,19 @@ export class TasksService {
       task.assigneeName = assignee.name;
     }
 
+    Object.assign(task, taskChanges);
+
     if (dto.isCompleted === true && !task.completedAt) {
-      task.completedAt = new Date();
+      task.completedAt = completedAt ? new Date(completedAt) : new Date();
     }
     if (dto.isCompleted === false) {
       task.completedAt = null;
     }
 
-    if (dto.dueDate !== undefined) {
-      task.dueDate = dto.dueDate ? new Date(dto.dueDate) : null;
+    if (dueDate !== undefined) {
+      task.dueDate = dueDate ? new Date(dueDate) : null;
     }
 
-    Object.assign(task, dto);
     return this.taskRepo.save(task);
   }
 
