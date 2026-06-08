@@ -2,7 +2,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { getSocket, refreshSocketAuth } from '../lib/socket';
 import { Board, Task } from '../api/api';
-import { queryKeys } from '../queries/boards.queries';
+import {
+  findTaskInBoard,
+  moveTaskToColumnEndInBoard,
+  queryKeys,
+  updateTaskInBoard,
+} from '../queries/boards.queries';
 
 export const useBoardSocket = (boardId: string) => {
   const qc = useQueryClient();
@@ -72,18 +77,26 @@ export const useBoardSocket = (boardId: string) => {
         },
       ) => {
         if (updatedTask.column.boardId !== boardId) return;
+        let didCompletionChange = false;
+
         qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            columns: prev.columns?.map((col) => ({
-              ...col,
-              tasks: col.tasks?.map((t) =>
-                t.id === updatedTask.id ? { ...t, ...updatedTask } : t,
-              ),
-            })),
-          };
+          const currentTask = findTaskInBoard(prev, updatedTask.id);
+          didCompletionChange =
+            currentTask?.isCompleted !== undefined &&
+            currentTask.isCompleted !== updatedTask.isCompleted;
+
+          if (didCompletionChange && updatedTask.isCompleted) {
+            return moveTaskToColumnEndInBoard(prev, updatedTask);
+          }
+
+          return updateTaskInBoard(prev, updatedTask);
         });
+
+        if (didCompletionChange) {
+          qc.invalidateQueries({
+            queryKey: queryKeys.boardAnalytics(boardId),
+          });
+        }
       },
     );
 

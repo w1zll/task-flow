@@ -144,6 +144,11 @@
   "TaskCard": {
     "priorityTooltip": "Приоритет: {priority}",
     "deadlineTooltip": "Срок: {date}",
+    "completed": "Выполнена",
+    "completedTooltip": "Задача выполнена",
+    "completionToggle": "Переключить выполнение задачи",
+    "markComplete": "Отметить выполненной",
+    "markIncomplete": "Снять отметку выполнения",
     "priority": {
       "low": "Низкий",
       "medium": "Средний",
@@ -156,6 +161,7 @@
     "title": "Название",
     "description": "Описание",
     "descriptionPlaceholder": "Введите описание задачи...",
+    "completed": "Выполнена",
     "priority": "Приоритет",
     "dueDate": "Срок выполнения",
     "assignee": "Ответственный",
@@ -172,6 +178,7 @@
   },
   "Notifications": {
     "columnMoveError": "Ошибка перемещения колонок",
-    "taskMoveError": "Не удалось переместить задачу"
+    "taskMoveError": "Не удалось переместить задачу",
+    "taskUpdateError": "Не удалось обновить задачу"
   }
 }

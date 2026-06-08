@@ -11,6 +11,12 @@ import { TasksService } from './tasks.service';
 describe('TasksService', () => {
   let service: TasksService;
   let taskRepo: jest.Mocked<Partial<Repository<Task>>>;
+  let mockQueryBuilder: {
+    update: jest.Mock;
+    set: jest.Mock;
+    where: jest.Mock;
+    execute: jest.Mock;
+  };
 
   const userId = 'user-1';
 
@@ -44,8 +50,16 @@ describe('TasksService', () => {
     }) as Task;
 
   beforeEach(async () => {
+    mockQueryBuilder = {
+      update: jest.fn().mockReturnThis(),
+      set: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue({}),
+    };
     taskRepo = {
       findOne: jest.fn(),
+      count: jest.fn().mockResolvedValue(1),
+      createQueryBuilder: jest.fn(() => mockQueryBuilder as any),
       save: jest.fn(async (task: Task) => task),
     };
 
@@ -96,6 +110,7 @@ describe('TasksService', () => {
       expect.objectContaining({
         isCompleted: true,
         completedAt: now,
+        order: 0,
       }),
     );
   });
@@ -163,5 +178,39 @@ describe('TasksService', () => {
 
     expect(result.isCompleted).toBe(true);
     expect(result.completedAt).toBe(completedAt);
+    expect(taskRepo.createQueryBuilder).not.toHaveBeenCalled();
+  });
+
+  it('moves a newly completed task to the end of its column', async () => {
+    taskRepo.count.mockResolvedValue(3);
+    taskRepo.findOne.mockResolvedValue(
+      createTask({
+        order: 0,
+      }),
+    );
+
+    const result = await service.update('task-1', { isCompleted: true }, userId);
+
+    expect(result.isCompleted).toBe(true);
+    expect(result.order).toBe(2);
+    expect(mockQueryBuilder.update).toHaveBeenCalledWith(Task);
+    expect(mockQueryBuilder.set).toHaveBeenCalledWith({
+      order: expect.any(Function),
+    });
+    expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+      '"columnId" = :columnId AND "order" > :sourceOrder AND "order" <= :lastOrder',
+      {
+        columnId: 'column-1',
+        sourceOrder: 0,
+        lastOrder: 2,
+      },
+    );
+    expect(mockQueryBuilder.execute).toHaveBeenCalled();
+    expect(taskRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        isCompleted: true,
+        order: 2,
+      }),
+    );
   });
 });
