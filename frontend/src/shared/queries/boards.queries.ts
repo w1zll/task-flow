@@ -12,6 +12,29 @@ export const queryKeys = {
   boards: ['boards'] as const,
   board: (id: string) => ['boards', id] as const,
   tasks: (columnId: string) => ['tasks', columnId] as const,
+  boardAnalytics: (id?: string) => ['boards', id, 'analytics'] as const,
+};
+
+export const findTaskInBoard = (board: Board | undefined, taskId: string) =>
+  board?.columns
+    ?.flatMap((column) => column.tasks ?? [])
+    .find((task) => task.id === taskId);
+
+export const updateTaskInBoard = (
+  board: Board | undefined,
+  updatedTask: Task,
+): Board | undefined => {
+  if (!board) return board;
+
+  return {
+    ...board,
+    columns: board.columns?.map((column) => ({
+      ...column,
+      tasks: column.tasks?.map((task) =>
+        task.id === updatedTask.id ? { ...task, ...updatedTask } : task,
+      ),
+    })),
+  };
 };
 
 export const useBoards = () => {
@@ -229,7 +252,7 @@ export const useRevokeBoardMember = () => {
 
 export const useBoardDailyAnalytics = (boardId?: string) => {
   return useQuery({
-    queryKey: ['boards', boardId, 'analytics', 'daily'],
+    queryKey: [...queryKeys.boardAnalytics(boardId), 'daily'],
     queryFn: () => taskApi.analytics.daily({ boardId }).then((r) => r.data),
     enabled: !!boardId,
     staleTime: 60_000,
@@ -238,7 +261,7 @@ export const useBoardDailyAnalytics = (boardId?: string) => {
 
 export const useBoardMonthlyAnalytics = (boardId?: string) => {
   return useQuery({
-    queryKey: ['boards', boardId, 'analytics', 'monthly'],
+    queryKey: [...queryKeys.boardAnalytics(boardId), 'monthly'],
     queryFn: () => taskApi.analytics.monthly({ boardId }).then((r) => r.data),
     enabled: !!boardId,
     staleTime: 60_000,
@@ -247,7 +270,7 @@ export const useBoardMonthlyAnalytics = (boardId?: string) => {
 
 export const useTaskCompletionSummary = (boardId?: string) => {
   return useQuery({
-    queryKey: ['boards', boardId, 'analytics', 'summary'],
+    queryKey: [...queryKeys.boardAnalytics(boardId), 'summary'],
     queryFn: () => taskApi.analytics.summary({ boardId }).then((r) => r.data),
     enabled: !!boardId,
     staleTime: 60_000,

@@ -1,17 +1,26 @@
 'use client';
 
-import { Task } from '@/shared/api/api';
+import { Board, Task } from '@/shared/api/api';
+import { getSocket } from '@/shared/lib/socket';
+import {
+  queryKeys,
+  updateTaskInBoard,
+} from '@/shared/queries/boards.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import {
   CalendarTodayOutlined,
+  CheckCircleOutlined,
   FlagOutlined,
   LabelOutlined,
+  RadioButtonUnchecked,
 } from '@mui/icons-material';
 import {
   alpha,
   Box,
   Card,
+  Checkbox,
   Chip,
   Tooltip,
   Typography,
@@ -19,7 +28,8 @@ import {
 import dayjs from 'dayjs';
 import { Draggable } from '@hello-pangea/dnd';
 import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { useSnackbar } from 'notistack';
 
 interface Props {
   task: Task;
@@ -46,12 +56,52 @@ const TaskCard = ({
   useDayjsLocale();
   const openTask = useBoardUIStore((state) => state.openTask);
   const t = useTranslations('TaskCard');
+  const tNotifications = useTranslations('Notifications');
+  const qc = useQueryClient();
+  const { enqueueSnackbar } = useSnackbar();
   const priority = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG.medium;
   const priorityLabel = t(priority.labelKey);
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [isCompletionPending, setIsCompletionPending] = useState(false);
 
   const isOverdue =
-    task.dueDate && dayjs(task.dueDate).isBefore(dayjs(), 'day');
+    !task.isCompleted &&
+    task.dueDate &&
+    dayjs(task.dueDate).isBefore(dayjs(), 'day');
+
+  const handleToggleCompletion = () => {
+    if (isPending || isCompletionPending) return;
+
+    const nextIsCompleted = !task.isCompleted;
+    const socket = getSocket();
+    const previousBoard = qc.getQueryData<Board>(queryKeys.board(boardId));
+    const optimisticTask: Task = {
+      ...task,
+      isCompleted: nextIsCompleted,
+      completedAt: nextIsCompleted
+        ? task.completedAt ?? new Date().toISOString()
+        : undefined,
+    };
+
+    qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) =>
+      updateTaskInBoard(prev, optimisticTask),
+    );
+    qc.invalidateQueries({ queryKey: queryKeys.boardAnalytics(boardId) });
+
+    if (!socket.connected) {
+      qc.setQueryData(queryKeys.board(boardId), previousBoard);
+      enqueueSnackbar(tNotifications('taskUpdateError'), { variant: 'error' });
+      return;
+    }
+
+    setIsCompletionPending(true);
+    socket.emit('task:update', {
+      boardId,
+      taskId: task.id,
+      changes: { isCompleted: nextIsCompleted },
+    });
+    window.setTimeout(() => setIsCompletionPending(false), 1200);
+  };
 
   return (
     <Draggable
@@ -78,7 +128,14 @@ const TaskCard = ({
           sx={{
             mb: 1,
             border: '1px solid',
-            borderColor: snapshot.isDragging ? 'primary.main' : 'divider',
+            borderColor: snapshot.isDragging
+              ? 'primary.main'
+              : task.isCompleted
+                ? 'success.light'
+                : 'divider',
+            bgcolor: task.isCompleted
+              ? (theme) => alpha(theme.palette.success.main, 0.06)
+              : 'background.paper',
             cursor: isPending ? 'progress' : 'grab',
             '&:active': { cursor: isPending ? 'progress' : 'grabbing' },
             transform: snapshot.isDragging ? 'rotate(2deg)' : 'none',
@@ -116,7 +173,51 @@ const TaskCard = ({
               '100%': { transform: 'translateX(100%)' },
             },
           }}
-        >
+          >
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 6,
+              right: 6,
+              zIndex: 1,
+            }}
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+            onMouseDown={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+            onPointerUp={(event) => event.stopPropagation()}
+          >
+            <Tooltip
+              title={
+                task.isCompleted ? t('markIncomplete') : t('markComplete')
+              }
+            >
+              <span>
+                <Checkbox
+                  size="small"
+                  checked={!!task.isCompleted}
+                  disabled={isPending || isCompletionPending}
+                  onChange={handleToggleCompletion}
+                  icon={<RadioButtonUnchecked fontSize="small" />}
+                  checkedIcon={<CheckCircleOutlined fontSize="small" />}
+                  slotProps={{
+                    input: {
+                      'aria-label': t('completionToggle'),
+                    },
+                  }}
+                  sx={{
+                    p: 0.25,
+                    color: 'text.disabled',
+                    '&.Mui-checked': {
+                      color: 'success.main',
+                    },
+                  }}
+                />
+              </span>
+            </Tooltip>
+          </Box>
+
           <Box
             onPointerDown={(event) => {
               pointerStartRef.current = {
@@ -137,7 +238,12 @@ const TaskCard = ({
               openTask(task.id);
             }}
             onMouseDown={(e) => e.stopPropagation()}
-            sx={{ p: 1.5, pl: 2, pointerEvents: isPending ? 'none' : 'auto' }}
+            sx={{
+              p: 1.5,
+              pl: 2,
+              pr: 4.5,
+              pointerEvents: isPending ? 'none' : 'auto',
+            }}
           >
             <Typography
               variant="body2"
@@ -145,6 +251,8 @@ const TaskCard = ({
                 lineHeight: 1.4,
                 mb: task.labels?.length ? 1 : 0,
                 fontWeight: 500,
+                color: task.isCompleted ? 'text.secondary' : 'text.primary',
+                textDecoration: task.isCompleted ? 'line-through' : 'none',
               }}
             >
               {task.title}
@@ -173,6 +281,27 @@ const TaskCard = ({
             <Box
               sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 0.5 }}
             >
+              {task.isCompleted && (
+                <Tooltip title={t('completedTooltip')}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.25,
+                      color: 'success.main',
+                    }}
+                  >
+                    <CheckCircleOutlined sx={{ fontSize: 13 }} />
+                    <Typography
+                      variant="caption"
+                      sx={{ fontSize: 11, fontWeight: 600 }}
+                    >
+                      {t('completed')}
+                    </Typography>
+                  </Box>
+                </Tooltip>
+              )}
+
               <Tooltip title={t('priorityTooltip', { priority: priorityLabel })}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
                   <FlagOutlined sx={{ fontSize: 13, color: priority.color }} />

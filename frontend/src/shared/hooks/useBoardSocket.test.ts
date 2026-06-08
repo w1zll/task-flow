@@ -14,8 +14,25 @@ jest.mock('../lib/socket', () => ({
 }));
 
 jest.mock('../queries/boards.queries', () => ({
+  findTaskInBoard: (board: any, taskId: string) =>
+    board?.columns
+      ?.flatMap((column: any) => column.tasks ?? [])
+      .find((task: any) => task.id === taskId),
   queryKeys: {
     board: (id: string) => ['board', id],
+    boardAnalytics: (id?: string) => ['boards', id, 'analytics'],
+  },
+  updateTaskInBoard: (board: any, updatedTask: any) => {
+    if (!board) return board;
+    return {
+      ...board,
+      columns: board.columns?.map((column: any) => ({
+        ...column,
+        tasks: column.tasks?.map((task: any) =>
+          task.id === updatedTask.id ? { ...task, ...updatedTask } : task,
+        ),
+      })),
+    };
   },
 }));
 
@@ -34,6 +51,7 @@ const createMockSocket = () => ({
 describe('useBoardSocket', () => {
   let mockSocket: ReturnType<typeof createMockSocket>;
   let mockSetQueryData: jest.Mock;
+  let mockInvalidateQueries: jest.Mock;
 
   beforeEach(() => {
     mockSocket = createMockSocket();
@@ -41,8 +59,10 @@ describe('useBoardSocket', () => {
     (refreshSocketAuth as jest.Mock).mockResolvedValue(undefined);
 
     mockSetQueryData = jest.fn();
+    mockInvalidateQueries = jest.fn();
     (useQueryClient as jest.Mock).mockReturnValue({
       setQueryData: mockSetQueryData,
+      invalidateQueries: mockInvalidateQueries,
     });
   });
 
@@ -154,6 +174,46 @@ describe('useBoardSocket', () => {
 
     const updaterFn = mockSetQueryData.mock.calls[0][1];
     expect(updaterFn(undefined)).toBeUndefined();
+  });
+
+  it('should invalidate analytics on task:update when completion changes', () => {
+    const prevBoard = {
+      id: 'board-1',
+      columns: [
+        {
+          id: 'col-1',
+          tasks: [
+            {
+              id: 'task-1',
+              title: 'Task',
+              columnId: 'col-1',
+              order: 0,
+              isCompleted: false,
+            },
+          ],
+        },
+      ],
+    };
+    mockSetQueryData.mockImplementation((_key, updater) =>
+      updater(prevBoard),
+    );
+    renderHook(() => useBoardSocket('board-1'));
+
+    const handler = mockSocket.on.mock.calls.find(
+      ([e]) => e === 'task:update',
+    )![1];
+    handler({
+      id: 'task-1',
+      title: 'Task',
+      columnId: 'col-1',
+      column: { boardId: 'board-1' },
+      order: 0,
+      isCompleted: true,
+    });
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['boards', 'board-1', 'analytics'],
+    });
   });
 
   // ─── task:moved ────────────────────────────────────────────────────────────
