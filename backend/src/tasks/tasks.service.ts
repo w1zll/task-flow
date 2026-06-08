@@ -134,6 +134,9 @@ export class TasksService {
 
   async update(id: string, dto: UpdateTaskDto, userId: string): Promise<Task> {
     const task = await this.verifyTaskAccess(id, userId);
+    const { completedAt, dueDate, ...taskChanges } = dto;
+    const wasCompleted = task.isCompleted;
+    const sourceOrder = task.order;
 
     if (dto.assigneeId) {
       const assignee = await this.validateAssignee(
@@ -143,18 +146,44 @@ export class TasksService {
       task.assigneeName = assignee.name;
     }
 
+    Object.assign(task, taskChanges);
+
     if (dto.isCompleted === true && !task.completedAt) {
-      task.completedAt = new Date();
+      task.completedAt = completedAt ? new Date(completedAt) : new Date();
     }
     if (dto.isCompleted === false) {
       task.completedAt = null;
     }
 
-    if (dto.dueDate !== undefined) {
-      task.dueDate = dto.dueDate ? new Date(dto.dueDate) : null;
+    if (dto.isCompleted === true && !wasCompleted) {
+      const taskCount = await this.taskRepo.count({
+        where: { columnId: task.columnId },
+      });
+      const lastOrder = Math.max(taskCount - 1, 0);
+
+      if (sourceOrder < lastOrder) {
+        await this.taskRepo
+          .createQueryBuilder()
+          .update(Task)
+          .set({ order: () => '"order" - 1' })
+          .where(
+            '"columnId" = :columnId AND "order" > :sourceOrder AND "order" <= :lastOrder',
+            {
+              columnId: task.columnId,
+              sourceOrder,
+              lastOrder,
+            },
+          )
+          .execute();
+
+        task.order = lastOrder;
+      }
     }
 
-    Object.assign(task, dto);
+    if (dueDate !== undefined) {
+      task.dueDate = dueDate ? new Date(dueDate) : null;
+    }
+
     return this.taskRepo.save(task);
   }
 

@@ -60,6 +60,7 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody()
     payload: { boardId: string; taskId: string; changes: UpdateTaskDto },
+    @Ack() ack?: SocketAck,
   ) {
     try {
       const userId = (client as any).user.sub;
@@ -70,10 +71,13 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
 
       this.server.to(`board-${payload.boardId}`).emit('task:update', updated);
+      ack?.({ ok: true });
     } catch (e) {
-      if (e instanceof Error) e = e.message;
-      console.error('task:update error:', e);
-      client.emit('exception', { message: e });
+      const message =
+        e instanceof Error ? e.message : 'Failed to update task';
+      console.error('task:update error:', message);
+      client.emit('exception', { message });
+      ack?.({ ok: false, message });
     }
   }
 

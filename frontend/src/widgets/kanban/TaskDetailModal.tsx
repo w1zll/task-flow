@@ -24,10 +24,12 @@ import {
   DialogTitle,
   Divider,
   FormControl,
+  FormControlLabel,
   IconButton,
   InputLabel,
   MenuItem,
   Select,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
@@ -87,6 +89,8 @@ const TaskDetailModal = ({ board }: Props) => {
         dueDate: task.dueDate ? dayjs(task.dueDate).format('YYYY-MM-DD') : '',
         assigneeName: task.assigneeName ?? '',
         assigneeId: task.assigneeId ?? undefined,
+        isCompleted: task.isCompleted,
+        completedAt: task.completedAt,
       });
       setIsDirty(false);
     }
@@ -194,6 +198,27 @@ const TaskDetailModal = ({ board }: Props) => {
           value={form.title ?? ''}
           onChange={(e) => patch('title', e.target.value as any)}
           slotProps={{ htmlInput: { style: { fontWeight: 600 } } }}
+        />
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={!!form.isCompleted}
+              onChange={(event) =>
+                patch('isCompleted', event.target.checked as any)
+              }
+              color="success"
+            />
+          }
+          label={t('completed')}
+          sx={{
+            alignSelf: 'flex-start',
+            m: 0,
+            '& .MuiFormControlLabel-label': {
+              fontSize: 14,
+              fontWeight: 500,
+            },
+          }}
         />
 
         <TextField

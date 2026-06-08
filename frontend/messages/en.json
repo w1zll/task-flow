@@ -144,6 +144,11 @@
   "TaskCard": {
     "priorityTooltip": "Priority: {priority}",
     "deadlineTooltip": "Due: {date}",
+    "completed": "Done",
+    "completedTooltip": "Task completed",
+    "completionToggle": "Toggle task completion",
+    "markComplete": "Mark complete",
+    "markIncomplete": "Mark incomplete",
     "priority": {
       "low": "Low",
       "medium": "Medium",
@@ -156,6 +161,7 @@
     "title": "Title",
     "description": "Description",
     "descriptionPlaceholder": "Enter task description...",
+    "completed": "Completed",
     "priority": "Priority",
     "dueDate": "Due date",
     "assignee": "Assignee",
@@ -172,6 +178,7 @@
   },
   "Notifications": {
     "columnMoveError": "Failed to move columns",
-    "taskMoveError": "Failed to move task"
+    "taskMoveError": "Failed to move task",
+    "taskUpdateError": "Failed to update task"
   }
 }
