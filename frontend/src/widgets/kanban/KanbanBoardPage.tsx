@@ -4,6 +4,8 @@ import {
   useBoard,
   useBoardDailyAnalytics,
   useBoardMembers,
+  useBoardMonthlyAnalytics,
+  useBoardWeeklyAnalytics,
   useCreateColumn,
   useRevokeBoardMember,
   useShareBoard,
@@ -22,13 +24,17 @@ import {
   Link,
   Skeleton,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
+import { BarChart } from '@mui/x-charts/BarChart';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Add, ArrowBack } from '@mui/icons-material';
+import dayjs from 'dayjs';
 import NextLink from 'next/link';
 import KanbanBoard from './KanbanBoard';
 import TaskDetailModal from './TaskDetailModal';
@@ -36,6 +42,8 @@ import TaskDetailModal from './TaskDetailModal';
 interface Props {
   boardId: string;
 }
+
+type AnalyticsPeriod = 'daily' | 'weekly' | 'monthly';
 
 const KanbanBoardPage = ({ boardId }: Props) => {
   const t = useTranslations('BoardPage');
@@ -59,6 +67,31 @@ const KanbanBoardPage = ({ boardId }: Props) => {
   const revokeMember = useRevokeBoardMember();
   const summaryAnalytics = useTaskCompletionSummary(boardId);
   const dailyAnalytics = useBoardDailyAnalytics(boardId);
+  const weeklyAnalytics = useBoardWeeklyAnalytics(boardId);
+  const monthlyAnalytics = useBoardMonthlyAnalytics(boardId);
+  const [analyticsPeriod, setAnalyticsPeriod] =
+    useState<AnalyticsPeriod>('daily');
+
+  const todayCompletedCount = useMemo(() => {
+    const today = dayjs().format('YYYY-MM-DD');
+    return dailyAnalytics.data?.find((item) => item.period === today)?.count ?? 0;
+  }, [dailyAnalytics.data]);
+
+  const chartAnalytics = {
+    daily: dailyAnalytics,
+    weekly: weeklyAnalytics,
+    monthly: monthlyAnalytics,
+  }[analyticsPeriod];
+
+  const chartData = chartAnalytics.data ?? [];
+  const isChartLoading = chartAnalytics.isLoading;
+  const isChartError = chartAnalytics.isError;
+
+  const analyticsPeriodLabels: Record<AnalyticsPeriod, string> = {
+    daily: t('analyticsDays'),
+    weekly: t('analyticsWeeks'),
+    monthly: t('analyticsMonths'),
+  };
 
   useEffect(() => {
     closeTask();
@@ -247,8 +280,79 @@ const KanbanBoardPage = ({ boardId }: Props) => {
                   {t('late', { count: summaryAnalytics.data?.late ?? '-' })}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {t('today', { count: dailyAnalytics.data?.length ?? 0 })}
+                  {t('today', { count: todayCompletedCount })}
                 </Typography>
+                <Tabs
+                  value={analyticsPeriod}
+                  onChange={(_, value: AnalyticsPeriod) =>
+                    setAnalyticsPeriod(value)
+                  }
+                  variant="fullWidth"
+                  sx={{ mt: 2, minHeight: 36 }}
+                >
+                  {(['daily', 'weekly', 'monthly'] as const).map((period) => (
+                    <Tab
+                      key={period}
+                      value={period}
+                      label={analyticsPeriodLabels[period]}
+                      sx={{ minHeight: 36, py: 0.5, fontSize: 12 }}
+                    />
+                  ))}
+                </Tabs>
+                <Box sx={{ height: 220, mt: 1 }}>
+                  {isChartLoading ? (
+                    <Skeleton variant="rounded" width="100%" height={196} />
+                  ) : isChartError ? (
+                    <Box
+                      sx={{
+                        height: 196,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Typography variant="body2" color="error">
+                        {t('analyticsError')}
+                      </Typography>
+                    </Box>
+                  ) : chartData.length > 0 ? (
+                    <BarChart
+                      height={196}
+                      xAxis={[
+                        {
+                          scaleType: 'band',
+                          data: chartData.map((item) => item.period),
+                          tickLabelStyle: { fontSize: 10 },
+                        },
+                      ]}
+                      yAxis={[{ tickMinStep: 1 }]}
+                      series={[
+                        {
+                          data: chartData.map((item) => item.count),
+                          label: t('completedTasks'),
+                        },
+                      ]}
+                      grid={{ horizontal: true }}
+                      margin={{ top: 20, right: 8, bottom: 42, left: 36 }}
+                      hideLegend
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        height: 196,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        {t('noAnalytics')}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
               </Box>
               <Box
                 sx={{

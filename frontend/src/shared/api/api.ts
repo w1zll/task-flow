@@ -151,6 +151,15 @@ export const taskApi = {
         '/api/tasks/analytics/daily',
         { params: query },
       ),
+    weekly: (query?: {
+      boardId?: string;
+      fromDate?: string;
+      toDate?: string;
+    }) =>
+      apiClient.get<ApiResponse<'/api/tasks/analytics/weekly', 'get'>>(
+        '/api/tasks/analytics/weekly',
+        { params: query },
+      ),
     monthly: (query?: {
       boardId?: string;
       fromDate?: string;
