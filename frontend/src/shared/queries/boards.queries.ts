@@ -286,6 +286,15 @@ export const useBoardDailyAnalytics = (boardId?: string) => {
   });
 };
 
+export const useBoardWeeklyAnalytics = (boardId?: string) => {
+  return useQuery({
+    queryKey: [...queryKeys.boardAnalytics(boardId), 'weekly'],
+    queryFn: () => taskApi.analytics.weekly({ boardId }).then((r) => r.data),
+    enabled: !!boardId,
+    staleTime: 60_000,
+  });
+};
+
 export const useBoardMonthlyAnalytics = (boardId?: string) => {
   return useQuery({
     queryKey: [...queryKeys.boardAnalytics(boardId), 'monthly'],
