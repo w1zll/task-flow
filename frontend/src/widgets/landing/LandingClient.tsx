@@ -1,8 +1,12 @@
 'use client';
 
 import {
+  Analytics,
+  DashboardCustomize,
   Devices,
   DragIndicator,
+  FactCheck,
+  PendingActions,
   Palette,
   Security,
   Speed,
@@ -52,6 +56,30 @@ const LandingClient = () => {
       icon: <ViewKanban />,
       title: t('features.boards.title'),
       desc: t('features.boards.desc'),
+    },
+    {
+      id: 'templates',
+      icon: <DashboardCustomize />,
+      title: t('features.templates.title'),
+      desc: t('features.templates.desc'),
+    },
+    {
+      id: 'welcome-board',
+      icon: <FactCheck />,
+      title: t('features.welcomeBoard.title'),
+      desc: t('features.welcomeBoard.desc'),
+    },
+    {
+      id: 'analytics',
+      icon: <Analytics />,
+      title: t('features.analytics.title'),
+      desc: t('features.analytics.desc'),
+    },
+    {
+      id: 'pending-changes',
+      icon: <PendingActions />,
+      title: t('features.pendingChanges.title'),
+      desc: t('features.pendingChanges.desc'),
     },
     {
       id: 'ssr',

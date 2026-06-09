@@ -34,6 +34,22 @@
         "title": "Multiple boards",
         "desc": "Create as many boards as you need. Use color coding for easy navigation."
       },
+      "templates": {
+        "title": "Board templates",
+        "desc": "Start from an empty board or generate a ready Scrum workflow with columns in the right order."
+      },
+      "welcomeBoard": {
+        "title": "Welcome board",
+        "desc": "New accounts receive a localized demo board with open and completed tasks, so analytics are useful from day one."
+      },
+      "analytics": {
+        "title": "Completion analytics",
+        "desc": "Track completed tasks by day, week, and month, including on-time and late completion summaries."
+      },
+      "pendingChanges": {
+        "title": "Pending changes queue",
+        "desc": "Offline task edits and moves are queued safely, then can be applied or discarded after the connection returns."
+      },
       "ssr": {
         "title": "SSR + ISR",
         "desc": "Next.js (App Router) app with Server Side Rendering (SSR) and Incremental Static Regeneration (ISR)."
