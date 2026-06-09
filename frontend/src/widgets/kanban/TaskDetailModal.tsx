@@ -172,16 +172,18 @@ const TaskDetailModal = ({ board }: Props) => {
       boardUI.closeTask();
     } catch (error) {
       qc.setQueryData(queryKeys.board(board.id), previousBoard);
+      const isQueuedUpdate = isBoardSocketMutationQueuedError(error);
       enqueueSnackbar(
         tNotifications(
-          isBoardSocketMutationQueuedError(error)
-            ? 'taskQueued'
-            : 'taskUpdateError',
+          isQueuedUpdate ? 'taskQueued' : 'taskUpdateError',
         ),
         {
-          variant: isBoardSocketMutationQueuedError(error) ? 'info' : 'error',
+          variant: isQueuedUpdate ? 'info' : 'error',
         },
       );
+      if (isQueuedUpdate) {
+        boardUI.closeTask();
+      }
     } finally {
       setIsUpdating(false);
     }
