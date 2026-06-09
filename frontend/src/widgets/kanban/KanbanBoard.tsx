@@ -11,7 +11,7 @@ import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import KanbanColumn from './KanbanColumn';
 import { Box } from '@mui/material';
 import { useBoardSocket } from '@/shared/hooks/useBoardSocket';
-import { getSocket } from '@/shared/lib/socket';
+import { ensureSocketConnected } from '@/shared/lib/socket';
 
 interface Props {
   board: Board;
@@ -31,32 +31,31 @@ const emitBoardMutation = <TPayload,>(
   payload: TPayload,
 ) =>
   new Promise<void>((resolve, reject) => {
-    const socket = getSocket();
+    ensureSocketConnected()
+      .then((socket) => {
+        socket
+          .timeout(SOCKET_ACK_TIMEOUT_MS)
+          .emit(
+            event,
+            payload,
+            (error: Error | null, response?: SocketAckResponse) => {
+              if (error) {
+                reject(error);
+                return;
+              }
 
-    if (!socket.connected) {
-      reject(new Error('Socket is not connected'));
-      return;
-    }
+              if (!response?.ok) {
+                reject(
+                  new Error(response?.message ?? 'Socket operation failed'),
+                );
+                return;
+              }
 
-    socket
-      .timeout(SOCKET_ACK_TIMEOUT_MS)
-      .emit(
-        event,
-        payload,
-        (error: Error | null, response?: SocketAckResponse) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-
-          if (!response?.ok) {
-            reject(new Error(response?.message ?? 'Socket operation failed'));
-            return;
-          }
-
-          resolve();
-        },
-      );
+              resolve();
+            },
+          );
+      })
+      .catch(reject);
   });
 
 const KanbanBoard = ({ board }: Props) => {

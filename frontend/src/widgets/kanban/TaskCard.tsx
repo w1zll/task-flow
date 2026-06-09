@@ -1,7 +1,7 @@
 'use client';
 
 import { Board, Task } from '@/shared/api/api';
-import { getSocket } from '@/shared/lib/socket';
+import { ensureSocketConnected } from '@/shared/lib/socket';
 import {
   moveTaskToColumnEndInBoard,
   queryKeys,
@@ -82,7 +82,6 @@ const TaskCard = ({
     if (isCardPending) return;
 
     const nextIsCompleted = !task.isCompleted;
-    const socket = getSocket();
     const previousBoard = qc.getQueryData<Board>(queryKeys.board(boardId));
     const optimisticTask: Task = {
       ...task,
@@ -99,14 +98,8 @@ const TaskCard = ({
         : updateTaskInBoard(prev, optimisticTask),
     );
 
-    if (!socket.connected) {
-      qc.setQueryData(queryKeys.board(boardId), previousBoard);
-      enqueueSnackbar(tNotifications('taskUpdateError'), { variant: 'error' });
-      setIsCompletionPending(false);
-      return;
-    }
-
     try {
+      const socket = await ensureSocketConnected();
       await new Promise<void>((resolve, reject) => {
         socket.timeout(SOCKET_ACK_TIMEOUT_MS).emit(
           'task:update',
