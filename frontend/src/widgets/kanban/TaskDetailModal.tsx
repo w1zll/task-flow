@@ -45,6 +45,7 @@ import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
+import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 
@@ -79,6 +80,7 @@ const TaskDetailModal = ({ board }: Props) => {
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   useDayjsLocale();
+  useStableBodyScrollLock(!!boardUI.openTaskId);
 
   const task =
     board.columns
