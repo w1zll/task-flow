@@ -30,12 +30,13 @@ import {
   Typography,
 } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Add, ArrowBack } from '@mui/icons-material';
 import dayjs from 'dayjs';
 import NextLink from 'next/link';
+import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
 import KanbanBoard from './KanbanBoard';
 import TaskDetailModal from './TaskDetailModal';
 
@@ -45,8 +46,32 @@ interface Props {
 
 type AnalyticsPeriod = 'daily' | 'weekly' | 'monthly';
 
+const formatAnalyticsPeriod = (
+  period: string,
+  analyticsPeriod: AnalyticsPeriod,
+  locale: string,
+) => {
+  const localizedDate = dayjs(period).locale(locale);
+
+  if (analyticsPeriod === 'monthly') {
+    return dayjs(`${period}-01`)
+      .locale(locale)
+      .format('MMM YYYY');
+  }
+
+  if (analyticsPeriod === 'weekly') {
+    return `${localizedDate.format('D MMM')} - ${localizedDate
+      .add(6, 'day')
+      .format('D MMM')}`;
+  }
+
+  return localizedDate.format('D MMM');
+};
+
 const KanbanBoardPage = ({ boardId }: Props) => {
+  useDayjsLocale();
   const t = useTranslations('BoardPage');
+  const locale = useLocale();
   const router = useRouter();
   const { data: board, isLoading, isError } = useBoard(boardId);
   const createColumn = useCreateColumn();
@@ -86,6 +111,13 @@ const KanbanBoardPage = ({ boardId }: Props) => {
   const chartData = chartAnalytics.data ?? [];
   const isChartLoading = chartAnalytics.isLoading;
   const isChartError = chartAnalytics.isError;
+  const chartXAxisLabels = useMemo(
+    () =>
+      chartData.map((item) =>
+        formatAnalyticsPeriod(item.period, analyticsPeriod, locale),
+      ),
+    [analyticsPeriod, chartData, locale],
+  );
 
   const analyticsPeriodLabels: Record<AnalyticsPeriod, string> = {
     daily: t('analyticsDays'),
@@ -322,7 +354,7 @@ const KanbanBoardPage = ({ boardId }: Props) => {
                       xAxis={[
                         {
                           scaleType: 'band',
-                          data: chartData.map((item) => item.period),
+                          data: chartXAxisLabels,
                           tickLabelStyle: { fontSize: 10 },
                         },
                       ]}
