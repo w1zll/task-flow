@@ -76,6 +76,9 @@ describe('useBoardSocket', () => {
   beforeEach(() => {
     mockSocket = createMockSocket();
     (getSocket as jest.Mock).mockReturnValue(mockSocket);
+    // В проде ensureSocketConnected обновляет ws-token и открывает socket.
+    // В unit-тесте нас интересует не транспорт, а поведение useBoardSocket,
+    // поэтому мок просто вызывает connect и возвращает тот же socket.
     (ensureSocketConnected as jest.Mock).mockImplementation(async (socket) => {
       socket.connect();
       return socket;

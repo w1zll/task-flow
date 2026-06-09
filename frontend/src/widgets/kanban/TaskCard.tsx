@@ -1,7 +1,10 @@
 'use client';
 
 import { Board, Task } from '@/shared/api/api';
-import { ensureSocketConnected } from '@/shared/lib/socket';
+import {
+  emitBoardSocketMutation,
+  isBoardSocketMutationQueuedError,
+} from '@/shared/lib/boardSocketMutations';
 import {
   moveTaskToColumnEndInBoard,
   queryKeys,
@@ -46,13 +49,6 @@ const PRIORITY_CONFIG = {
   high: { color: '#f97316', labelKey: 'priority.high' as const },
   urgent: { color: '#ef4444', labelKey: 'priority.urgent' as const },
 } as const;
-
-type SocketAckResponse = {
-  ok: boolean;
-  message?: string;
-};
-
-const SOCKET_ACK_TIMEOUT_MS = 5000;
 
 const TaskCard = ({
   task,
@@ -99,37 +95,29 @@ const TaskCard = ({
     );
 
     try {
-      const socket = await ensureSocketConnected();
-      await new Promise<void>((resolve, reject) => {
-        socket.timeout(SOCKET_ACK_TIMEOUT_MS).emit(
-          'task:update',
-          {
-            boardId,
-            taskId: task.id,
-            changes: { isCompleted: nextIsCompleted },
-          },
-          (error: Error | null, response?: SocketAckResponse) => {
-            if (error) {
-              reject(error);
-              return;
-            }
-
-            if (!response?.ok) {
-              reject(
-                new Error(response?.message ?? 'Socket operation failed'),
-              );
-              return;
-            }
-
-            resolve();
-          },
-        );
-      });
+      await emitBoardSocketMutation(
+        'task:update',
+        {
+          boardId,
+          taskId: task.id,
+          changes: { isCompleted: nextIsCompleted },
+        },
+        { boardId },
+      );
 
       qc.invalidateQueries({ queryKey: queryKeys.boardAnalytics(boardId) });
     } catch (error) {
       qc.setQueryData(queryKeys.board(boardId), previousBoard);
-      enqueueSnackbar(tNotifications('taskUpdateError'), { variant: 'error' });
+      enqueueSnackbar(
+        tNotifications(
+          isBoardSocketMutationQueuedError(error)
+            ? 'taskQueued'
+            : 'taskUpdateError',
+        ),
+        {
+          variant: isBoardSocketMutationQueuedError(error) ? 'info' : 'error',
+        },
+      );
     } finally {
       setIsCompletionPending(false);
     }

@@ -11,52 +11,14 @@ import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import KanbanColumn from './KanbanColumn';
 import { Box } from '@mui/material';
 import { useBoardSocket } from '@/shared/hooks/useBoardSocket';
-import { ensureSocketConnected } from '@/shared/lib/socket';
+import {
+  emitBoardSocketMutation,
+  isBoardSocketMutationQueuedError,
+} from '@/shared/lib/boardSocketMutations';
 
 interface Props {
   board: Board;
 }
-
-type SocketAckResponse = {
-  ok: boolean;
-  message?: string;
-};
-
-type BoardSocketEvent = 'task:move' | 'task:reorder';
-
-const SOCKET_ACK_TIMEOUT_MS = 5000;
-
-const emitBoardMutation = <TPayload,>(
-  event: BoardSocketEvent,
-  payload: TPayload,
-) =>
-  new Promise<void>((resolve, reject) => {
-    ensureSocketConnected()
-      .then((socket) => {
-        socket
-          .timeout(SOCKET_ACK_TIMEOUT_MS)
-          .emit(
-            event,
-            payload,
-            (error: Error | null, response?: SocketAckResponse) => {
-              if (error) {
-                reject(error);
-                return;
-              }
-
-              if (!response?.ok) {
-                reject(
-                  new Error(response?.message ?? 'Socket operation failed'),
-                );
-                return;
-              }
-
-              resolve();
-            },
-          );
-      })
-      .catch(reject);
-  });
 
 const KanbanBoard = ({ board }: Props) => {
   const t = useTranslations('Notifications');
@@ -181,34 +143,41 @@ const KanbanBoard = ({ board }: Props) => {
     try {
       if (isSameColumn) {
         const col = newBoard.columns?.find((c) => c.id === srcColId);
-        await emitBoardMutation('task:reorder', {
-          boardId: board.id,
-          columnId: srcColId,
-          taskIds: col?.tasks?.map((t) => t.id) ?? [],
-        });
-        // if (col?.tasks) {
-        //   await taskApi.reorder(
-        //     srcColId,
-        //     col.tasks.map((t) => t.id),
-        //   );
-        // }
+        await emitBoardSocketMutation(
+          'task:reorder',
+          {
+            boardId: board.id,
+            columnId: srcColId,
+            taskIds: col?.tasks?.map((t) => t.id) ?? [],
+          },
+          { boardId: board.id },
+        );
       } else {
-        await emitBoardMutation('task:move', {
-          boardId: board.id,
-          taskId: draggableId,
-          columnId: dstColId,
-          order: destination.index,
-        });
-        // await taskApi.move(draggableId, {
-        //   columnId: dstColId,
-        //   order: destination.index,
-        // });
+        await emitBoardSocketMutation(
+          'task:move',
+          {
+            boardId: board.id,
+            taskId: draggableId,
+            columnId: dstColId,
+            order: destination.index,
+          },
+          { boardId: board.id },
+        );
       }
       qc.setQueryData(queryKeys.board(board.id), newBoard);
     } catch (error) {
       setLocalBoard(previousBoard);
       qc.setQueryData(queryKeys.board(board.id), previousBoard);
-      enqueueSnackbar(t('taskMoveError'), { variant: 'error' });
+      enqueueSnackbar(
+        t(
+          isBoardSocketMutationQueuedError(error)
+            ? 'taskQueued'
+            : 'taskMoveError',
+        ),
+        {
+          variant: isBoardSocketMutationQueuedError(error) ? 'info' : 'error',
+        },
+      );
     } finally {
       setPendingTaskId(null);
     }

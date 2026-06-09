@@ -1,7 +1,11 @@
 'use client';
 
 import { Board, Task } from '@/shared/api/api';
-import { ensureSocketConnected, getSocket } from '@/shared/lib/socket';
+import {
+  emitBoardSocketMutation,
+  isBoardSocketMutationQueuedError,
+} from '@/shared/lib/boardSocketMutations';
+import { getSocket } from '@/shared/lib/socket';
 import {
   moveTaskToColumnEndInBoard,
   queryKeys,
@@ -66,13 +70,6 @@ const LABEL_PRESETS = [
   'test',
 ];
 
-type SocketAckResponse = {
-  ok: boolean;
-  message?: string;
-};
-
-const SOCKET_ACK_TIMEOUT_MS = 5000;
-
 const TaskDetailModal = ({ board }: Props) => {
   const t = useTranslations('TaskDetail');
   const tPriority = useTranslations('TaskCard');
@@ -82,8 +79,6 @@ const TaskDetailModal = ({ board }: Props) => {
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   useDayjsLocale();
-
-  const socket = getSocket();
 
   const task =
     board.columns
@@ -119,12 +114,14 @@ const TaskDetailModal = ({ board }: Props) => {
       }
     };
 
+    const socket = getSocket();
+
     socket.on('task:update', handleTaskUpdate);
 
     return () => {
       socket.off('task:update', handleTaskUpdate);
     };
-  }, [task?.id, socket]);
+  }, [task?.id]);
 
   const patch = <K extends keyof Task>(key: K, value: Task[K]) => {
     setForm((p) => ({ ...p, [key]: value }));
@@ -156,32 +153,15 @@ const TaskDetailModal = ({ board }: Props) => {
     );
 
     try {
-      const connectedSocket = await ensureSocketConnected(socket);
-      await new Promise<void>((resolve, reject) => {
-        connectedSocket.timeout(SOCKET_ACK_TIMEOUT_MS).emit(
-          'task:update',
-          {
-            boardId: board.id,
-            taskId: task.id,
-            changes: form,
-          },
-          (error: Error | null, response?: SocketAckResponse) => {
-            if (error) {
-              reject(error);
-              return;
-            }
-
-            if (!response?.ok) {
-              reject(
-                new Error(response?.message ?? 'Socket operation failed'),
-              );
-              return;
-            }
-
-            resolve();
-          },
-        );
-      });
+      await emitBoardSocketMutation(
+        'task:update',
+        {
+          boardId: board.id,
+          taskId: task.id,
+          changes: form,
+        },
+        { boardId: board.id },
+      );
 
       setIsDirty(false);
       if (isCompletionChange) {
@@ -189,9 +169,19 @@ const TaskDetailModal = ({ board }: Props) => {
           queryKey: queryKeys.boardAnalytics(board.id),
         });
       }
+      boardUI.closeTask();
     } catch (error) {
       qc.setQueryData(queryKeys.board(board.id), previousBoard);
-      enqueueSnackbar(tNotifications('taskUpdateError'), { variant: 'error' });
+      enqueueSnackbar(
+        tNotifications(
+          isBoardSocketMutationQueuedError(error)
+            ? 'taskQueued'
+            : 'taskUpdateError',
+        ),
+        {
+          variant: isBoardSocketMutationQueuedError(error) ? 'info' : 'error',
+        },
+      );
     } finally {
       setIsUpdating(false);
     }

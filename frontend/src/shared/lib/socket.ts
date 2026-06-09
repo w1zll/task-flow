@@ -13,6 +13,24 @@ const getSocketUrl = () =>
 const isBrowserOffline = () =>
   typeof navigator !== 'undefined' && navigator.onLine === false;
 
+export const isSocketReady = (targetSocket: Socket = getSocket()) => {
+  if (isBrowserOffline() || !targetSocket.connected) return false;
+
+  const engine = targetSocket.io.engine as
+    | {
+        readyState?: string;
+        transport?: {
+          writable?: boolean;
+        };
+      }
+    | undefined;
+
+  if (engine?.readyState && engine.readyState !== 'open') return false;
+  if (engine?.transport?.writable === false) return false;
+
+  return true;
+};
+
 export const getSocket = (): Socket => {
   if (!socket) {
     const socketUrl = getSocketUrl();
@@ -22,9 +40,6 @@ export const getSocket = (): Socket => {
       reconnection: false,
       transports: ['websocket', 'polling'],
     });
-    // socket.onAnyOutgoing((event, ...args) => {
-    //   console.log('[WS OUT]', event, args);
-    // });
   }
 
   return socket;
@@ -41,7 +56,7 @@ export const ensureSocketConnected = async (
   targetSocket: Socket = getSocket(),
   timeoutMs = 5000,
 ): Promise<Socket> => {
-  if (targetSocket.connected) return targetSocket;
+  if (isSocketReady(targetSocket)) return targetSocket;
   if (isBrowserOffline()) {
     throw new Error('Browser is offline');
   }
@@ -71,7 +86,7 @@ export const ensureSocketConnected = async (
       if (isBrowserOffline()) {
         throw new Error('Browser is offline');
       }
-      if (targetSocket.connected) {
+      if (isSocketReady(targetSocket)) {
         cleanup();
         resolve(targetSocket);
         return;
