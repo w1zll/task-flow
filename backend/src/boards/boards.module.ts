@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Board } from './entities/board.entity';
 import { BoardMember } from './entities/board-member.entity';
@@ -16,7 +16,7 @@ import { AuthModule } from '@/auth/auth.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Board, BoardMember, User, Task, Column]),
-    AuthModule,
+    forwardRef(() => AuthModule),
   ],
   providers: [BoardsService, BoardGateway, WsJwtGuard, TasksService],
   controllers: [BoardsController],

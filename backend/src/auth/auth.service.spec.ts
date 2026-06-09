@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
+import { BoardsService } from '@/boards/boards.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -15,6 +16,7 @@ describe('AuthService', () => {
   let refreshTokenRepo: Repository<RefreshToken>;
   let jwtService: JwtService;
   let configService: ConfigService;
+  let boardsService: BoardsService;
 
   const mockUserRepo = {
     findOne: jest.fn(),
@@ -44,6 +46,10 @@ describe('AuthService', () => {
     get: jest.fn(),
   };
 
+  const mockBoardsService = {
+    createWelcomeBoard: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -64,6 +70,10 @@ describe('AuthService', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: BoardsService,
+          useValue: mockBoardsService,
+        },
       ],
     }).compile();
 
@@ -74,6 +84,7 @@ describe('AuthService', () => {
     );
     jwtService = module.get<JwtService>(JwtService);
     configService = module.get<ConfigService>(ConfigService);
+    boardsService = module.get<BoardsService>(BoardsService);
   });
 
   afterEach(() => {
@@ -92,6 +103,7 @@ describe('AuthService', () => {
         email: dto.email,
         name: dto.name,
         password: 'hashed',
+        createdAt: new Date('2026-06-10T12:00:00.000Z'),
       };
       const tokenPair = {
         accessToken: 'access',
@@ -107,6 +119,7 @@ describe('AuthService', () => {
         .mockReturnValueOnce('refresh');
       mockConfigService.get.mockReturnValue('secret');
       mockRefreshTokenRepo.save.mockResolvedValue({});
+      mockBoardsService.createWelcomeBoard.mockResolvedValue({});
 
       const result = await service.register(dto);
 
@@ -115,7 +128,45 @@ describe('AuthService', () => {
       });
       expect(mockUserRepo.create).toHaveBeenCalledWith(dto);
       expect(mockUserRepo.save).toHaveBeenCalledWith(user);
+      expect(boardsService.createWelcomeBoard).toHaveBeenCalledWith(
+        user.id,
+        user.createdAt,
+        'en',
+      );
       expect(result).toEqual(tokenPair);
+    });
+
+    it('should create localized welcome board on registration', async () => {
+      const dto: RegisterDto = {
+        email: 'test@example.com',
+        password: 'password',
+        name: 'Test User',
+      };
+      const user = {
+        id: '1',
+        email: dto.email,
+        name: dto.name,
+        password: 'hashed',
+        createdAt: new Date('2026-06-10T12:00:00.000Z'),
+      };
+
+      mockUserRepo.findOne.mockResolvedValue(null);
+      mockUserRepo.create.mockReturnValue(user);
+      mockUserRepo.save.mockResolvedValue(user);
+      mockJwtService.sign
+        .mockReturnValueOnce('access')
+        .mockReturnValueOnce('refresh');
+      mockConfigService.get.mockReturnValue('secret');
+      mockRefreshTokenRepo.save.mockResolvedValue({});
+      mockBoardsService.createWelcomeBoard.mockResolvedValue({});
+
+      await service.register(dto, 'ru');
+
+      expect(boardsService.createWelcomeBoard).toHaveBeenCalledWith(
+        user.id,
+        user.createdAt,
+        'ru',
+      );
     });
 
     it('should throw ConflictException if user already exists', async () => {
@@ -127,6 +178,7 @@ describe('AuthService', () => {
       mockUserRepo.findOne.mockResolvedValue({ id: '1', email: dto.email });
 
       await expect(service.register(dto)).rejects.toThrow(ConflictException);
+      expect(mockBoardsService.createWelcomeBoard).not.toHaveBeenCalled();
     });
   });
 

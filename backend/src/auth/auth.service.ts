@@ -1,8 +1,10 @@
 import { User } from '@/users/entities/user.entity';
 import {
   ConflictException,
+  Inject,
   Injectable,
   UnauthorizedException,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,6 +13,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
+import { BoardsService } from '@/boards/boards.service';
+import { AppLocale } from '@/common/locale/request-locale';
 
 @Injectable()
 export class AuthService {
@@ -23,17 +27,24 @@ export class AuthService {
 
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
+
+    @Inject(forwardRef(() => BoardsService))
+    private readonly boardsService: BoardsService,
   ) {}
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto, locale: AppLocale = 'en') {
     const existing = await this.userRepo.findOne({
       where: { email: dto.email },
     });
     if (existing) {
       throw new ConflictException('Пользователь с таким email уже существует');
     }
-    const user = this.userRepo.create(dto);
-    await this.userRepo.save(user);
+    const user = await this.userRepo.save(this.userRepo.create(dto));
+    await this.boardsService.createWelcomeBoard(
+      user.id,
+      user.createdAt ?? new Date(),
+      locale,
+    );
 
     return this.generateTokenPair(user);
   }
