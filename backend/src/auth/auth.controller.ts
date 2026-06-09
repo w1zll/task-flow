@@ -32,6 +32,7 @@ import { User } from '@/users/entities/user.entity';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { MessageDto } from '@/common/dto/message-response.dto';
+import { detectRequestLocale } from '@/common/locale/request-locale';
 
 const REFRESH_COOKIE = 'refresh_token';
 export const ACCESS_COOKIE = 'access_token';
@@ -53,9 +54,13 @@ export class AuthController {
   @ApiCreatedResponse({ type: AuthResponseDto })
   async register(
     @Body() dto: RegisterDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.register(dto);
+    const result = await this.authService.register(
+      dto,
+      detectRequestLocale(req),
+    );
     this.setTokenCookies(res, result.accessToken, result.refreshToken);
     return { user: result.user };
   }

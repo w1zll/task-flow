@@ -1,7 +1,16 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, IsUUID, Matches, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 import { ColumnResponseDto } from '@/columns/dto/column.dto';
 import { UserResponseDto } from '@/users/dto/user.dto';
+import { BoardTemplate } from '../board-templates';
 
 export class CreateBoardDto {
   @ApiProperty({ example: 'Board 1' })
@@ -18,6 +27,15 @@ export class CreateBoardDto {
   @IsOptional()
   @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'Неверный формат кода' })
   color?: string;
+
+  @ApiProperty({
+    enum: BoardTemplate,
+    default: BoardTemplate.EMPTY,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(BoardTemplate)
+  template?: BoardTemplate;
 }
 
 export class ShareBoardDto {

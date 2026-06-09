@@ -9,6 +9,16 @@ import { BoardMember } from './entities/board-member.entity';
 import { User } from '@/users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreateBoardDto, ShareBoardDto, UpdateBoardDto } from './dto/board.dto';
+import { Column } from '@/columns/entities/column.entity';
+import { Task } from '@/tasks/entities/task.entity';
+import {
+  BoardTemplate,
+  SCRUM_COLUMN_KEYS,
+  createScrumColumns,
+  createWelcomeTasks,
+  getWelcomeBoardText,
+} from './board-templates';
+import { AppLocale } from '@/common/locale/request-locale';
 
 @Injectable()
 export class BoardsService {
@@ -21,6 +31,12 @@ export class BoardsService {
 
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+
+    @InjectRepository(Column)
+    private readonly columnRepo: Repository<Column>,
+
+    @InjectRepository(Task)
+    private readonly taskRepo: Repository<Task>,
   ) {}
 
   async findAll(userId: string): Promise<Board[]> {
@@ -60,9 +76,64 @@ export class BoardsService {
     return board;
   }
 
-  async create(dto: CreateBoardDto, userId: string): Promise<Board> {
-    const board = this.boardRepo.create({ ...dto, ownerId: userId });
-    return this.boardRepo.save(board);
+  async create(
+    dto: CreateBoardDto,
+    userId: string,
+    locale: AppLocale = 'en',
+  ): Promise<Board> {
+    const { template = BoardTemplate.EMPTY, ...boardDto } = dto;
+    const board = await this.boardRepo.save(
+      this.boardRepo.create({ ...boardDto, ownerId: userId }),
+    );
+
+    if (template === BoardTemplate.SCRUM) {
+      board.columns = await this.createScrumColumnsForBoard(board.id, locale);
+    }
+
+    return board;
+  }
+
+  async createWelcomeBoard(
+    userId: string,
+    registeredAt = new Date(),
+    locale: AppLocale = 'en',
+  ): Promise<Board> {
+    const boardText = getWelcomeBoardText(locale);
+    const board = await this.boardRepo.save(
+      this.boardRepo.create({
+        title: boardText.title,
+        description: boardText.description,
+        color: '#6366f1',
+        ownerId: userId,
+      }),
+    );
+
+    const columns = await this.createScrumColumnsForBoard(board.id, locale);
+    const columnsByKey = Object.fromEntries(
+      columns.map((column, index) => [SCRUM_COLUMN_KEYS[index], column]),
+    ) as Record<(typeof SCRUM_COLUMN_KEYS)[number], Column>;
+    const tasks = this.taskRepo.create(
+      createWelcomeTasks(columnsByKey, registeredAt, locale),
+    );
+
+    const savedTasks = await this.taskRepo.save(tasks);
+
+    board.columns = columns.map((column) => ({
+      ...column,
+      tasks: savedTasks
+        .filter((task) => task.columnId === column.id)
+        .sort((a, b) => a.order - b.order),
+    }));
+
+    return board;
+  }
+
+  private async createScrumColumnsForBoard(
+    boardId: string,
+    locale: AppLocale,
+  ): Promise<Column[]> {
+    const columns = this.columnRepo.create(createScrumColumns(boardId, locale));
+    return this.columnRepo.save(columns);
   }
 
   async update(

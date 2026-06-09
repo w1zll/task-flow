@@ -9,6 +9,7 @@ import {
   Param,
   Post,
   Put,
+  Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -31,6 +32,8 @@ import {
   ShareBoardDto,
   UpdateBoardDto,
 } from './dto/board.dto';
+import type { Request } from 'express';
+import { detectRequestLocale } from '@/common/locale/request-locale';
 
 @ApiTags('boards')
 @ApiBearerAuth()
@@ -87,8 +90,12 @@ export class BoardsController {
   @Post()
   @ApiOperation({ summary: 'Создать доску' })
   @ApiCreatedResponse({ type: BoardResponseDto })
-  create(@Body() dto: CreateBoardDto, @CurrentUser() user: User) {
-    return this.boardsService.create(dto, user.id);
+  create(
+    @Body() dto: CreateBoardDto,
+    @CurrentUser() user: User,
+    @Req() req: Request,
+  ) {
+    return this.boardsService.create(dto, user.id, detectRequestLocale(req));
   }
 
   @Put(':id')
