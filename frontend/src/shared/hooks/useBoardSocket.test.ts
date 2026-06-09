@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBoardSocket } from '../hooks/useBoardSocket';
-import { getSocket, refreshSocketAuth } from '../lib/socket';
+import { ensureSocketConnected, getSocket } from '../lib/socket';
 
 // --- моки ---
 jest.mock('@tanstack/react-query', () => ({
@@ -9,8 +9,8 @@ jest.mock('@tanstack/react-query', () => ({
 }));
 
 jest.mock('../lib/socket', () => ({
+  ensureSocketConnected: jest.fn(),
   getSocket: jest.fn(),
-  refreshSocketAuth: jest.fn(),
 }));
 
 jest.mock('../queries/boards.queries', () => ({
@@ -76,7 +76,13 @@ describe('useBoardSocket', () => {
   beforeEach(() => {
     mockSocket = createMockSocket();
     (getSocket as jest.Mock).mockReturnValue(mockSocket);
-    (refreshSocketAuth as jest.Mock).mockResolvedValue(undefined);
+    // В проде ensureSocketConnected обновляет ws-token и открывает socket.
+    // В unit-тесте нас интересует не транспорт, а поведение useBoardSocket,
+    // поэтому мок просто вызывает connect и возвращает тот же socket.
+    (ensureSocketConnected as jest.Mock).mockImplementation(async (socket) => {
+      socket.connect();
+      return socket;
+    });
 
     mockSetQueryData = jest.fn();
     mockInvalidateQueries = jest.fn();
@@ -92,11 +98,11 @@ describe('useBoardSocket', () => {
 
   // ─── подключение ───────────────────────────────────────────────────────────
 
-  it('should refresh socket auth before connecting on mount', async () => {
+  it('should ensure socket connection on mount', async () => {
     renderHook(() => useBoardSocket('board-1'));
 
     await waitFor(() => expect(mockSocket.connect).toHaveBeenCalledTimes(1));
-    expect(refreshSocketAuth).toHaveBeenCalledWith(mockSocket);
+    expect(ensureSocketConnected).toHaveBeenCalledWith(mockSocket);
   });
 
   it('should emit board:join immediately if socket is already connected', () => {
@@ -131,6 +137,7 @@ describe('useBoardSocket', () => {
 
     const registeredEvents = mockSocket.on.mock.calls.map(([event]) => event);
     expect(registeredEvents).toContain('connect');
+    expect(registeredEvents).toContain('disconnect');
     expect(registeredEvents).toContain('board:state');
     expect(registeredEvents).toContain('task:update');
     expect(registeredEvents).toContain('task:moved');
@@ -410,6 +417,10 @@ describe('useBoardSocket', () => {
     expect(mockSocket.off).toHaveBeenCalledWith('connect', expect.any(Function));
     expect(mockSocket.off).toHaveBeenCalledWith(
       'connect_error',
+      expect.any(Function),
+    );
+    expect(mockSocket.off).toHaveBeenCalledWith(
+      'disconnect',
       expect.any(Function),
     );
     expect(mockSocket.disconnect).not.toHaveBeenCalled();

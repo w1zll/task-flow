@@ -179,6 +179,17 @@
   "Notifications": {
     "columnMoveError": "Failed to move columns",
     "taskMoveError": "Failed to move task",
-    "taskUpdateError": "Failed to update task"
+    "taskUpdateError": "Failed to update task",
+    "taskQueued": "No connection. Change added to pending changes."
+  },
+  "PendingChanges": {
+    "title": "Unsaved changes",
+    "description": "There are {count} task changes waiting for connection. Apply them now?",
+    "apply": "Apply",
+    "applying": "Applying...",
+    "discard": "Discard",
+    "applied": "Pending changes applied",
+    "discarded": "Pending changes discarded",
+    "applyError": "Failed to apply pending changes"
   }
 }

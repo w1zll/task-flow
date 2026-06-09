@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { getSocket, refreshSocketAuth } from '../lib/socket';
+import { ensureSocketConnected, getSocket } from '../lib/socket';
 import { Board, Task } from '../api/api';
 import {
   findTaskInBoard,
@@ -23,17 +23,23 @@ export const useBoardSocket = (boardId: string) => {
       isRefreshingAuth = true;
 
       try {
-        await refreshSocketAuth(socket);
-        if (!isActive) return;
-        // Убеждаемся, что сокет не в процессе подключения
-        if (!socket.active) {
-          socket.connect();
-        }
+        await ensureSocketConnected(socket);
       } catch (error) {
         console.error('socket auth error:', error);
+        if (typeof navigator === 'undefined' || navigator.onLine !== false) {
+          scheduleReconnect();
+        }
       } finally {
         isRefreshingAuth = false;
       }
+    };
+
+    const scheduleReconnect = () => {
+      if (!isActive) return;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => {
+        void connectWithToken();
+      }, 2000);
     };
 
     const onConnect = () => {
@@ -46,21 +52,27 @@ export const useBoardSocket = (boardId: string) => {
 
     const onConnectError = (error: Error) => {
       console.error('[WS] connect_error:', error.message);
-      // Задержка перед повтором — предотвращает шторм запросов
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      reconnectTimer = setTimeout(() => {
-        void connectWithToken();
-      }, 2000);
+      scheduleReconnect();
     };
+
+    const onDisconnect = () => {
+      scheduleReconnect();
+    };
+
+    const onOnline = () => {
+      void connectWithToken();
+    };
+
     socket.on('connect', onConnect);
     socket.on('connect_error', onConnectError);
+    socket.on('disconnect', onDisconnect);
+    window.addEventListener('online', onOnline);
 
     if (socket.connected) {
       socket.emit('board:join', { boardId });
     } else {
       void connectWithToken();
     }
-    // socket.emit('board:join', { boardId });
 
     socket.on('board:state', (board: Board) => {
       if (board.id !== boardId) return;
@@ -101,7 +113,6 @@ export const useBoardSocket = (boardId: string) => {
     );
 
     socket.on('task:moved', (updatedTask: Task) => {
-      // console.log('task moved', updatedTask);
       qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
         if (!prev) return prev;
         return {
@@ -120,7 +131,6 @@ export const useBoardSocket = (boardId: string) => {
     socket.on(
       'task:reordered',
       ({ columnId, taskIds }: { columnId: string; taskIds: string[] }) => {
-        // console.log('task reordered');
         qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
           if (!prev) return prev;
           return {
@@ -143,10 +153,12 @@ export const useBoardSocket = (boardId: string) => {
       socket.emit('board:leave', { boardId });
       socket.off('connect', onConnect);
       socket.off('connect_error', onConnectError);
+      socket.off('disconnect', onDisconnect);
       socket.off('board:state');
       socket.off('task:update');
       socket.off('task:moved');
       socket.off('task:reordered');
+      window.removeEventListener('online', onOnline);
     };
   }, [boardId, qc]);
 };
