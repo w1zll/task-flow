@@ -1,9 +1,17 @@
 'use client';
 
 import { Board, Task } from '@/shared/api/api';
-import { useBoardSocket } from '@/shared/hooks/useBoardSocket';
+import {
+  emitBoardSocketMutation,
+  isBoardSocketMutationQueuedError,
+} from '@/shared/lib/boardSocketMutations';
 import { getSocket } from '@/shared/lib/socket';
-import { useDeleteTask } from '@/shared/queries/boards.queries';
+import {
+  moveTaskToColumnEndInBoard,
+  queryKeys,
+  updateTaskInBoard,
+  useDeleteTask,
+} from '@/shared/queries/boards.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
 import {
   CalendarToday,
@@ -37,6 +45,8 @@ import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSnackbar } from 'notistack';
 
 interface Props {
   board: Board;
@@ -63,11 +73,12 @@ const LABEL_PRESETS = [
 const TaskDetailModal = ({ board }: Props) => {
   const t = useTranslations('TaskDetail');
   const tPriority = useTranslations('TaskCard');
+  const tNotifications = useTranslations('Notifications');
   const boardUI = useBoardUIStore();
   const deleteTask = useDeleteTask();
+  const qc = useQueryClient();
+  const { enqueueSnackbar } = useSnackbar();
   useDayjsLocale();
-
-  const socket = getSocket();
 
   const task =
     board.columns
@@ -103,28 +114,77 @@ const TaskDetailModal = ({ board }: Props) => {
       }
     };
 
+    const socket = getSocket();
+
     socket.on('task:update', handleTaskUpdate);
 
     return () => {
       socket.off('task:update', handleTaskUpdate);
     };
-  }, [task?.id, socket]);
+  }, [task?.id]);
 
   const patch = <K extends keyof Task>(key: K, value: Task[K]) => {
     setForm((p) => ({ ...p, [key]: value }));
     setIsDirty(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!task) return;
+
+    const isCompletionChange =
+      form.isCompleted !== undefined && form.isCompleted !== task.isCompleted;
+    const previousBoard = qc.getQueryData<Board>(queryKeys.board(board.id));
+    const optimisticTask: Task = {
+      ...task,
+      ...form,
+      completedAt:
+        form.isCompleted === true
+          ? task.completedAt ?? new Date().toISOString()
+          : form.isCompleted === false
+            ? undefined
+            : task.completedAt,
+    };
+
     setIsUpdating(true);
-    socket.emit('task:update', {
-      boardId: board.id,
-      taskId: task.id,
-      changes: form,
-    });
-    setIsDirty(false);
-    // isUpdating will be reset by the 'task:update' socket event
+    qc.setQueryData(queryKeys.board(board.id), (prev: Board | undefined) =>
+      isCompletionChange && form.isCompleted
+        ? moveTaskToColumnEndInBoard(prev, optimisticTask)
+        : updateTaskInBoard(prev, optimisticTask),
+    );
+
+    try {
+      await emitBoardSocketMutation(
+        'task:update',
+        {
+          boardId: board.id,
+          taskId: task.id,
+          changes: form,
+        },
+        { boardId: board.id },
+      );
+
+      setIsDirty(false);
+      if (isCompletionChange) {
+        qc.invalidateQueries({
+          queryKey: queryKeys.boardAnalytics(board.id),
+        });
+      }
+      boardUI.closeTask();
+    } catch (error) {
+      qc.setQueryData(queryKeys.board(board.id), previousBoard);
+      enqueueSnackbar(
+        tNotifications(
+          isBoardSocketMutationQueuedError(error)
+            ? 'taskQueued'
+            : 'taskUpdateError',
+        ),
+        {
+          variant: isBoardSocketMutationQueuedError(error) ? 'info' : 'error',
+        },
+      );
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleDelete = () => {

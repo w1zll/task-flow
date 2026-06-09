@@ -2,6 +2,7 @@
 
 import AuthHydrator from '@/features/auth/AuthHydrator';
 import { defaultTimeZone } from '@/i18n/config';
+import PendingBoardMutationsPrompt from '@/shared/ui/PendingBoardMutationsPrompt';
 import { useThemeStore } from '@/shared/store/root.store';
 import type { ThemeMode } from '@/shared/store/theme.store';
 import { darkTheme, lightTheme } from '@/shared/theme/theme';
@@ -48,6 +49,7 @@ const ThemedApp = ({
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
         <AuthHydrator />
+        <PendingBoardMutationsPrompt />
         {children}
       </SnackbarProvider>
     </ThemeProvider>
