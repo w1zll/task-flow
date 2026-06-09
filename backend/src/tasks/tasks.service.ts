@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from './entities/task.entity';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Column } from '@/columns/entities/column.entity';
 import { Board } from '@/boards/entities/board.entity';
 import { BoardMember } from '@/boards/entities/board-member.entity';
@@ -280,16 +280,19 @@ export class TasksService {
     await Promise.all(updates);
   }
 
-  async getDailyAnalytics(
+  private buildCompletionAnalyticsQuery(
     userId: string,
     query: AnalyticsQueryDto,
-  ): Promise<{ period: string; count: number }[]> {
+  ): SelectQueryBuilder<Task> {
     const qb = this.taskRepo
       .createQueryBuilder('task')
       .innerJoin('task.column', 'column')
       .innerJoin('column.board', 'board')
-      .leftJoin('board.members', 'member')
+      .leftJoin('board.members', 'member', 'member.userId = :userId', {
+        userId,
+      })
       .where('task.isCompleted = true')
+      .andWhere('task.completedAt IS NOT NULL')
       .andWhere('(board.ownerId = :userId OR member.userId = :userId)', {
         userId,
       });
@@ -307,6 +310,15 @@ export class TasksService {
         toDate: new Date(query.toDate),
       });
     }
+
+    return qb;
+  }
+
+  async getDailyAnalytics(
+    userId: string,
+    query: AnalyticsQueryDto,
+  ): Promise<{ period: string; count: number }[]> {
+    const qb = this.buildCompletionAnalyticsQuery(userId, query);
 
     const raw = await qb
       .select(
@@ -324,33 +336,33 @@ export class TasksService {
     }));
   }
 
+  async getWeeklyAnalytics(
+    userId: string,
+    query: AnalyticsQueryDto,
+  ): Promise<{ period: string; count: number }[]> {
+    const qb = this.buildCompletionAnalyticsQuery(userId, query);
+
+    const raw = await qb
+      .select(
+        "TO_CHAR(DATE_TRUNC('week', task.completedAt), 'YYYY-MM-DD')",
+        'period',
+      )
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('period')
+      .orderBy('period', 'ASC')
+      .getRawMany();
+
+    return raw.map((item) => ({
+      period: item.period,
+      count: Number(item.count) || 0,
+    }));
+  }
+
   async getMonthlyAnalytics(
     userId: string,
     query: AnalyticsQueryDto,
   ): Promise<{ period: string; count: number }[]> {
-    const qb = this.taskRepo
-      .createQueryBuilder('task')
-      .innerJoin('task.column', 'column')
-      .innerJoin('column.board', 'board')
-      .leftJoin('board.members', 'member')
-      .where('task.isCompleted = true')
-      .andWhere('(board.ownerId = :userId OR member.userId = :userId)', {
-        userId,
-      });
-
-    if (query.boardId) {
-      qb.andWhere('board.id = :boardId', { boardId: query.boardId });
-    }
-    if (query.fromDate) {
-      qb.andWhere('task.completedAt >= :fromDate', {
-        fromDate: new Date(query.fromDate),
-      });
-    }
-    if (query.toDate) {
-      qb.andWhere('task.completedAt <= :toDate', {
-        toDate: new Date(query.toDate),
-      });
-    }
+    const qb = this.buildCompletionAnalyticsQuery(userId, query);
 
     const raw = await qb
       .select(
@@ -372,29 +384,7 @@ export class TasksService {
     userId: string,
     query: AnalyticsQueryDto,
   ): Promise<{ total: number; onTime: number; late: number }> {
-    const qb = this.taskRepo
-      .createQueryBuilder('task')
-      .innerJoin('task.column', 'column')
-      .innerJoin('column.board', 'board')
-      .leftJoin('board.members', 'member')
-      .where('task.isCompleted = true')
-      .andWhere('(board.ownerId = :userId OR member.userId = :userId)', {
-        userId,
-      });
-
-    if (query.boardId) {
-      qb.andWhere('board.id = :boardId', { boardId: query.boardId });
-    }
-    if (query.fromDate) {
-      qb.andWhere('task.completedAt >= :fromDate', {
-        fromDate: new Date(query.fromDate),
-      });
-    }
-    if (query.toDate) {
-      qb.andWhere('task.completedAt <= :toDate', {
-        toDate: new Date(query.toDate),
-      });
-    }
+    const qb = this.buildCompletionAnalyticsQuery(userId, query);
 
     const summary = await qb
       .select('COUNT(*)', 'total')

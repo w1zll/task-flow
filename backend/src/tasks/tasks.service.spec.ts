@@ -15,6 +15,15 @@ describe('TasksService', () => {
     update: jest.Mock;
     set: jest.Mock;
     where: jest.Mock;
+    innerJoin: jest.Mock;
+    leftJoin: jest.Mock;
+    andWhere: jest.Mock;
+    select: jest.Mock;
+    addSelect: jest.Mock;
+    groupBy: jest.Mock;
+    orderBy: jest.Mock;
+    getRawMany: jest.Mock;
+    getRawOne: jest.Mock;
     execute: jest.Mock;
   };
 
@@ -54,6 +63,15 @@ describe('TasksService', () => {
       update: jest.fn().mockReturnThis(),
       set: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
+      innerJoin: jest.fn().mockReturnThis(),
+      leftJoin: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([]),
+      getRawOne: jest.fn().mockResolvedValue({}),
       execute: jest.fn().mockResolvedValue({}),
     };
     taskRepo = {
@@ -96,6 +114,34 @@ describe('TasksService', () => {
     jest.useRealTimers();
     jest.clearAllMocks();
   });
+
+  const expectCompletionAnalyticsAccessQuery = () => {
+    expect(taskRepo.createQueryBuilder).toHaveBeenCalledWith('task');
+    expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith(
+      'task.column',
+      'column',
+    );
+    expect(mockQueryBuilder.innerJoin).toHaveBeenCalledWith(
+      'column.board',
+      'board',
+    );
+    expect(mockQueryBuilder.leftJoin).toHaveBeenCalledWith(
+      'board.members',
+      'member',
+      'member.userId = :userId',
+      { userId },
+    );
+    expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+      'task.isCompleted = true',
+    );
+    expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+      'task.completedAt IS NOT NULL',
+    );
+    expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+      '(board.ownerId = :userId OR member.userId = :userId)',
+      { userId },
+    );
+  };
 
   it('sets completedAt when completing a task without a timestamp', async () => {
     const now = new Date('2026-06-08T10:00:00.000Z');
@@ -211,6 +257,117 @@ describe('TasksService', () => {
         isCompleted: true,
         order: 2,
       }),
+    );
+  });
+
+  it('returns daily analytics with access and board/date filters', async () => {
+    mockQueryBuilder.getRawMany.mockResolvedValue([
+      { period: '2026-06-01', count: '2' },
+      { period: '2026-06-02', count: '1' },
+    ]);
+
+    const result = await service.getDailyAnalytics(userId, {
+      boardId: 'board-1',
+      fromDate: '2026-06-01',
+      toDate: '2026-06-30',
+    });
+
+    expect(result).toEqual([
+      { period: '2026-06-01', count: 2 },
+      { period: '2026-06-02', count: 1 },
+    ]);
+    expectCompletionAnalyticsAccessQuery();
+    expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+      'board.id = :boardId',
+      { boardId: 'board-1' },
+    );
+    expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+      'task.completedAt >= :fromDate',
+      { fromDate: new Date('2026-06-01') },
+    );
+    expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+      'task.completedAt <= :toDate',
+      { toDate: new Date('2026-06-30') },
+    );
+    expect(mockQueryBuilder.select).toHaveBeenCalledWith(
+      "TO_CHAR(DATE_TRUNC('day', task.completedAt), 'YYYY-MM-DD')",
+      'period',
+    );
+    expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
+      'COUNT(*)',
+      'count',
+    );
+    expect(mockQueryBuilder.groupBy).toHaveBeenCalledWith('period');
+    expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('period', 'ASC');
+  });
+
+  it('returns weekly analytics grouped by week start date', async () => {
+    mockQueryBuilder.getRawMany.mockResolvedValue([
+      { period: '2026-06-01', count: '3' },
+    ]);
+
+    const result = await service.getWeeklyAnalytics(userId, {});
+
+    expect(result).toEqual([{ period: '2026-06-01', count: 3 }]);
+    expectCompletionAnalyticsAccessQuery();
+    expect(mockQueryBuilder.select).toHaveBeenCalledWith(
+      "TO_CHAR(DATE_TRUNC('week', task.completedAt), 'YYYY-MM-DD')",
+      'period',
+    );
+    expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
+      'COUNT(*)',
+      'count',
+    );
+    expect(mockQueryBuilder.groupBy).toHaveBeenCalledWith('period');
+    expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('period', 'ASC');
+  });
+
+  it('returns monthly analytics grouped by month', async () => {
+    mockQueryBuilder.getRawMany.mockResolvedValue([
+      { period: '2026-06', count: '4' },
+    ]);
+
+    const result = await service.getMonthlyAnalytics(userId, {});
+
+    expect(result).toEqual([{ period: '2026-06', count: 4 }]);
+    expectCompletionAnalyticsAccessQuery();
+    expect(mockQueryBuilder.select).toHaveBeenCalledWith(
+      "TO_CHAR(DATE_TRUNC('month', task.completedAt), 'YYYY-MM')",
+      'period',
+    );
+    expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
+      'COUNT(*)',
+      'count',
+    );
+    expect(mockQueryBuilder.groupBy).toHaveBeenCalledWith('period');
+    expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('period', 'ASC');
+  });
+
+  it('returns completion summary analytics', async () => {
+    mockQueryBuilder.getRawOne.mockResolvedValue({
+      total: '5',
+      onTime: '3',
+      late: '2',
+    });
+
+    const result = await service.getCompletionSummary(userId, {
+      boardId: 'board-1',
+    });
+
+    expect(result).toEqual({ total: 5, onTime: 3, late: 2 });
+    expectCompletionAnalyticsAccessQuery();
+    expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+      'board.id = :boardId',
+      { boardId: 'board-1' },
+    );
+    expect(mockQueryBuilder.select).toHaveBeenCalledWith('COUNT(*)', 'total');
+    expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
+      'SUM(CASE WHEN task.dueDate IS NULL OR task.completedAt <= task.dueDate THEN 1 ELSE 0 END)',
+      'onTime',
+    );
+    expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith(
+      'SUM(CASE WHEN task.dueDate IS NOT NULL AND task.completedAt > task.dueDate THEN 1 ELSE 0 END)',
+      'late',
     );
   });
 });
