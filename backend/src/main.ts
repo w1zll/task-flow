@@ -5,6 +5,31 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { corsOrigin } from './common/cors/cors-origin';
 
+const trimTrailingSlash = (value: string) => value.replace(/\/$/, '');
+
+const withProtocol = (value: string) =>
+  /^https?:\/\//i.test(value) ? value : `https://${value}`;
+
+const getPublicBaseUrl = (port: string | number) => {
+  const explicitPublicUrl =
+    process.env.BACKEND_PUBLIC_URL ??
+    process.env.API_PUBLIC_URL ??
+    process.env.PUBLIC_URL;
+
+  if (explicitPublicUrl) {
+    return trimTrailingSlash(withProtocol(explicitPublicUrl.trim()));
+  }
+
+  const railwayUrl =
+    process.env.RAILWAY_STATIC_URL ?? process.env.RAILWAY_PUBLIC_DOMAIN;
+
+  if (railwayUrl) {
+    return trimTrailingSlash(withProtocol(railwayUrl.trim()));
+  }
+
+  return `http://localhost:${port}`;
+};
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -52,8 +77,9 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port, '0.0.0.0');
-  console.log(`TaskFlow API running on host:${port}`);
-  console.log(`Swagger docs at host:${port}/api/docs`);
-  console.log(`OpenAPI spec at host:${port}/api/docs.json`);
+  const publicBaseUrl = getPublicBaseUrl(port);
+  console.log(`TaskFlow API running on ${publicBaseUrl}`);
+  console.log(`Swagger docs at ${publicBaseUrl}/api/docs`);
+  console.log(`OpenAPI spec at ${publicBaseUrl}/api/docs.json`);
 }
 bootstrap();

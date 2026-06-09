@@ -105,6 +105,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/ws-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Получить короткоживущий токен для WebSocket */
+        get: operations["AuthController_wsToken"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/sessions": {
         parameters: {
             query?: never;
@@ -365,6 +382,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tasks/analytics/weekly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Статистика выполненных задач по неделям */
+        get: operations["TasksController_analyticsWeekly"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tasks/analytics/monthly": {
         parameters: {
             query?: never;
@@ -429,6 +463,10 @@ export interface components {
         MessageDto: {
             /** @example Успешный ответ */
             message: string;
+        };
+        WsTokenResponseDto: {
+            /** @description Short-lived JWT used only for Socket.IO authentication */
+            token: string;
         };
         SessionDto: {
             /** @example session-uuid */
@@ -542,6 +580,11 @@ export interface components {
             description?: string;
             /** @example #6366f1 */
             color?: string;
+            /**
+             * @default empty
+             * @enum {string}
+             */
+            template?: "empty" | "scrum";
         };
         UpdateBoardDto: {
             /** @example Board 1 */
@@ -550,6 +593,11 @@ export interface components {
             description?: string;
             /** @example #6366f1 */
             color?: string;
+            /**
+             * @default empty
+             * @enum {string}
+             */
+            template?: "empty" | "scrum";
         };
         CreateColumnDto: {
             /** @example To Do */
@@ -776,6 +824,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserDto"];
+                };
+            };
+        };
+    };
+    AuthController_wsToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WsTokenResponseDto"];
                 };
             };
         };
@@ -1197,6 +1264,29 @@ export interface operations {
         };
     };
     TasksController_analyticsDaily: {
+        parameters: {
+            query?: {
+                boardId?: string;
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsItemDto"][];
+                };
+            };
+        };
+    };
+    TasksController_analyticsWeekly: {
         parameters: {
             query?: {
                 boardId?: string;

@@ -4,6 +4,8 @@ import {
   useBoard,
   useBoardDailyAnalytics,
   useBoardMembers,
+  useBoardMonthlyAnalytics,
+  useBoardWeeklyAnalytics,
   useCreateColumn,
   useRevokeBoardMember,
   useShareBoard,
@@ -12,6 +14,7 @@ import {
 import { useBoardUIStore } from '@/shared/store/root.store';
 import { useAuth } from '@/features/auth/useAuth';
 import {
+  alpha,
   Box,
   Breadcrumbs,
   Button,
@@ -19,17 +22,26 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Drawer,
+  IconButton,
   Link,
   Skeleton,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
-import { useTranslations } from 'next-intl';
+import type { SxProps, Theme } from '@mui/material/styles';
+import { BarChart } from '@mui/x-charts/BarChart';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Add, ArrowBack } from '@mui/icons-material';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Add, ArrowBack, Close, QueryStats } from '@mui/icons-material';
+import dayjs from 'dayjs';
 import NextLink from 'next/link';
+import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
+import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import KanbanBoard from './KanbanBoard';
 import TaskDetailModal from './TaskDetailModal';
 
@@ -37,8 +49,34 @@ interface Props {
   boardId: string;
 }
 
+type AnalyticsPeriod = 'daily' | 'weekly' | 'monthly';
+
+const formatAnalyticsPeriod = (
+  period: string,
+  analyticsPeriod: AnalyticsPeriod,
+  locale: string,
+) => {
+  const localizedDate = dayjs(period).locale(locale);
+
+  if (analyticsPeriod === 'monthly') {
+    return dayjs(`${period}-01`)
+      .locale(locale)
+      .format('MMM YYYY');
+  }
+
+  if (analyticsPeriod === 'weekly') {
+    return `${localizedDate.format('D MMM')} - ${localizedDate
+      .add(6, 'day')
+      .format('D MMM')}`;
+  }
+
+  return localizedDate.format('D MMM');
+};
+
 const KanbanBoardPage = ({ boardId }: Props) => {
+  useDayjsLocale();
   const t = useTranslations('BoardPage');
+  const locale = useLocale();
   const router = useRouter();
   const { data: board, isLoading, isError } = useBoard(boardId);
   const createColumn = useCreateColumn();
@@ -52,19 +90,102 @@ const KanbanBoardPage = ({ boardId }: Props) => {
 
   const [newColTitle, setNewColTitle] = useState('');
   const [isShareOpen, setShareOpen] = useState(false);
+  const [isStatsOpen, setStatsOpen] = useState(false);
   const [shareEmail, setShareEmail] = useState('');
+  const [boardScrollWidth, setBoardScrollWidth] = useState(0);
+  const boardScrollRef = useRef<HTMLDivElement | null>(null);
+  const boardTopScrollRef = useRef<HTMLDivElement | null>(null);
+  const boardContentRef = useRef<HTMLDivElement | null>(null);
 
   const boardMembers = useBoardMembers(boardId);
   const shareBoard = useShareBoard();
   const revokeMember = useRevokeBoardMember();
   const summaryAnalytics = useTaskCompletionSummary(boardId);
   const dailyAnalytics = useBoardDailyAnalytics(boardId);
+  const weeklyAnalytics = useBoardWeeklyAnalytics(boardId);
+  const monthlyAnalytics = useBoardMonthlyAnalytics(boardId);
+  const [analyticsPeriod, setAnalyticsPeriod] =
+    useState<AnalyticsPeriod>('daily');
+
+  useStableBodyScrollLock(isShareOpen || isStatsOpen);
+
+  const todayCompletedCount = useMemo(() => {
+    const today = dayjs().format('YYYY-MM-DD');
+    return dailyAnalytics.data?.find((item) => item.period === today)?.count ?? 0;
+  }, [dailyAnalytics.data]);
+
+  const chartAnalytics = {
+    daily: dailyAnalytics,
+    weekly: weeklyAnalytics,
+    monthly: monthlyAnalytics,
+  }[analyticsPeriod];
+
+  const chartData = chartAnalytics.data ?? [];
+  const isChartLoading = chartAnalytics.isLoading;
+  const isChartError = chartAnalytics.isError;
+  const chartXAxisLabels = useMemo(
+    () =>
+      chartData.map((item) =>
+        formatAnalyticsPeriod(item.period, analyticsPeriod, locale),
+      ),
+    [analyticsPeriod, chartData, locale],
+  );
+
+  const analyticsPeriodLabels: Record<AnalyticsPeriod, string> = {
+    daily: t('analyticsDays'),
+    weekly: t('analyticsWeeks'),
+    monthly: t('analyticsMonths'),
+  };
 
   useEffect(() => {
     closeTask();
     setAddingColumn(false);
     setAddingTaskInColumn(null);
   }, [boardId, closeTask, setAddingColumn, setAddingTaskInColumn]);
+
+  useEffect(() => {
+    const content = boardContentRef.current;
+    if (!content) return;
+
+    const updateWidth = () => setBoardScrollWidth(content.scrollWidth);
+    updateWidth();
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(content);
+
+    return () => observer.disconnect();
+  }, [board, isAddingColumn]);
+
+  const subtleScrollbarSx: SxProps<Theme> = {
+    scrollbarWidth: 'thin',
+    scrollbarColor: (theme) =>
+      `${alpha(theme.palette.text.primary, 0.28)} transparent`,
+    '&::-webkit-scrollbar': {
+      height: 8,
+    },
+    '&::-webkit-scrollbar-track': {
+      bgcolor: 'transparent',
+    },
+    '&::-webkit-scrollbar-thumb': {
+      bgcolor: (theme) => alpha(theme.palette.text.primary, 0.24),
+      borderRadius: 999,
+      border: '2px solid transparent',
+      backgroundClip: 'content-box',
+    },
+    '&::-webkit-scrollbar-thumb:hover': {
+      bgcolor: (theme) => alpha(theme.palette.text.primary, 0.36),
+    },
+  };
+
+  const syncBoardScroll = () => {
+    if (!boardScrollRef.current || !boardTopScrollRef.current) return;
+    boardTopScrollRef.current.scrollLeft = boardScrollRef.current.scrollLeft;
+  };
+
+  const syncTopScroll = () => {
+    if (!boardScrollRef.current || !boardTopScrollRef.current) return;
+    boardScrollRef.current.scrollLeft = boardTopScrollRef.current.scrollLeft;
+  };
 
   const handleShareBoard = () => {
     if (!shareEmail.trim()) return;
@@ -138,6 +259,7 @@ const KanbanBoardPage = ({ boardId }: Props) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: { xs: 'wrap', sm: 'nowrap' },
           gap: 2,
           bgcolor: 'background.paper',
         }}
@@ -179,9 +301,26 @@ const KanbanBoardPage = ({ boardId }: Props) => {
               </Typography>
             </Breadcrumbs>
           </Box>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<Add />}
+            onClick={() => setAddingColumn(true)}
+            sx={{ flexShrink: 0 }}
+          >
+            {t('addColumn')}
+          </Button>
         </Box>
 
         <Stack direction="row" spacing={1}>
+          <Button
+            variant={isStatsOpen ? 'contained' : 'outlined'}
+            size="small"
+            startIcon={<QueryStats />}
+            onClick={() => setStatsOpen((open) => !open)}
+          >
+            {t('stats')}
+          </Button>
           <Button
             variant="outlined"
             size="small"
@@ -189,18 +328,10 @@ const KanbanBoardPage = ({ boardId }: Props) => {
           >
             {t('share')}
           </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Add />}
-            onClick={() => setAddingColumn(true)}
-          >
-            {t('addColumn')}
-          </Button>
         </Stack>
       </Box>
 
-      <Box sx={{ flex: 1, overflowX: 'auto', overflowY: 'visible', p: 2 }}>
+      <Box sx={{ flex: 1, minWidth: 0, overflowX: 'hidden', py: 1 }}>
         {isLoading ? (
           <Box sx={{ display: 'flex', gap: 2, height: '100%' }}>
             {Array.from({ length: 3 }).map((_, i) => (
@@ -210,182 +341,310 @@ const KanbanBoardPage = ({ boardId }: Props) => {
         ) : board ? (
           <Box
             sx={{
-              display: 'flex',
-              gap: 2,
-              alignItems: 'flex-start',
+              minWidth: 0,
               minHeight: '100%',
             }}
           >
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <KanbanBoard key={boardId} board={board} />
+            <Box
+              ref={boardTopScrollRef}
+              onScroll={syncTopScroll}
+              sx={{
+                ...subtleScrollbarSx,
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                height: 12,
+                mb: 1,
+              }}
+            >
+              <Box sx={{ width: boardScrollWidth, height: 1 }} />
             </Box>
             <Box
+              ref={boardScrollRef}
+              onScroll={syncBoardScroll}
               sx={{
-                width: 320,
-                flexShrink: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
+                minWidth: 0,
+                overflowX: 'auto',
+                overflowY: 'visible',
+                pb: 1.5,
+                ...subtleScrollbarSx,
               }}
             >
               <Box
+                ref={boardContentRef}
                 sx={{
-                  p: 2,
-                  bgcolor: 'background.paper',
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 2,
+                  minWidth: 'max-content',
                 }}
               >
-                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-                  {t('taskStats')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {t('onTime', { count: summaryAnalytics.data?.onTime ?? '-' })}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {t('late', { count: summaryAnalytics.data?.late ?? '-' })}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {t('today', { count: dailyAnalytics.data?.length ?? 0 })}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  p: 2,
-                  bgcolor: 'background.paper',
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                }}
-              >
-                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-                  {t('members')}
-                </Typography>
-                {boardMembers.isLoading ? (
-                  <Typography variant="body2" color="text.secondary">
-                    {t('loading')}
-                  </Typography>
-                ) : boardMembers.data && boardMembers.data.length > 0 ? (
-                  <Stack spacing={1}>
-                    {boardMembers.data
-                      .sort(({ user: userA }: any, { user: userB }: any) => {
-                        // Owner is always first
-                        if (userA.id === board?.ownerId) return -1;
-                        if (userB.id === board?.ownerId) return 1;
-                        return 0;
-                      })
-                      .map(({ user, id: memberId }: any) => {
-                        const isOwner = user.id === board?.ownerId;
-                        const isCurrentUser = user.id === currentUser?.id;
-                        return (
-                          <Box
-                            key={user.id}
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                            }}
-                          >
-                            <Typography variant="body2">
-                              {user.name}
-                              {isOwner && (
-                                <Typography
-                                  component="span"
-                                  variant="caption"
-                                  sx={{
-                                    ml: 1,
-                                    color: 'primary.main',
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  {t('ownerSuffix')}
-                                </Typography>
-                              )}
-                              {isCurrentUser && (
-                                <Typography
-                                  component="span"
-                                  variant="caption"
-                                  sx={{
-                                    ml: 1,
-                                    color: 'primary.main',
-                                  }}
-                                >
-                                  {t('youSuffix')}
-                                </Typography>
-                              )}
-                            </Typography>
-                            {currentUser?.id === board?.ownerId && !isOwner && (
-                              <Button
-                                size="small"
-                                color="error"
-                                onClick={() =>
-                                  revokeMember.mutate({
-                                    boardId,
-                                    memberId: user.id,
-                                  })
-                                }
-                              >
-                                {t('remove')}
-                              </Button>
-                            )}
-                          </Box>
-                        );
-                      })}
-                  </Stack>
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    {t('noMembers')}
-                  </Typography>
-                )}
-              </Box>
-              {isAddingColumn ? (
-                <Box
-                  sx={{
-                    width: 280,
-                    flexShrink: 0,
-                    bgcolor: 'background.paper',
-                    borderRadius: 2,
-                    p: 2,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                  }}
-                >
-                  <TextField
-                    autoFocus
-                    size="small"
-                    fullWidth
-                    placeholder={t('columnTitle')}
-                    value={newColTitle}
-                    onChange={(e) => setNewColTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleAddColumn();
-                      if (e.key === 'Escape') setAddingColumn(false);
-                    }}
-                    sx={{ mb: 1 }}
-                  />
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={handleAddColumn}
-                      disabled={createColumn.isPending}
-                    >
-                      {t('add')}
-                    </Button>
-                    <Button
-                      size="small"
-                      onClick={() => setAddingColumn(false)}
-                    >
-                      {t('cancel')}
-                    </Button>
-                  </Box>
+                <Box sx={{ flexShrink: 0 }}>
+                  <KanbanBoard key={boardId} board={board} />
                 </Box>
-              ) : null}
+                {isAddingColumn ? (
+                  <Box
+                    sx={{
+                      width: 280,
+                      flexShrink: 0,
+                      bgcolor: 'background.paper',
+                      borderRadius: 2,
+                      p: 2,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <TextField
+                      autoFocus
+                      size="small"
+                      fullWidth
+                      placeholder={t('columnTitle')}
+                      value={newColTitle}
+                      onChange={(e) => setNewColTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleAddColumn();
+                        if (e.key === 'Escape') setAddingColumn(false);
+                      }}
+                      sx={{ mb: 1 }}
+                    />
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={handleAddColumn}
+                        disabled={createColumn.isPending}
+                      >
+                        {t('add')}
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={() => setAddingColumn(false)}
+                      >
+                        {t('cancel')}
+                      </Button>
+                    </Box>
+                  </Box>
+                ) : null}
+              </Box>
             </Box>
           </Box>
         ) : null}
       </Box>
+
+      <Drawer
+        anchor="right"
+        open={isStatsOpen}
+        onClose={() => setStatsOpen(false)}
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: '100%', sm: 360 },
+              bgcolor: 'background.paper',
+              borderLeft: '1px solid',
+              borderColor: 'divider',
+            },
+          },
+        }}
+      >
+        <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              {t('stats')}
+            </Typography>
+            <IconButton size="small" onClick={() => setStatsOpen(false)}>
+              <Close fontSize="small" />
+            </IconButton>
+          </Box>
+          <Box
+            sx={{
+              p: 2,
+              bgcolor: 'background.default',
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+              {t('taskStats')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('onTime', { count: summaryAnalytics.data?.onTime ?? '-' })}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('late', { count: summaryAnalytics.data?.late ?? '-' })}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('today', { count: todayCompletedCount })}
+            </Typography>
+            <Tabs
+              value={analyticsPeriod}
+              onChange={(_, value: AnalyticsPeriod) =>
+                setAnalyticsPeriod(value)
+              }
+              variant="fullWidth"
+              sx={{ mt: 2, minHeight: 36 }}
+            >
+              {(['daily', 'weekly', 'monthly'] as const).map((period) => (
+                <Tab
+                  key={period}
+                  value={period}
+                  label={analyticsPeriodLabels[period]}
+                  sx={{ minHeight: 36, py: 0.5, fontSize: 12 }}
+                />
+              ))}
+            </Tabs>
+            <Box sx={{ height: 220, mt: 1 }}>
+              {isChartLoading ? (
+                <Skeleton variant="rounded" width="100%" height={196} />
+              ) : isChartError ? (
+                <Box
+                  sx={{
+                    height: 196,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Typography variant="body2" color="error">
+                    {t('analyticsError')}
+                  </Typography>
+                </Box>
+              ) : chartData.length > 0 ? (
+                <BarChart
+                  height={196}
+                  xAxis={[
+                    {
+                      scaleType: 'band',
+                      data: chartXAxisLabels,
+                      tickLabelStyle: { fontSize: 10 },
+                    },
+                  ]}
+                  yAxis={[{ tickMinStep: 1 }]}
+                  series={[
+                    {
+                      data: chartData.map((item) => item.count),
+                      label: t('completedTasks'),
+                    },
+                  ]}
+                  grid={{ horizontal: true }}
+                  margin={{ top: 20, right: 8, bottom: 42, left: 36 }}
+                  hideLegend
+                />
+              ) : (
+                <Box
+                  sx={{
+                    height: 196,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    {t('noAnalytics')}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+          <Box
+            sx={{
+              p: 2,
+              bgcolor: 'background.default',
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+              {t('members')}
+            </Typography>
+            {boardMembers.isLoading ? (
+              <Typography variant="body2" color="text.secondary">
+                {t('loading')}
+              </Typography>
+            ) : boardMembers.data && boardMembers.data.length > 0 ? (
+              <Stack spacing={1}>
+                {boardMembers.data
+                  .sort(({ user: userA }: any, { user: userB }: any) => {
+                    // Owner is always first
+                    if (userA.id === board?.ownerId) return -1;
+                    if (userB.id === board?.ownerId) return 1;
+                    return 0;
+                  })
+                  .map(({ user, id: memberId }: any) => {
+                    const isOwner = user.id === board?.ownerId;
+                    const isCurrentUser = user.id === currentUser?.id;
+                    return (
+                      <Box
+                        key={user.id}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <Typography variant="body2">
+                          {user.name}
+                          {isOwner && (
+                            <Typography
+                              component="span"
+                              variant="caption"
+                              sx={{
+                                ml: 1,
+                                color: 'primary.main',
+                                fontWeight: 600,
+                              }}
+                            >
+                              {t('ownerSuffix')}
+                            </Typography>
+                          )}
+                          {isCurrentUser && (
+                            <Typography
+                              component="span"
+                              variant="caption"
+                              sx={{
+                                ml: 1,
+                                color: 'primary.main',
+                              }}
+                            >
+                              {t('youSuffix')}
+                            </Typography>
+                          )}
+                        </Typography>
+                        {currentUser?.id === board?.ownerId && !isOwner && (
+                          <Button
+                            size="small"
+                            color="error"
+                            onClick={() =>
+                              revokeMember.mutate({
+                                boardId,
+                                memberId: user.id,
+                              })
+                            }
+                          >
+                            {t('remove')}
+                          </Button>
+                        )}
+                      </Box>
+                    );
+                  })}
+              </Stack>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                {t('noMembers')}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      </Drawer>
 
       <Dialog open={isShareOpen} onClose={() => setShareOpen(false)}>
         <DialogTitle>{t('shareTitle')}</DialogTitle>

@@ -7,6 +7,7 @@ import {
   Task,
   taskApi,
 } from '../api/api';
+import { ApiBody } from '../api/types';
 
 export const queryKeys = {
   boards: ['boards'] as const,
@@ -93,6 +94,7 @@ export const useCreateBoard = () => {
       title: string;
       description?: string;
       color?: string;
+      template?: ApiBody<'/api/boards', 'post'>['template'];
     }) => boardsApi.create(data).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.boards }),
   });
@@ -281,6 +283,15 @@ export const useBoardDailyAnalytics = (boardId?: string) => {
   return useQuery({
     queryKey: [...queryKeys.boardAnalytics(boardId), 'daily'],
     queryFn: () => taskApi.analytics.daily({ boardId }).then((r) => r.data),
+    enabled: !!boardId,
+    staleTime: 60_000,
+  });
+};
+
+export const useBoardWeeklyAnalytics = (boardId?: string) => {
+  return useQuery({
+    queryKey: [...queryKeys.boardAnalytics(boardId), 'weekly'],
+    queryFn: () => taskApi.analytics.weekly({ boardId }).then((r) => r.data),
     enabled: !!boardId,
     staleTime: 60_000,
   });

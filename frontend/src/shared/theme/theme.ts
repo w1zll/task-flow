@@ -1,6 +1,7 @@
 'use client';
 
 import { alpha, createTheme } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
 
 const palette = {
   primary: {
@@ -19,6 +20,40 @@ const palette = {
   warning: { main: '#f97316' },
   success: { main: '#22c55e' },
   info: { main: '#3b82f6' },
+};
+
+const createGlobalScrollbarStyles = (theme: Theme) => {
+  const thumb = alpha(theme.palette.text.primary, 0.24);
+  const thumbHover = alpha(theme.palette.text.primary, 0.36);
+  const scrollbarColor = `${alpha(theme.palette.text.primary, 0.28)} transparent`;
+
+  return {
+    html: {
+      overflowY: 'scroll',
+      scrollbarWidth: 'thin',
+      scrollbarColor,
+    },
+    '*': {
+      scrollbarWidth: 'thin',
+      scrollbarColor,
+    },
+    '*::-webkit-scrollbar': {
+      width: 8,
+      height: 8,
+    },
+    '*::-webkit-scrollbar-track': {
+      backgroundColor: 'transparent',
+    },
+    '*::-webkit-scrollbar-thumb': {
+      backgroundColor: thumb,
+      borderRadius: 999,
+      border: '2px solid transparent',
+      backgroundClip: 'content-box',
+    },
+    '*::-webkit-scrollbar-thumb:hover': {
+      backgroundColor: thumbHover,
+    },
+  };
 };
 
 export const lightTheme = createTheme({
@@ -41,6 +76,14 @@ export const lightTheme = createTheme({
   },
   shape: { borderRadius: 12 },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: createGlobalScrollbarStyles,
+    },
+    MuiModal: {
+      defaultProps: {
+        disableScrollLock: true,
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {

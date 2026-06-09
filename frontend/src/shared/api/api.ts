@@ -56,7 +56,7 @@ export const boardsApi = {
   getOne: (id: string) =>
     apiClient.get<ApiResponse<'/api/boards/{id}', 'get'>>(`/api/boards/${id}`),
 
-  create: (data: { title: string; description?: string; color?: string }) =>
+  create: (data: ApiBody<'/api/boards', 'post'>) =>
     apiClient.post<ApiResponse<'/api/boards', 'post'>>('/api/boards', data),
 
   update: (id: string, data: Partial<Board>) =>
@@ -149,6 +149,15 @@ export const taskApi = {
     }) =>
       apiClient.get<ApiResponse<'/api/tasks/analytics/daily', 'get'>>(
         '/api/tasks/analytics/daily',
+        { params: query },
+      ),
+    weekly: (query?: {
+      boardId?: string;
+      fromDate?: string;
+      toDate?: string;
+    }) =>
+      apiClient.get<ApiResponse<'/api/tasks/analytics/weekly', 'get'>>(
+        '/api/tasks/analytics/weekly',
         { params: query },
       ),
     monthly: (query?: {

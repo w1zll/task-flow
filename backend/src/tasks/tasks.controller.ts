@@ -103,6 +103,16 @@ export class TasksController {
     return this.tasksService.getDailyAnalytics(user.id, query);
   }
 
+  @Get('analytics/weekly')
+  @ApiOperation({ summary: 'Статистика выполненных задач по неделям' })
+  @ApiOkResponse({ type: AnalyticsItemDto, isArray: true })
+  analyticsWeekly(
+    @Query() query: AnalyticsQueryDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.getWeeklyAnalytics(user.id, query);
+  }
+
   @Get('analytics/monthly')
   @ApiOperation({ summary: 'Статистика выполненных задач по месяцам' })
   @ApiOkResponse({ type: AnalyticsItemDto, isArray: true })
