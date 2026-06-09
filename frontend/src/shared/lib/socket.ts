@@ -99,9 +99,7 @@ export const ensureSocketConnected = async (
         reject(new Error('Socket connection timeout'));
       }, timeoutMs);
 
-      if (!targetSocket.active) {
-        targetSocket.connect();
-      }
+      targetSocket.connect();
     } catch (error) {
       cleanup();
       reject(error);

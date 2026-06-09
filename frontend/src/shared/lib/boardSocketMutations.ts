@@ -117,7 +117,6 @@ export const emitBoardSocketMutation = async (
     if (!queueOnFailure) throw error;
 
     discardBufferedSocketWrites(socket);
-    socket.disconnect();
 
     const mutation = queueMutation(event, payload, boardId);
     throw new BoardSocketMutationQueuedError(mutation);
@@ -133,7 +132,6 @@ export const applyPendingBoardMutation = async (
     if (!(error instanceof BoardSocketAckError)) {
       const socket = getSocket();
       discardBufferedSocketWrites(socket);
-      socket.disconnect();
     }
     throw error;
   }
