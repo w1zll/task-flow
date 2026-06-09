@@ -6,6 +6,7 @@ import {
   useCreateBoard,
   useDeleteBoard,
 } from '@/shared/queries/boards.queries';
+import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { Add, Delete, MoreVert, ViewKanban } from '@mui/icons-material';
 import {
   Box,
@@ -22,12 +23,17 @@ import {
   MenuItem,
   Skeleton,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
+
+type BoardTemplate = 'empty' | 'scrum';
 
 const BOARD_COLORS = [
   '#6366f1',
@@ -42,6 +48,7 @@ const BOARD_COLORS = [
 
 const BoardsClientPage = () => {
   const t = useTranslations('Boards');
+  const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
   const { data: boards, isLoading } = useBoards();
   const createBoard = useCreateBoard();
@@ -52,18 +59,27 @@ const BoardsClientPage = () => {
     title: '',
     description: '',
     color: BOARD_COLORS[0],
+    template: 'empty' as BoardTemplate,
   });
   const [menuAnchor, setMenuAnchor] = useState<{
     el: HTMLElement;
     board: Board;
   } | null>(null);
 
+  useStableBodyScrollLock(createOpen);
+
   const handleCreate = () => {
     if (!form.title.trim()) return;
     createBoard.mutate(form, {
-      onSuccess: () => {
+      onSuccess: (board) => {
         setCreateOpen(false);
-        setForm({ title: '', description: '', color: BOARD_COLORS[0] });
+        setForm({
+          title: '',
+          description: '',
+          color: BOARD_COLORS[0],
+          template: 'empty',
+        });
+        router.push(`/boards/${board.id}`);
       },
     });
   };
@@ -270,6 +286,32 @@ const BoardsClientPage = () => {
               setForm((p) => ({ ...p, description: e.target.value }))
             }
           />
+          <Box>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mb: 1, display: 'block' }}
+            >
+              {t('template')}
+            </Typography>
+            <ToggleButtonGroup
+              exclusive
+              fullWidth
+              size="small"
+              value={form.template}
+              onChange={(_, template: BoardTemplate | null) => {
+                if (template) setForm((p) => ({ ...p, template }));
+              }}
+              aria-label={t('template')}
+            >
+              <ToggleButton value="empty">
+                {t('templateEmpty')}
+              </ToggleButton>
+              <ToggleButton value="scrum">
+                {t('templateScrum')}
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
           <Box>
             <Typography
               variant="caption"

@@ -580,6 +580,11 @@ export interface components {
             description?: string;
             /** @example #6366f1 */
             color?: string;
+            /**
+             * @default empty
+             * @enum {string}
+             */
+            template?: "empty" | "scrum";
         };
         UpdateBoardDto: {
             /** @example Board 1 */
@@ -588,6 +593,11 @@ export interface components {
             description?: string;
             /** @example #6366f1 */
             color?: string;
+            /**
+             * @default empty
+             * @enum {string}
+             */
+            template?: "empty" | "scrum";
         };
         CreateColumnDto: {
             /** @example To Do */

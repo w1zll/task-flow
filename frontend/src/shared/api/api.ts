@@ -56,7 +56,7 @@ export const boardsApi = {
   getOne: (id: string) =>
     apiClient.get<ApiResponse<'/api/boards/{id}', 'get'>>(`/api/boards/${id}`),
 
-  create: (data: { title: string; description?: string; color?: string }) =>
+  create: (data: ApiBody<'/api/boards', 'post'>) =>
     apiClient.post<ApiResponse<'/api/boards', 'post'>>('/api/boards', data),
 
   update: (id: string, data: Partial<Board>) =>

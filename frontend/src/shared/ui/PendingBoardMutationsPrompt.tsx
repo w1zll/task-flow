@@ -4,6 +4,7 @@ import {
   applyPendingBoardMutation,
 } from '@/shared/lib/boardSocketMutations';
 import { getSocket, isSocketReady } from '@/shared/lib/socket';
+import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { queryKeys } from '@/shared/queries/boards.queries';
 import { usePendingBoardMutationsStore } from '@/shared/store/root.store';
 import {
@@ -30,6 +31,8 @@ const PendingBoardMutationsPrompt = () => {
   const { enqueueSnackbar } = useSnackbar();
   const canApplyPendingChanges =
     isSocketAvailable && mutations.length > 0 && isSocketReady();
+
+  useStableBodyScrollLock(canApplyPendingChanges);
 
   useEffect(() => {
     const socket = getSocket();

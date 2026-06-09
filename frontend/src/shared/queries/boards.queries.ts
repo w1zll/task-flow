@@ -7,6 +7,7 @@ import {
   Task,
   taskApi,
 } from '../api/api';
+import { ApiBody } from '../api/types';
 
 export const queryKeys = {
   boards: ['boards'] as const,
@@ -93,6 +94,7 @@ export const useCreateBoard = () => {
       title: string;
       description?: string;
       color?: string;
+      template?: ApiBody<'/api/boards', 'post'>['template'];
     }) => boardsApi.create(data).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.boards }),
   });
