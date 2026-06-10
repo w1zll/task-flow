@@ -51,8 +51,8 @@
         "desc": "Offline task edits and moves are queued safely, then can be applied or discarded after the connection returns."
       },
       "ssr": {
-        "title": "SSR + ISR",
-        "desc": "Next.js (App Router) app with Server Side Rendering (SSR) and Incremental Static Regeneration (ISR)."
+        "title": "Rendering & cache",
+        "desc": "Protected boards render dynamically with TanStack hydration, while shared board content uses tagged cache revalidated by the backend."
       }
     },
     "footer": "TaskFlow - Next.js · NestJS · Zustand · Material UI"
