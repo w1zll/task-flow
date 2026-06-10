@@ -106,10 +106,11 @@ Swagger на http://localhost:3001/api/docs
 
 | Страница             | Стратегия                  | Причина                                              |
 | -------------------- | -------------------------- | ---------------------------------------------------- |
-| `/`                  | **SSG** (`force-static`)   | Маркетинговая страница без динамических данных       |
-| `/boards`            | **SSR**                    | Защищена авторизацией, персональный список           |
-| `/boards/[id]`       | **ISR** (`revalidate: 60`) | Данные доски кэшируются на 60 сек, пересборка в фоне |
-| Страницы авторизации | **Client**                 | SEO не нужен                                         |
+| `/`                  | **Dynamic shell / static-ready content** | Локаль определяется из cookies/headers; приватных данных нет |
+| `/auth/login`, `/auth/register` | **Dynamic shell / client-first form** | Метаданные серверные, auth flow клиентский |
+| `/boards`            | **Dynamic SSR + TanStack hydration** (`force-dynamic`, `revalidate = 0`, `force-no-store`) | Персональный список грузится на сервере без cache и гидрируется в клиент |
+| `/boards/[id]`       | **Dynamic SSR + tagged board cache** (`force-dynamic`, `revalidate = 0`, `force-no-store`) | Access check no-store; общий контент доски кешируется по `board-content:{id}` и инвалидируется backend webhook |
+| `/profile`           | **Dynamic SSR shell** (`force-dynamic`, `revalidate = 0`, `force-no-store`) | Защищенные session data |
 
 ### Управление состоянием
 
@@ -235,7 +236,7 @@ export default function Page() {
 10. **Real-time синхронизация** — WebSocket события для изменения позиции и перемещения задач между колонками.
 11. **Мультиязычность** — поддержка English и Russian с автоматической детекцией локали через cookies и Accept-Language.
 12. **Zustand + TanStack Query** — чёткое разделение серверного стейта и UI-стейта.
-13. **ISR** — `/boards/[id]` отдаётся из кэша, пересобирается каждые 60 сек без downtime.
+13. **Protected route freshness** — `/boards` рендерится динамически и грузит персональный список без cache; `/boards/[id]` делает no-store access check и кеширует общий контент доски по tag, который инвалидирует backend.
 14. **FSD-архитектура** — слои `app / widgets / features / shared` с однонаправленными зависимостями.
 15. **NestJS guards + decorators** — `@UseGuards(JwtAuthGuard)` + `@CurrentUser()`.
 16. **Swagger/OpenAPI** — интерактивная документация API на `/api/docs` с возможностью тестирования.

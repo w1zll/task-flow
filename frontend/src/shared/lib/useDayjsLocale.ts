@@ -5,8 +5,11 @@ import { useLayoutEffect } from 'react';
 
 export function useDayjsLocale() {
   const locale = useLocale();
+  const dayjsLocale = locale === 'ru' ? 'ru' : 'en';
 
   useLayoutEffect(() => {
-    dayjs.locale(locale === 'ru' ? 'ru' : 'en');
-  }, [locale]);
+    dayjs.locale(dayjsLocale);
+  }, [dayjsLocale]);
+
+  return dayjsLocale;
 }

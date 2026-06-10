@@ -1,6 +1,13 @@
 import { getLocale, getMessages } from 'next-intl/server';
 import { cookies } from 'next/headers';
+import { DM_Sans } from 'next/font/google';
 import Providers from './Providers';
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
 
 type ThemeMode = 'light' | 'dark';
 
@@ -19,19 +26,9 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body>
+      <body className={dmSans.className}>
         <Providers
           messages={messages}
           locale={locale}

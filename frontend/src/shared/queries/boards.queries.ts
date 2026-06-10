@@ -8,13 +8,35 @@ import {
   taskApi,
 } from '../api/api';
 import { ApiBody } from '../api/types';
+import type { QueryClient } from '@tanstack/react-query';
+import { queryKeys } from './board-query-keys';
 
-export const queryKeys = {
-  boards: ['boards'] as const,
-  board: (id: string) => ['boards', id] as const,
-  tasks: (columnId: string) => ['tasks', columnId] as const,
-  boardAnalytics: (id?: string) => ['boards', id, 'analytics'] as const,
+export { queryKeys };
+
+const invalidateBoards = (qc: QueryClient) => {
+  void qc.invalidateQueries({ queryKey: queryKeys.boards });
 };
+
+const invalidateBoard = (qc: QueryClient, boardId: string) => {
+  void qc.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+};
+
+const invalidateBoardWithList = (qc: QueryClient, boardId: string) => {
+  void qc.invalidateQueries({ queryKey: queryKeys.boards });
+  void qc.invalidateQueries({ queryKey: queryKeys.board(boardId) });
+};
+
+const invalidateBoardMembers = (qc: QueryClient, boardId: string) => {
+  void qc.invalidateQueries({ queryKey: queryKeys.boardMembers(boardId) });
+};
+
+const invalidateBoardAnalytics = (qc: QueryClient, boardId: string) => {
+  void qc.invalidateQueries({ queryKey: queryKeys.boardAnalytics(boardId) });
+};
+
+const hasCompletionChange = (data: Partial<Task>) =>
+  Object.prototype.hasOwnProperty.call(data, 'isCompleted') ||
+  Object.prototype.hasOwnProperty.call(data, 'completedAt');
 
 export const findTaskInBoard = (board: Board | undefined, taskId: string) =>
   board?.columns
@@ -73,16 +95,15 @@ export const useBoards = () => {
   });
 };
 
-export const useBoard = (id: string) => {
+export const useBoard = (id: string, initialData?: Board) => {
   return useQuery({
     queryKey: queryKeys.board(id),
     queryFn: async () => {
       const res = await boardsApi.getOne(id);
-      console.log('REQUEST ID:', id, 'RESPONSE ID:', res.data.id);
       return res.data;
-      // return boardsApi.getOne(id).then((r) => r.data);
     },
-    staleTime: 0,
+    initialData,
+    staleTime: 30_000,
     enabled: !!id,
   });
 };
@@ -94,9 +115,9 @@ export const useCreateBoard = () => {
       title: string;
       description?: string;
       color?: string;
-      template?: ApiBody<'/api/boards', 'post'>['template'];
+      template: ApiBody<'/api/boards', 'post'>['template'];
     }) => boardsApi.create(data).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.boards }),
+    onSuccess: () => invalidateBoards(qc),
   });
 };
 
@@ -105,10 +126,7 @@ export const useUpdateBoard = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<Board> }) =>
       boardsApi.update(id, data).then((r) => r.data),
-    onSuccess: (_, { id }) => {
-      qc.invalidateQueries({ queryKey: queryKeys.boards });
-      qc.invalidateQueries({ queryKey: queryKeys.board(id) });
-    },
+    onSuccess: (_, { id }) => invalidateBoardWithList(qc, id),
   });
 };
 
@@ -116,7 +134,10 @@ export const useDeleteBoard = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => boardsApi.remove(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.boards }),
+    onSuccess: (_, id) => {
+      invalidateBoards(qc);
+      qc.removeQueries({ queryKey: queryKeys.board(id) });
+    },
   });
 };
 
@@ -125,8 +146,7 @@ export const useCreateColumn = () => {
   return useMutation({
     mutationFn: (data: { title: string; boardId: string }) =>
       columnsApi.create(data).then((r) => r.data),
-    onSuccess: (col) =>
-      qc.invalidateQueries({ queryKey: queryKeys.board(col.boardId) }),
+    onSuccess: (col) => invalidateBoard(qc, col.boardId),
   });
 };
 
@@ -142,8 +162,7 @@ export const useUpdateColumn = () => {
       data: Partial<BoardColumn>;
       boardId: string;
     }) => columnsApi.update(id, data).then((r) => r.data),
-    onSuccess: (_, { boardId }) =>
-      qc.invalidateQueries({ queryKey: queryKeys.board(boardId) }),
+    onSuccess: (_, { boardId }) => invalidateBoard(qc, boardId),
   });
 };
 
@@ -152,8 +171,7 @@ export const useDeleteColumn = () => {
   return useMutation({
     mutationFn: ({ id, boardId }: { id: string; boardId: string }) =>
       columnsApi.remove(id).then(() => boardId),
-    onSuccess: (boardId) =>
-      qc.invalidateQueries({ queryKey: queryKeys.board(boardId) }),
+    onSuccess: (boardId) => invalidateBoard(qc, boardId),
   });
 };
 
@@ -181,8 +199,7 @@ export const useCreateTask = () => {
           assigneeId: data.assigneeId,
         })
         .then((r) => r.data),
-    onSuccess: (_, { boardId }) =>
-      qc.invalidateQueries({ queryKey: queryKeys.board(boardId) }),
+    onSuccess: (_, { boardId }) => invalidateBoard(qc, boardId),
   });
 };
 
@@ -198,8 +215,12 @@ export const useUpdateTask = () => {
       data: Partial<Task>;
       boardId: string;
     }) => taskApi.update(id, data).then((r) => r.data),
-    onSuccess: (_, { boardId }) =>
-      qc.invalidateQueries({ queryKey: queryKeys.board(boardId) }),
+    onSuccess: (_, { boardId, data }) => {
+      invalidateBoard(qc, boardId);
+      if (hasCompletionChange(data)) {
+        invalidateBoardAnalytics(qc, boardId);
+      }
+    },
   });
 };
 
@@ -217,8 +238,7 @@ export const useMoveTask = () => {
       order: number;
       boardId: string;
     }) => taskApi.move(id, { columnId, order }).then((r) => r.data),
-    onSuccess: (_, { boardId }) =>
-      qc.invalidateQueries({ queryKey: queryKeys.board(boardId) }),
+    onSuccess: (_, { boardId }) => invalidateBoard(qc, boardId),
   });
 };
 
@@ -227,8 +247,7 @@ export const useDeleteTask = () => {
   return useMutation({
     mutationFn: ({ id, boardId }: { id: string; boardId: string }) =>
       taskApi.remove(id).then(() => boardId),
-    onSuccess: (boardId) =>
-      qc.invalidateQueries({ queryKey: queryKeys.board(boardId) }),
+    onSuccess: (boardId) => invalidateBoard(qc, boardId),
   });
 };
 
@@ -247,15 +266,15 @@ export const useShareBoard = () => {
         })
         .then((r) => r.data),
     onSuccess: (_, { boardId }) => {
-      qc.invalidateQueries({ queryKey: queryKeys.board(boardId) });
-      qc.invalidateQueries({ queryKey: ['boards'] });
+      invalidateBoardWithList(qc, boardId);
+      invalidateBoardMembers(qc, boardId);
     },
   });
 };
 
 export const useBoardMembers = (boardId: string) => {
   return useQuery({
-    queryKey: ['boards', boardId, 'members'],
+    queryKey: queryKeys.boardMembers(boardId),
     queryFn: () => boardsApi.getMembers(boardId).then((r) => r.data),
     enabled: !!boardId,
     staleTime: 60_000,
@@ -273,8 +292,8 @@ export const useRevokeBoardMember = () => {
       memberId: string;
     }) => boardsApi.revokeMember(boardId, memberId),
     onSuccess: (_, { boardId }) => {
-      qc.invalidateQueries({ queryKey: queryKeys.board(boardId) });
-      qc.invalidateQueries({ queryKey: ['boards', boardId, 'members'] });
+      invalidateBoardWithList(qc, boardId);
+      invalidateBoardMembers(qc, boardId);
     },
   });
 };

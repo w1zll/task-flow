@@ -11,6 +11,8 @@ import {
   useShareBoard,
   useTaskCompletionSummary,
 } from '@/shared/queries/boards.queries';
+import { Board } from '@/shared/api/api';
+import { queryKeys } from '@/shared/queries/board-query-keys';
 import { useBoardUIStore } from '@/shared/store/root.store';
 import { useAuth } from '@/features/auth/useAuth';
 import {
@@ -34,7 +36,7 @@ import {
 } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Add, ArrowBack, Close, QueryStats } from '@mui/icons-material';
@@ -44,9 +46,11 @@ import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import KanbanBoard from './KanbanBoard';
 import TaskDetailModal from './TaskDetailModal';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Props {
   boardId: string;
+  initialBoard?: Board;
 }
 
 type AnalyticsPeriod = 'daily' | 'weekly' | 'monthly';
@@ -59,9 +63,7 @@ const formatAnalyticsPeriod = (
   const localizedDate = dayjs(period).locale(locale);
 
   if (analyticsPeriod === 'monthly') {
-    return dayjs(`${period}-01`)
-      .locale(locale)
-      .format('MMM YYYY');
+    return dayjs(`${period}-01`).locale(locale).format('MMM YYYY');
   }
 
   if (analyticsPeriod === 'weekly') {
@@ -73,12 +75,18 @@ const formatAnalyticsPeriod = (
   return localizedDate.format('D MMM');
 };
 
-const KanbanBoardPage = ({ boardId }: Props) => {
-  useDayjsLocale();
+const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
+  const dayjsLocale = useDayjsLocale();
   const t = useTranslations('BoardPage');
-  const locale = useLocale();
   const router = useRouter();
-  const { data: board, isLoading, isError } = useBoard(boardId);
+  const qc = useQueryClient();
+  const [isInitialBoardSynced, setInitialBoardSynced] = useState(!initialBoard);
+  const {
+    data: queriedBoard,
+    isLoading,
+    isError,
+  } = useBoard(boardId, initialBoard);
+  const board = isInitialBoardSynced ? queriedBoard : initialBoard;
   const createColumn = useCreateColumn();
   const isAddingColumn = useBoardUIStore((state) => state.isAddingColumn);
   const closeTask = useBoardUIStore((state) => state.closeTask);
@@ -109,9 +117,18 @@ const KanbanBoardPage = ({ boardId }: Props) => {
 
   useStableBodyScrollLock(isShareOpen || isStatsOpen);
 
+  useEffect(() => {
+    if (!initialBoard) return;
+
+    qc.setQueryData(queryKeys.board(boardId), initialBoard);
+    setInitialBoardSynced(true);
+  }, [boardId, initialBoard, qc]);
+
   const todayCompletedCount = useMemo(() => {
     const today = dayjs().format('YYYY-MM-DD');
-    return dailyAnalytics.data?.find((item) => item.period === today)?.count ?? 0;
+    return (
+      dailyAnalytics.data?.find((item) => item.period === today)?.count ?? 0
+    );
   }, [dailyAnalytics.data]);
 
   const chartAnalytics = {
@@ -126,9 +143,9 @@ const KanbanBoardPage = ({ boardId }: Props) => {
   const chartXAxisLabels = useMemo(
     () =>
       chartData.map((item) =>
-        formatAnalyticsPeriod(item.period, analyticsPeriod, locale),
+        formatAnalyticsPeriod(item.period, analyticsPeriod, dayjsLocale),
       ),
-    [analyticsPeriod, chartData, locale],
+    [analyticsPeriod, chartData, dayjsLocale],
   );
 
   const analyticsPeriodLabels: Record<AnalyticsPeriod, string> = {

@@ -51,8 +51,8 @@
         "desc": "Офлайн-изменения задач и перемещения безопасно попадают в очередь, а после восстановления связи их можно применить или отменить."
       },
       "ssr": {
-        "title": "SSR + ISR",
-        "desc": "Next.js (App Router) приложение с Server Side Rendering (SSR) и Incremental Static Regeneration (ISR)."
+        "title": "Рендеринг и кэш",
+        "desc": "Защищенные доски рендерятся динамически с гидрацией TanStack, а общий контент доски кешируется по тегу и инвалидируется бэкендом."
       }
     },
     "footer": "TaskFlow - Next.js · NestJS · Zustand · Material UI"

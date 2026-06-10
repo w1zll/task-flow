@@ -11,6 +11,7 @@ import {
 import { BoardMember } from './entities/board-member.entity';
 import { Board } from './entities/board.entity';
 import { BoardsService } from './boards.service';
+import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
 
 describe('BoardsService', () => {
   let service: BoardsService;
@@ -82,6 +83,10 @@ describe('BoardsService', () => {
         {
           provide: getRepositoryToken(Task),
           useValue: taskRepo,
+        },
+        {
+          provide: FrontendCacheService,
+          useValue: { revalidateBoard: jest.fn() },
         },
       ],
     }).compile();

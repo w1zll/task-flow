@@ -584,7 +584,7 @@ export interface components {
              * @default empty
              * @enum {string}
              */
-            template?: "empty" | "scrum";
+            template: "empty" | "scrum";
         };
         UpdateBoardDto: {
             /** @example Board 1 */
@@ -597,7 +597,7 @@ export interface components {
              * @default empty
              * @enum {string}
              */
-            template?: "empty" | "scrum";
+            template: "empty" | "scrum";
         };
         CreateColumnDto: {
             /** @example To Do */
