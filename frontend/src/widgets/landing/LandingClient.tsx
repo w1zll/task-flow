@@ -2,8 +2,8 @@
 
 import {
   Analytics,
+  Cached,
   DashboardCustomize,
-  Devices,
   DragIndicator,
   FactCheck,
   PendingActions,
@@ -82,8 +82,8 @@ const LandingClient = () => {
       desc: t('features.pendingChanges.desc'),
     },
     {
-      id: 'ssr',
-      icon: <Devices />,
+      id: 'rendering-cache',
+      icon: <Cached />,
       title: t('features.ssr.title'),
       desc: t('features.ssr.desc'),
     },

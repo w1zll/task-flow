@@ -7,6 +7,7 @@ import { Column } from '@/columns/entities/column.entity';
 import { User } from '@/users/entities/user.entity';
 import { Task, TaskPriority } from './entities/task.entity';
 import { TasksService } from './tasks.service';
+import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -103,6 +104,10 @@ describe('TasksService', () => {
         {
           provide: getRepositoryToken(User),
           useValue: {},
+        },
+        {
+          provide: FrontendCacheService,
+          useValue: { revalidateBoard: jest.fn() },
         },
       ],
     }).compile();

@@ -17,6 +17,7 @@ import {
   UpdateTaskDto,
   AnalyticsQueryDto,
 } from './dto/task.dto';
+import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
 
 @Injectable()
 export class TasksService {
@@ -35,6 +36,8 @@ export class TasksService {
 
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+
+    private readonly frontendCache: FrontendCacheService,
   ) {}
 
   private async verifyColumnAccess(
@@ -129,7 +132,9 @@ export class TasksService {
             : undefined,
     });
 
-    return this.taskRepo.save(task);
+    const saved = await this.taskRepo.save(task);
+    await this.frontendCache.revalidateBoard(column.boardId);
+    return saved;
   }
 
   async update(id: string, dto: UpdateTaskDto, userId: string): Promise<Task> {
@@ -184,12 +189,16 @@ export class TasksService {
       task.dueDate = dueDate ? new Date(dueDate) : null;
     }
 
-    return this.taskRepo.save(task);
+    const saved = await this.taskRepo.save(task);
+    await this.frontendCache.revalidateBoard(task.column.boardId);
+    return saved;
   }
 
   async remove(id: string, userId: string): Promise<void> {
     const task = await this.verifyTaskAccess(id, userId);
+    const boardId = task.column.boardId;
     await this.taskRepo.remove(task);
+    await this.frontendCache.revalidateBoard(boardId);
   }
 
   async move(id: string, dto: MoveTaskDto, userId: string): Promise<Task> {
@@ -262,10 +271,12 @@ export class TasksService {
       { columnId: dto.columnId, order: dto.order },
     );
 
-    return this.taskRepo.findOne({
+    const updated = await this.taskRepo.findOne({
       where: { id: task.id },
       relations: ['column', 'column.board', 'assignee'],
     });
+    await this.frontendCache.revalidateBoard(updated.column.boardId);
+    return updated;
   }
 
   async reorder(
@@ -278,6 +289,10 @@ export class TasksService {
       this.taskRepo.update({ id: taskId, columnId }, { order: index }),
     );
     await Promise.all(updates);
+    const column = await this.columnRepo.findOne({ where: { id: columnId } });
+    if (column) {
+      await this.frontendCache.revalidateBoard(column.boardId);
+    }
   }
 
   private buildCompletionAnalyticsQuery(

@@ -57,7 +57,7 @@ const TaskCard = ({
   isPending = false,
   isDragDisabled = false,
 }: Props) => {
-  useDayjsLocale();
+  const dayjsLocale = useDayjsLocale();
   const openTask = useBoardUIStore((state) => state.openTask);
   const t = useTranslations('TaskCard');
   const tNotifications = useTranslations('Notifications');
@@ -406,7 +406,7 @@ const TaskCard = ({
               {task.dueDate && (
                 <Tooltip
                   title={t('deadlineTooltip', {
-                    date: dayjs(task.dueDate).format('D MMM'),
+                    date: dayjs(task.dueDate).locale(dayjsLocale).format('D MMM'),
                   })}
                 >
                   <Box
@@ -427,7 +427,7 @@ const TaskCard = ({
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {dayjs(task.dueDate).format('D MMM')}
+                      {dayjs(task.dueDate).locale(dayjsLocale).format('D MMM')}
                     </Typography>
                   </Box>
                 </Tooltip>

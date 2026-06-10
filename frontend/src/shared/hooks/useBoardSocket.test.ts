@@ -24,7 +24,9 @@ jest.mock('../queries/boards.queries', () => ({
       ...board,
       columns: board.columns?.map((column: any) => {
         const tasks = column.tasks ?? [];
-        const currentTask = tasks.find((task: any) => task.id === updatedTask.id);
+        const currentTask = tasks.find(
+          (task: any) => task.id === updatedTask.id,
+        );
 
         if (!currentTask) return column;
 
@@ -221,9 +223,7 @@ describe('useBoardSocket', () => {
         },
       ],
     };
-    mockSetQueryData.mockImplementation((_key, updater) =>
-      updater(prevBoard),
-    );
+    mockSetQueryData.mockImplementation((_key, updater) => updater(prevBoard));
     renderHook(() => useBoardSocket('board-1'));
 
     const handler = mockSocket.on.mock.calls.find(
@@ -289,8 +289,7 @@ describe('useBoardSocket', () => {
       'task-1',
     ]);
     expect(result.columns[0].tasks.map((task: any) => task.order)).toEqual([
-      0,
-      1,
+      0, 1,
     ]);
   });
 
@@ -414,7 +413,10 @@ describe('useBoardSocket', () => {
     expect(mockSocket.off).toHaveBeenCalledWith('task:update');
     expect(mockSocket.off).toHaveBeenCalledWith('task:moved');
     expect(mockSocket.off).toHaveBeenCalledWith('task:reordered');
-    expect(mockSocket.off).toHaveBeenCalledWith('connect', expect.any(Function));
+    expect(mockSocket.off).toHaveBeenCalledWith(
+      'connect',
+      expect.any(Function),
+    );
     expect(mockSocket.off).toHaveBeenCalledWith(
       'connect_error',
       expect.any(Function),
