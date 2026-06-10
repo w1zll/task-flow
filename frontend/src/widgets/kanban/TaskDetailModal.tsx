@@ -79,7 +79,7 @@ const TaskDetailModal = ({ board }: Props) => {
   const deleteTask = useDeleteTask();
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
-  useDayjsLocale();
+  const dayjsLocale = useDayjsLocale();
   useStableBodyScrollLock(!!boardUI.openTaskId);
 
   const task =
@@ -441,10 +441,12 @@ const TaskDetailModal = ({ board }: Props) => {
 
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Typography variant="caption" color="text.secondary">
-            {t('created')} {dayjs(task.createdAt).format('D MMM')}
+            {t('created')}{' '}
+            {dayjs(task.createdAt).locale(dayjsLocale).format('D MMM')}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {t('updated')} {dayjs(task.updatedAt).format('D MMM')}
+            {t('updated')}{' '}
+            {dayjs(task.updatedAt).locale(dayjsLocale).format('D MMM')}
           </Typography>
         </Box>
       </DialogContent>

@@ -19,6 +19,7 @@ import {
   getWelcomeBoardText,
 } from './board-templates';
 import { AppLocale } from '@/common/locale/request-locale';
+import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
 
 @Injectable()
 export class BoardsService {
@@ -37,6 +38,8 @@ export class BoardsService {
 
     @InjectRepository(Task)
     private readonly taskRepo: Repository<Task>,
+
+    private readonly frontendCache: FrontendCacheService,
   ) {}
 
   async findAll(userId: string): Promise<Board[]> {
@@ -143,12 +146,15 @@ export class BoardsService {
   ): Promise<Board> {
     const board = await this.findOne(id, userId);
     Object.assign(board, dto);
-    return this.boardRepo.save(board);
+    const saved = await this.boardRepo.save(board);
+    await this.frontendCache.revalidateBoard(id);
+    return saved;
   }
 
   async remove(id: string, userId: string): Promise<void> {
     const board = await this.findOne(id, userId);
     await this.boardRepo.remove(board);
+    await this.frontendCache.revalidateBoard(id);
   }
 
   async share(
@@ -182,10 +188,12 @@ export class BoardsService {
 
     const member = this.memberRepo.create({ boardId, userId: target.id });
     const saved = await this.memberRepo.save(member);
-    return this.memberRepo.findOne({
+    const boardMember = await this.memberRepo.findOne({
       where: { id: saved.id },
       relations: ['user'],
     });
+    await this.frontendCache.revalidateBoard(boardId);
+    return boardMember;
   }
 
   async listMembers(boardId: string, userId: string): Promise<BoardMember[]> {
@@ -236,6 +244,7 @@ export class BoardsService {
     }
 
     await this.memberRepo.remove(member);
+    await this.frontendCache.revalidateBoard(boardId);
   }
 
   private async isBoardMember(

@@ -14,6 +14,7 @@ import { UsersModule } from './users/users.module';
 import { BoardsModule } from './boards/boards.module';
 import { ColumnsModule } from './columns/columns.module';
 import { TasksModule } from './tasks/tasks.module';
+import { FrontendCacheModule } from './common/frontend-cache/frontend-cache.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { TasksModule } from './tasks/tasks.module';
     }),
 
     AuthModule,
+    FrontendCacheModule,
     UsersModule,
     BoardsModule,
     ColumnsModule,

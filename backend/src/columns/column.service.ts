@@ -12,6 +12,7 @@ import {
   ReorderColumnsDto,
   UpdateColumnDto,
 } from './dto/column.dto';
+import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
 
 @Injectable()
 export class ColumnsService {
@@ -21,6 +22,8 @@ export class ColumnsService {
 
     @InjectRepository(Board)
     private readonly boardRepo: Repository<Board>,
+
+    private readonly frontendCache: FrontendCacheService,
   ) {}
 
   private async verifyBoardOwner(
@@ -43,7 +46,9 @@ export class ColumnsService {
       dto.order = count;
     }
     const column = this.columnRepo.create(dto);
-    return this.columnRepo.save(column);
+    const saved = await this.columnRepo.save(column);
+    await this.frontendCache.revalidateBoard(dto.boardId);
+    return saved;
   }
 
   async update(
@@ -55,14 +60,18 @@ export class ColumnsService {
     if (!column) throw new NotFoundException('Колонка не найдена');
     await this.verifyBoardOwner(column.boardId, userId);
     Object.assign(column, dto);
-    return this.columnRepo.save(column);
+    const saved = await this.columnRepo.save(column);
+    await this.frontendCache.revalidateBoard(column.boardId);
+    return saved;
   }
 
   async remove(id: string, userId: string): Promise<void> {
     const column = await this.columnRepo.findOne({ where: { id } });
     if (!column) throw new NotFoundException('Колонка не найдена');
     await this.verifyBoardOwner(column.boardId, userId);
+    const { boardId } = column;
     await this.columnRepo.remove(column);
+    await this.frontendCache.revalidateBoard(boardId);
   }
 
   async reorder(
@@ -76,5 +85,6 @@ export class ColumnsService {
       this.columnRepo.update({ id: colId, boardId }, { order: index }),
     );
     await Promise.all(updates);
+    await this.frontendCache.revalidateBoard(boardId);
   }
 }
