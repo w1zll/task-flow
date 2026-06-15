@@ -19,7 +19,20 @@ const fetchBoardApi = async <T>(
   init: RequestInit & { next?: NextFetchRequestConfig } = {},
 ): Promise<T> => {
   const response = await fetch(`${apiBaseUrl}${path}`, init);
+  handleBoardApiResponse(response);
 
+  return response.json() as Promise<T>;
+};
+
+const fetchBoardApiNoContent = async (
+  path: string,
+  init: RequestInit & { next?: NextFetchRequestConfig } = {},
+): Promise<void> => {
+  const response = await fetch(`${apiBaseUrl}${path}`, init);
+  handleBoardApiResponse(response);
+};
+
+const handleBoardApiResponse = (response: Response) => {
   if (response.status === 401) {
     redirect('/auth/login');
   }
@@ -31,8 +44,6 @@ const fetchBoardApi = async <T>(
   if (!response.ok) {
     throw new Error(`Board API request failed: ${response.status}`);
   }
-
-  return response.json() as Promise<T>;
 };
 
 export const getBoardsForCurrentUser = async () => {
@@ -46,11 +57,11 @@ export const getBoardsForCurrentUser = async () => {
   });
 };
 
-const getFreshBoardForCurrentUser = async (
+const ensureBoardAccessForCurrentUser = async (
   boardId: string,
   cookieHeader: string,
 ) => {
-  return fetchBoardApi<Board>(`/api/boards/${boardId}`, {
+  return fetchBoardApiNoContent(`/api/boards/${boardId}/access`, {
     cache: 'no-store',
     headers: {
       cookie: cookieHeader,
@@ -80,6 +91,6 @@ const getCachedBoardContent = async (
 export const getBoardForCurrentUser = async (boardId: string) => {
   const cookieHeader = await getCookieHeader();
 
-  await getFreshBoardForCurrentUser(boardId, cookieHeader);
+  await ensureBoardAccessForCurrentUser(boardId, cookieHeader);
   return getCachedBoardContent(boardId, cookieHeader);
 };
