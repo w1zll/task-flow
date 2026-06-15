@@ -79,6 +79,19 @@ export class BoardsService {
     return board;
   }
 
+  async ensureAccess(id: string, userId: string): Promise<void> {
+    const board = await this.boardRepo.findOne({
+      where: { id },
+      select: { id: true, ownerId: true },
+    });
+
+    if (!board) throw new NotFoundException('Доска не найдена');
+    if (board.ownerId === userId) return;
+    if (await this.isBoardMember(id, userId)) return;
+
+    throw new ForbiddenException('Доступ запрещен');
+  }
+
   async create(
     dto: CreateBoardDto,
     userId: string,

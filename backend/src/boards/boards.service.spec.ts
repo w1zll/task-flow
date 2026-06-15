@@ -1,4 +1,5 @@
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
 import { Column } from '@/columns/entities/column.entity';
@@ -16,6 +17,7 @@ import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.ser
 describe('BoardsService', () => {
   let service: BoardsService;
   let boardRepo: jest.Mocked<Partial<Repository<Board>>>;
+  let memberRepo: jest.Mocked<Partial<Repository<BoardMember>>>;
   let columnRepo: jest.Mocked<Partial<Repository<Column>>>;
   let taskRepo: jest.Mocked<Partial<Repository<Task>>>;
 
@@ -36,12 +38,16 @@ describe('BoardsService', () => {
   beforeEach(async () => {
     boardRepo = {
       create: jest.fn((data) => data as Board),
+      findOne: jest.fn(),
       save: jest.fn(async (board: Board) =>
         createBoard({
           ...board,
           id: board.id ?? 'board-1',
         }),
       ),
+    };
+    memberRepo = {
+      count: jest.fn(async () => 0),
     };
     columnRepo = {
       create: jest.fn((data) => data as Column[]),
@@ -70,7 +76,7 @@ describe('BoardsService', () => {
         },
         {
           provide: getRepositoryToken(BoardMember),
-          useValue: {},
+          useValue: memberRepo,
         },
         {
           provide: getRepositoryToken(User),
@@ -138,6 +144,50 @@ describe('BoardsService', () => {
     expect(board.columns.map((column) => column.title)).toEqual(
       getScrumColumnTitles('ru'),
     );
+  });
+
+  it('allows board owner access without member lookup', async () => {
+    boardRepo.findOne!.mockResolvedValue(createBoard());
+
+    await expect(
+      service.ensureAccess('board-1', 'user-1'),
+    ).resolves.toBeUndefined();
+
+    expect(boardRepo.findOne).toHaveBeenCalledWith({
+      where: { id: 'board-1' },
+      select: { id: true, ownerId: true },
+    });
+    expect(memberRepo.count).not.toHaveBeenCalled();
+  });
+
+  it('allows board member access', async () => {
+    boardRepo.findOne!.mockResolvedValue(createBoard());
+    memberRepo.count!.mockResolvedValue(1);
+
+    await expect(
+      service.ensureAccess('board-1', 'user-2'),
+    ).resolves.toBeUndefined();
+
+    expect(memberRepo.count).toHaveBeenCalledWith({
+      where: { boardId: 'board-1', userId: 'user-2' },
+    });
+  });
+
+  it('throws not found when checking access to a missing board', async () => {
+    boardRepo.findOne!.mockResolvedValue(null);
+
+    await expect(
+      service.ensureAccess('missing-board', 'user-1'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('throws forbidden when user cannot access board', async () => {
+    boardRepo.findOne!.mockResolvedValue(createBoard());
+    memberRepo.count!.mockResolvedValue(0);
+
+    await expect(
+      service.ensureAccess('board-1', 'user-2'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('creates a welcome board with completed tasks relative to registration', async () => {

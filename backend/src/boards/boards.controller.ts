@@ -50,6 +50,14 @@ export class BoardsController {
     return this.boardsService.findAll(user.id);
   }
 
+  @Get(':id/access')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Проверить доступ к доске' })
+  @ApiNoContentResponse()
+  async checkAccess(@Param('id') id: string, @CurrentUser() user: User) {
+    await this.boardsService.ensureAccess(id, user.id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Получить доску по id' })
   @ApiOkResponse({ type: BoardResponseDto })
