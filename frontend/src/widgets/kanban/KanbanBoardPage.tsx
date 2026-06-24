@@ -643,7 +643,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                             onClick={() =>
                               revokeMember.mutate({
                                 boardId,
-                                memberId: user.id,
+                                memberId,
                               })
                             }
                           >

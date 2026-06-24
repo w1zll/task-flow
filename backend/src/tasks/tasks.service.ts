@@ -123,7 +123,7 @@ export class TasksService {
 
     const task = this.taskRepo.create({
       ...dto,
-      dueDate: dto.dueDate ? new Date(dto.dueDate) : new Date(),
+      dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
       completedAt:
         dto.isCompleted && !dto.completedAt
           ? new Date()
