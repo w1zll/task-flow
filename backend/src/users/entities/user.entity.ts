@@ -32,6 +32,12 @@ export class User {
   @Column({ nullable: true, length: 500 })
   avatar: string;
 
+  @Column({ nullable: true, length: 30 })
+  avatarProvider: string;
+
+  @Column({ nullable: true, length: 500 })
+  avatarStorageKey: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

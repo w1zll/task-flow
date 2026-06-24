@@ -19,6 +19,25 @@ export class RegisterDto {
   password: string;
 }
 
+export class RegisterRequestDto extends RegisterDto {
+  @ApiProperty({
+    type: 'string',
+    format: 'binary',
+    required: false,
+    description: 'Optional PNG, JPEG, or WebP avatar up to 2 MB',
+  })
+  avatar?: string;
+}
+
+export class AvatarUploadDto {
+  @ApiProperty({
+    type: 'string',
+    format: 'binary',
+    description: 'PNG, JPEG, or WebP avatar up to 2 MB',
+  })
+  avatar: string;
+}
+
 export class LoginDto {
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()

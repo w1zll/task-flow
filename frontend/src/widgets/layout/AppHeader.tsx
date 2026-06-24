@@ -6,7 +6,6 @@ import type { ThemeMode } from '@/shared/store/theme.store';
 import { DarkMode, LightMode, Logout, ViewKanban } from '@mui/icons-material';
 import {
   AppBar,
-  Avatar,
   Box,
   Button,
   Divider,
@@ -23,6 +22,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import NextLink from 'next/link';
 import LocaleSwitcher from './LocaleSwitcher';
+import UserAvatar from '@/shared/ui/UserAvatar';
 
 const AppHeader = ({
   initialThemeMode,
@@ -38,8 +38,6 @@ const AppHeader = ({
     : initialThemeMode;
   const isDark = themeMode === 'dark';
 
-  const initials = user?.name ? user.name[0].toUpperCase() : '?';
-
   return (
     <AppBar
       position="sticky"
@@ -51,8 +49,14 @@ const AppHeader = ({
         color: 'text.primary',
       }}
     >
-      <Toolbar sx={{ gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <Toolbar sx={{ gap: 1, px: { xs: 1, sm: 2 } }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: { xs: 1, sm: 4 },
+          }}
+        >
           <Link
             component={NextLink}
             href="/"
@@ -87,6 +91,7 @@ const AppHeader = ({
 
           <Link
             sx={{
+              display: { xs: 'none', sm: 'inline-flex' },
               fontWeight: 600,
               textDecoration: 'none',
               fontSize: 18,
@@ -125,17 +130,11 @@ const AppHeader = ({
                   onClick={(e) => setAnchorEl(e.currentTarget)}
                   sx={{ p: 0.5 }}
                 >
-                  <Avatar
-                    sx={{
-                      width: 34,
-                      height: 34,
-                      bgcolor: 'primary.main',
-                      fontSize: 13,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {initials}
-                  </Avatar>
+                  <UserAvatar
+                    name={user.name}
+                    src={user.avatar}
+                    size={34}
+                  />
                 </IconButton>
               </Tooltip>
             )

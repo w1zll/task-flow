@@ -1,6 +1,6 @@
 'use client';
 
-import { authApi } from '@/shared/api/api';
+import { authApi, type RegisterPayload } from '@/shared/api/api';
 import { useAuthStore } from '@/shared/store/root.store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -28,7 +28,7 @@ export const useAuth = () => {
   });
 
   const registerMutation = useMutation({
-    mutationFn: (data: { email: string; name: string; password: string }) =>
+    mutationFn: (data: RegisterPayload) =>
       authApi.register(data).then((r) => r.data),
     onSuccess: ({ user }) => {
       queryClient.clear();

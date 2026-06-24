@@ -19,7 +19,6 @@ import {
   Delete,
   Flag,
   Label,
-  Person,
   Save,
 } from '@mui/icons-material';
 import {
@@ -48,6 +47,7 @@ import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
+import UserAvatar from '@/shared/ui/UserAvatar';
 
 interface Props {
   board: Board;
@@ -110,8 +110,14 @@ const TaskDetailModal = ({ board }: Props) => {
   }, [task?.id]);
 
   useEffect(() => {
-    const handleTaskUpdate = (updatedTask: Task) => {
-      if (updatedTask.id === task?.id) {
+    const handleTaskUpdate = ({
+      boardId,
+      task: updatedTask,
+    }: {
+      boardId: string;
+      task: Task;
+    }) => {
+      if (boardId === board.id && updatedTask.id === task?.id) {
         setIsUpdating(false);
       }
     };
@@ -123,7 +129,7 @@ const TaskDetailModal = ({ board }: Props) => {
     return () => {
       socket.off('task:update', handleTaskUpdate);
     };
-  }, [task?.id]);
+  }, [board.id, task?.id]);
 
   const patch = <K extends keyof Task>(key: K, value: Task[K]) => {
     setForm((p) => ({ ...p, [key]: value }));
@@ -355,13 +361,31 @@ const TaskDetailModal = ({ board }: Props) => {
               }}
               renderValue={(val) => {
                 const member = board.members?.find((m) => m.userId === val);
-                return member?.user?.name ?? t('unassigned');
+                return member ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <UserAvatar
+                      name={member.user.name}
+                      src={member.user.avatar}
+                      size={24}
+                    />
+                    <span>{member.user.name}</span>
+                  </Box>
+                ) : (
+                  t('unassigned')
+                );
               }}
             >
               <MenuItem value="">{t('unassigned')}</MenuItem>
               {board.members?.map((member) => (
                 <MenuItem key={member.id} value={member.userId}>
-                  {member.user.name}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <UserAvatar
+                      name={member.user.name}
+                      src={member.user.avatar}
+                      size={24}
+                    />
+                    <span>{member.user.name}</span>
+                  </Box>
                 </MenuItem>
               ))}
             </Select>

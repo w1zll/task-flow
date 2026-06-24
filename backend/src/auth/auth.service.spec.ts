@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { BoardsService } from '@/boards/boards.service';
+import { AvatarService } from '@/users/avatar.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -17,11 +18,13 @@ describe('AuthService', () => {
   let jwtService: JwtService;
   let configService: ConfigService;
   let boardsService: BoardsService;
+  let avatarService: AvatarService;
 
   const mockUserRepo = {
     findOne: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
+    remove: jest.fn(),
   };
 
   const mockRefreshTokenRepo = {
@@ -50,6 +53,13 @@ describe('AuthService', () => {
     createWelcomeBoard: jest.fn(),
   };
 
+  const mockAvatarService = {
+    initializeAvatar: jest.fn(),
+    updateAvatar: jest.fn(),
+    resetAvatar: jest.fn(),
+    removeStoredAvatar: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -74,6 +84,10 @@ describe('AuthService', () => {
           provide: BoardsService,
           useValue: mockBoardsService,
         },
+        {
+          provide: AvatarService,
+          useValue: mockAvatarService,
+        },
       ],
     }).compile();
 
@@ -85,6 +99,7 @@ describe('AuthService', () => {
     jwtService = module.get<JwtService>(JwtService);
     configService = module.get<ConfigService>(ConfigService);
     boardsService = module.get<BoardsService>(BoardsService);
+    avatarService = module.get<AvatarService>(AvatarService);
   });
 
   afterEach(() => {
@@ -104,16 +119,28 @@ describe('AuthService', () => {
         name: dto.name,
         password: 'hashed',
         createdAt: new Date('2026-06-10T12:00:00.000Z'),
+        avatar: undefined,
+      };
+      const initializedUser = {
+        ...user,
+        avatar:
+          'https://api.dicebear.com/10.x/glyphs/svg?seed=1',
       };
       const tokenPair = {
         accessToken: 'access',
         refreshToken: 'refresh',
-        user: { id: '1', email: dto.email, name: dto.name, avatar: undefined },
+        user: {
+          id: '1',
+          email: dto.email,
+          name: dto.name,
+          avatar: initializedUser.avatar,
+        },
       };
 
       mockUserRepo.findOne.mockResolvedValue(null);
       mockUserRepo.create.mockReturnValue(user);
       mockUserRepo.save.mockResolvedValue(user);
+      mockAvatarService.initializeAvatar.mockResolvedValue(initializedUser);
       mockJwtService.sign
         .mockReturnValueOnce('access')
         .mockReturnValueOnce('refresh');
@@ -128,6 +155,10 @@ describe('AuthService', () => {
       });
       expect(mockUserRepo.create).toHaveBeenCalledWith(dto);
       expect(mockUserRepo.save).toHaveBeenCalledWith(user);
+      expect(avatarService.initializeAvatar).toHaveBeenCalledWith(
+        user,
+        undefined,
+      );
       expect(boardsService.createWelcomeBoard).toHaveBeenCalledWith(
         user.id,
         user.createdAt,
@@ -153,6 +184,7 @@ describe('AuthService', () => {
       mockUserRepo.findOne.mockResolvedValue(null);
       mockUserRepo.create.mockReturnValue(user);
       mockUserRepo.save.mockResolvedValue(user);
+      mockAvatarService.initializeAvatar.mockResolvedValue(user);
       mockJwtService.sign
         .mockReturnValueOnce('access')
         .mockReturnValueOnce('refresh');
@@ -166,6 +198,46 @@ describe('AuthService', () => {
         user.id,
         user.createdAt,
         'ru',
+      );
+    });
+
+    it('should pass an uploaded avatar to the avatar service', async () => {
+      const dto: RegisterDto = {
+        email: 'avatar@example.com',
+        password: 'password',
+        name: 'Avatar User',
+      };
+      const user = {
+        id: 'avatar-user',
+        ...dto,
+        createdAt: new Date('2026-06-10T12:00:00.000Z'),
+      };
+      const avatarFile = {
+        buffer: Buffer.from('avatar'),
+        mimetype: 'image/png',
+        originalname: 'avatar.png',
+        size: 6,
+      };
+
+      mockUserRepo.findOne.mockResolvedValue(null);
+      mockUserRepo.create.mockReturnValue(user);
+      mockUserRepo.save.mockResolvedValue(user);
+      mockAvatarService.initializeAvatar.mockResolvedValue({
+        ...user,
+        avatar: '/api/storage/avatars/avatar.png',
+      });
+      mockBoardsService.createWelcomeBoard.mockResolvedValue({});
+      mockJwtService.sign
+        .mockReturnValueOnce('access')
+        .mockReturnValueOnce('refresh');
+      mockConfigService.get.mockReturnValue('secret');
+      mockRefreshTokenRepo.save.mockResolvedValue({});
+
+      await service.register(dto, 'en', avatarFile);
+
+      expect(avatarService.initializeAvatar).toHaveBeenCalledWith(
+        user,
+        avatarFile,
       );
     });
 

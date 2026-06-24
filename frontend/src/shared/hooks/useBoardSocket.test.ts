@@ -175,7 +175,7 @@ describe('useBoardSocket', () => {
     const handler = mockSocket.on.mock.calls.find(
       ([e]) => e === 'task:update',
     )![1];
-    handler(updatedTask);
+    handler({ boardId: 'board-1', task: updatedTask });
 
     // проверяем что updater-функция корректно обновляет задачу
     const updaterFn = mockSetQueryData.mock.calls[0][1];
@@ -199,7 +199,10 @@ describe('useBoardSocket', () => {
     const handler = mockSocket.on.mock.calls.find(
       ([e]) => e === 'task:update',
     )![1];
-    handler({ id: 'task-1', title: 'X', column: { boardId: 'board-1' } });
+    handler({
+      boardId: 'board-1',
+      task: { id: 'task-1', title: 'X' },
+    });
 
     const updaterFn = mockSetQueryData.mock.calls[0][1];
     expect(updaterFn(undefined)).toBeUndefined();
@@ -230,12 +233,14 @@ describe('useBoardSocket', () => {
       ([e]) => e === 'task:update',
     )![1];
     handler({
-      id: 'task-1',
-      title: 'Task',
-      columnId: 'col-1',
-      column: { boardId: 'board-1' },
-      order: 0,
-      isCompleted: true,
+      boardId: 'board-1',
+      task: {
+        id: 'task-1',
+        title: 'Task',
+        columnId: 'col-1',
+        order: 0,
+        isCompleted: true,
+      },
     });
 
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
@@ -250,12 +255,14 @@ describe('useBoardSocket', () => {
       ([e]) => e === 'task:update',
     )![1];
     handler({
-      id: 'task-1',
-      title: 'Task 1',
-      columnId: 'col-1',
-      column: { boardId: 'board-1' },
-      order: 2,
-      isCompleted: true,
+      boardId: 'board-1',
+      task: {
+        id: 'task-1',
+        title: 'Task 1',
+        columnId: 'col-1',
+        order: 2,
+        isCompleted: true,
+      },
     });
 
     const updaterFn = mockSetQueryData.mock.calls[0][1];
@@ -302,7 +309,7 @@ describe('useBoardSocket', () => {
     const handler = mockSocket.on.mock.calls.find(
       ([e]) => e === 'task:moved',
     )![1];
-    handler(movedTask);
+    handler({ boardId: 'board-1', task: movedTask });
 
     const updaterFn = mockSetQueryData.mock.calls[0][1];
     const prevBoard = {
@@ -326,7 +333,7 @@ describe('useBoardSocket', () => {
     const handler = mockSocket.on.mock.calls.find(
       ([e]) => e === 'task:moved',
     )![1];
-    handler(movedTask);
+    handler({ boardId: 'board-1', task: movedTask });
 
     const updaterFn = mockSetQueryData.mock.calls[0][1];
     const prevBoard = {
@@ -352,7 +359,11 @@ describe('useBoardSocket', () => {
   it('should reorder tasks in column on task:reordered event', () => {
     renderHook(() => useBoardSocket('board-1'));
 
-    const payload = { columnId: 'col-1', taskIds: ['task-2', 'task-1'] };
+    const payload = {
+      boardId: 'board-1',
+      columnId: 'col-1',
+      taskIds: ['task-2', 'task-1'],
+    };
     const handler = mockSocket.on.mock.calls.find(
       ([e]) => e === 'task:reordered',
     )![1];
@@ -380,7 +391,11 @@ describe('useBoardSocket', () => {
   it('should not affect other columns on task:reordered', () => {
     renderHook(() => useBoardSocket('board-1'));
 
-    const payload = { columnId: 'col-1', taskIds: ['task-1'] };
+    const payload = {
+      boardId: 'board-1',
+      columnId: 'col-1',
+      taskIds: ['task-1'],
+    };
     const handler = mockSocket.on.mock.calls.find(
       ([e]) => e === 'task:reordered',
     )![1];
@@ -401,6 +416,36 @@ describe('useBoardSocket', () => {
   });
 
   // ─── cleanup ───────────────────────────────────────────────────────────────
+
+  it('should ignore task events from a previously joined board', () => {
+    renderHook(() => useBoardSocket('board-2'));
+
+    const updateHandler = mockSocket.on.mock.calls.find(
+      ([event]) => event === 'task:update',
+    )![1];
+    const moveHandler = mockSocket.on.mock.calls.find(
+      ([event]) => event === 'task:moved',
+    )![1];
+    const reorderHandler = mockSocket.on.mock.calls.find(
+      ([event]) => event === 'task:reordered',
+    )![1];
+
+    updateHandler({
+      boardId: 'board-1',
+      task: { id: 'task-1', title: 'Stale update' },
+    });
+    moveHandler({
+      boardId: 'board-1',
+      task: { id: 'task-1', columnId: 'column-1', order: 0 },
+    });
+    reorderHandler({
+      boardId: 'board-1',
+      columnId: 'column-1',
+      taskIds: ['task-1'],
+    });
+
+    expect(mockSetQueryData).not.toHaveBeenCalled();
+  });
 
   it('should emit board:leave and remove all listeners on unmount', () => {
     const { unmount } = renderHook(() => useBoardSocket('board-1'));

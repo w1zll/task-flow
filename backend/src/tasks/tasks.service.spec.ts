@@ -12,6 +12,7 @@ import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.ser
 describe('TasksService', () => {
   let service: TasksService;
   let taskRepo: jest.Mocked<Partial<Repository<Task>>>;
+  let columnRepo: jest.Mocked<Partial<Repository<Column>>>;
   let mockQueryBuilder: {
     update: jest.Mock;
     set: jest.Mock;
@@ -78,8 +79,12 @@ describe('TasksService', () => {
     taskRepo = {
       findOne: jest.fn(),
       count: jest.fn().mockResolvedValue(1),
+      create: jest.fn((data) => data as Task),
       createQueryBuilder: jest.fn(() => mockQueryBuilder as any),
       save: jest.fn(async (task: Task) => task),
+    };
+    columnRepo = {
+      findOne: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -91,7 +96,7 @@ describe('TasksService', () => {
         },
         {
           provide: getRepositoryToken(Column),
-          useValue: {},
+          useValue: columnRepo,
         },
         {
           provide: getRepositoryToken(Board),
@@ -147,6 +152,35 @@ describe('TasksService', () => {
       { userId },
     );
   };
+
+  it('creates a task without a due date as null', async () => {
+    columnRepo.findOne!.mockResolvedValue({
+      id: 'column-1',
+      boardId: 'board-1',
+      board: {
+        id: 'board-1',
+        ownerId: userId,
+        members: [],
+      },
+    } as Column);
+
+    const result = await service.create(
+      {
+        title: 'Task without deadline',
+        columnId: 'column-1',
+      },
+      userId,
+    );
+
+    expect(taskRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Task without deadline',
+        columnId: 'column-1',
+        dueDate: null,
+      }),
+    );
+    expect(result.dueDate).toBeNull();
+  });
 
   it('sets completedAt when completing a task without a timestamp', async () => {
     const now = new Date('2026-06-08T10:00:00.000Z');

@@ -15,6 +15,8 @@ import { LoginDto, RegisterDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
 import { BoardsService } from '@/boards/boards.service';
 import { AppLocale } from '@/common/locale/request-locale';
+import { AvatarService } from '@/users/avatar.service';
+import { AvatarUploadFile } from '@/storage/storage.types';
 
 @Injectable()
 export class AuthService {
@@ -30,23 +32,45 @@ export class AuthService {
 
     @Inject(forwardRef(() => BoardsService))
     private readonly boardsService: BoardsService,
+
+    private readonly avatarService: AvatarService,
   ) {}
 
-  async register(dto: RegisterDto, locale: AppLocale = 'en') {
+  async register(
+    dto: RegisterDto,
+    locale: AppLocale = 'en',
+    avatarFile?: AvatarUploadFile,
+  ) {
     const existing = await this.userRepo.findOne({
       where: { email: dto.email },
     });
     if (existing) {
       throw new ConflictException('Пользователь с таким email уже существует');
     }
-    const user = await this.userRepo.save(this.userRepo.create(dto));
-    await this.boardsService.createWelcomeBoard(
-      user.id,
-      user.createdAt ?? new Date(),
-      locale,
-    );
+    let user = await this.userRepo.save(this.userRepo.create(dto));
+
+    try {
+      user = await this.avatarService.initializeAvatar(user, avatarFile);
+      await this.boardsService.createWelcomeBoard(
+        user.id,
+        user.createdAt ?? new Date(),
+        locale,
+      );
+    } catch (error) {
+      await this.avatarService.removeStoredAvatar(user).catch(() => undefined);
+      await this.userRepo.remove(user);
+      throw error;
+    }
 
     return this.generateTokenPair(user);
+  }
+
+  updateAvatar(user: User, avatarFile: AvatarUploadFile) {
+    return this.avatarService.updateAvatar(user, avatarFile);
+  }
+
+  resetAvatar(user: User) {
+    return this.avatarService.resetAvatar(user);
   }
 
   async login(dto: LoginDto) {

@@ -82,13 +82,13 @@ export const useBoardSocket = (boardId: string) => {
     socket.on(
       'task:update',
       (
-        updatedTask: Task & {
-          column: {
-            boardId: string;
-          };
+        payload: {
+          boardId: string;
+          task: Task;
         },
       ) => {
-        if (updatedTask.column.boardId !== boardId) return;
+        if (payload.boardId !== boardId) return;
+        const updatedTask = payload.task;
         let didCompletionChange = false;
 
         qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
@@ -112,7 +112,9 @@ export const useBoardSocket = (boardId: string) => {
       },
     );
 
-    socket.on('task:moved', (updatedTask: Task) => {
+    socket.on('task:moved', (payload: { boardId: string; task: Task }) => {
+      if (payload.boardId !== boardId) return;
+      const updatedTask = payload.task;
       qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
         if (!prev) return prev;
         return {
@@ -130,7 +132,16 @@ export const useBoardSocket = (boardId: string) => {
 
     socket.on(
       'task:reordered',
-      ({ columnId, taskIds }: { columnId: string; taskIds: string[] }) => {
+      ({
+        boardId: eventBoardId,
+        columnId,
+        taskIds,
+      }: {
+        boardId: string;
+        columnId: string;
+        taskIds: string[];
+      }) => {
+        if (eventBoardId !== boardId) return;
         qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
           if (!prev) return prev;
           return {

@@ -78,6 +78,13 @@
       "name": "Full name",
       "email": "Email",
       "password": "Password",
+      "chooseAvatar": "Choose avatar",
+      "changeAvatar": "Change avatar",
+      "avatarHint": "Optional PNG, JPEG or WebP, up to 2 MB. A default avatar is created if skipped.",
+      "avatarError": {
+        "size": "The avatar must not exceed 2 MB.",
+        "type": "Choose a PNG, JPEG or WebP image."
+      },
       "submit": "Register",
       "loading": "Loading...",
       "haveAccount": "Already have an account?",
@@ -138,8 +145,23 @@
     "cancel": "Cancel"
   },
   "ProfilePage": {
-    "title": "Active sessions",
-    "description": "See your devices and end unused sessions.",
+    "profileTitle": "Profile",
+    "profileDescription": "Manage your account and active sessions.",
+    "avatarTitle": "Profile avatar",
+    "avatarDescription": "Use an image that helps teammates recognize you.",
+    "changeAvatar": "Change avatar",
+    "resetAvatar": "Use default",
+    "avatarSaving": "Saving...",
+    "avatarHint": "PNG, JPEG or WebP, up to 2 MB.",
+    "avatarUpdated": "Avatar updated",
+    "avatarReset": "Default avatar restored",
+    "avatarUpdateError": "Failed to update avatar",
+    "avatarError": {
+      "size": "The avatar must not exceed 2 MB.",
+      "type": "Choose a PNG, JPEG or WebP image."
+    },
+    "sessionsTitle": "Active sessions",
+    "sessionsDescription": "See your devices and end unused sessions.",
     "deviceFallback": "Device",
     "ipUnknown": "IP unknown",
     "browserUnknown": "Unknown browser",
