@@ -49,9 +49,18 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { boardId: string },
   ) {
     const userId = (client as any).user.sub;
-    await client.join(`board-${payload.boardId}`);
     const board = await this.boardService.findOne(payload.boardId, userId);
+    await client.join(`board-${payload.boardId}`);
     client.emit('board:state', board);
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('board:leave')
+  async handleLeaveBoard(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { boardId: string },
+  ) {
+    await client.leave(`board-${payload.boardId}`);
   }
 
   @UseGuards(WsJwtGuard)
@@ -70,7 +79,10 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
         userId,
       );
 
-      this.server.to(`board-${payload.boardId}`).emit('task:update', updated);
+      this.server.to(`board-${payload.boardId}`).emit('task:update', {
+        boardId: payload.boardId,
+        task: updated,
+      });
       ack?.({ ok: true });
     } catch (e) {
       const message =
@@ -105,7 +117,10 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
         userId,
       );
 
-      this.server.to(`board-${payload.boardId}`).emit('task:moved', updated);
+      this.server.to(`board-${payload.boardId}`).emit('task:moved', {
+        boardId: payload.boardId,
+        task: updated,
+      });
       ack?.({ ok: true });
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Failed to move task';
@@ -132,6 +147,7 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.tasksService.reorder(payload, payload.columnId, userId);
 
       this.server.to(`board-${payload.boardId}`).emit('task:reordered', {
+        boardId: payload.boardId,
         columnId: payload.columnId,
         taskIds: payload.taskIds,
       });

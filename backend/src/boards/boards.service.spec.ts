@@ -48,6 +48,8 @@ describe('BoardsService', () => {
     };
     memberRepo = {
       count: jest.fn(async () => 0),
+      findOne: jest.fn(),
+      remove: jest.fn(),
     };
     columnRepo = {
       create: jest.fn((data) => data as Column[]),
@@ -188,6 +190,38 @@ describe('BoardsService', () => {
     await expect(
       service.ensureAccess('board-1', 'user-2'),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('revokes a board member by membership id', async () => {
+    const member = {
+      id: 'membership-1',
+      boardId: 'board-1',
+      userId: 'user-2',
+    } as BoardMember;
+    boardRepo.findOne!.mockResolvedValue(createBoard());
+    memberRepo.findOne!.mockResolvedValue(member);
+
+    await service.revokeMember('board-1', 'membership-1', 'user-1');
+
+    expect(memberRepo.findOne).toHaveBeenCalledWith({
+      where: { id: 'membership-1' },
+    });
+    expect(memberRepo.remove).toHaveBeenCalledWith(member);
+  });
+
+  it('does not revoke a membership belonging to another board', async () => {
+    boardRepo.findOne!.mockResolvedValue(createBoard());
+    memberRepo.findOne!.mockResolvedValue({
+      id: 'membership-1',
+      boardId: 'board-2',
+      userId: 'user-2',
+    } as BoardMember);
+
+    await expect(
+      service.revokeMember('board-1', 'membership-1', 'user-1'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(memberRepo.remove).not.toHaveBeenCalled();
   });
 
   it('creates a welcome board with completed tasks relative to registration', async () => {
