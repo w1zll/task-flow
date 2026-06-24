@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Column } from './entities/column.entity';
-import { Board } from '@/boards/entities/board.entity';
 import { ColumnsService } from './column.service';
 import { ColumnsController } from './columns.controller';
+import { BoardPermissionsModule } from '@/boards/board-permissions.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Column, Board])],
+  imports: [
+    TypeOrmModule.forFeature([Column]),
+    BoardPermissionsModule,
+  ],
   providers: [ColumnsService],
   controllers: [ColumnsController],
 })

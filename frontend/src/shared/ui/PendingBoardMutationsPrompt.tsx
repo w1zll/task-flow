@@ -2,7 +2,9 @@
 
 import {
   applyPendingBoardMutation,
+  isBoardPermissionError,
 } from '@/shared/lib/boardSocketMutations';
+import { Board, boardsApi } from '@/shared/api/api';
 import { getSocket, isSocketReady } from '@/shared/lib/socket';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { queryKeys } from '@/shared/queries/boards.queries';
@@ -31,6 +33,13 @@ const PendingBoardMutationsPrompt = () => {
   const { enqueueSnackbar } = useSnackbar();
   const canApplyPendingChanges =
     isSocketAvailable && mutations.length > 0 && isSocketReady();
+  const readOnlyMutationCount = mutations.filter(
+    (mutation) =>
+      qc.getQueryData<Board>(queryKeys.board(mutation.boardId))?.capabilities
+        .canEditBoardContent === false,
+  ).length;
+  const allMutationsAreReadOnly =
+    mutations.length > 0 && readOnlyMutationCount === mutations.length;
 
   useStableBodyScrollLock(canApplyPendingChanges);
 
@@ -68,20 +77,49 @@ const PendingBoardMutationsPrompt = () => {
 
   const handleApply = async () => {
     setIsApplying(true);
+    let appliedCount = 0;
+    let deniedCount = 0;
 
     for (const mutation of mutations) {
       try {
+        const board =
+          qc.getQueryData<Board>(queryKeys.board(mutation.boardId)) ??
+          (await qc.fetchQuery({
+            queryKey: queryKeys.board(mutation.boardId),
+            queryFn: () =>
+              boardsApi.getOne(mutation.boardId).then((response) => response.data),
+            staleTime: 0,
+          }));
+        if (!board?.capabilities.canEditBoardContent) {
+          remove(mutation.id);
+          deniedCount += 1;
+          invalidateBoards([mutation.boardId]);
+          continue;
+        }
+
         await applyPendingBoardMutation(mutation);
         remove(mutation.id);
+        appliedCount += 1;
         invalidateBoards([mutation.boardId]);
       } catch (error) {
+        if (isBoardPermissionError(error)) {
+          remove(mutation.id);
+          deniedCount += 1;
+          invalidateBoards([mutation.boardId]);
+          continue;
+        }
         enqueueSnackbar(t('applyError'), { variant: 'error' });
         setIsApplying(false);
         return;
       }
     }
 
-    enqueueSnackbar(t('applied'), { variant: 'success' });
+    if (appliedCount > 0) {
+      enqueueSnackbar(t('applied'), { variant: 'success' });
+    }
+    if (deniedCount > 0) {
+      enqueueSnackbar(t('permissionChanged'), { variant: 'warning' });
+    }
     setIsApplying(false);
   };
 
@@ -102,20 +140,25 @@ const PendingBoardMutationsPrompt = () => {
       <DialogTitle>{t('title')}</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary">
-          {t('description', { count: mutations.length })}
+          {t(
+            allMutationsAreReadOnly ? 'readOnlyDescription' : 'description',
+            { count: mutations.length },
+          )}
         </Typography>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={handleDiscard} disabled={isApplying}>
           {t('discard')}
         </Button>
-        <Button
-          variant="contained"
-          onClick={handleApply}
-          disabled={isApplying || !canApplyPendingChanges}
-        >
-          {isApplying ? t('applying') : t('apply')}
-        </Button>
+        {!allMutationsAreReadOnly && (
+          <Button
+            variant="contained"
+            onClick={handleApply}
+            disabled={isApplying || !canApplyPendingChanges}
+          >
+            {isApplying ? t('applying') : t('apply')}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

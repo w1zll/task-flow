@@ -3,13 +3,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Task } from './entities/task.entity';
 import { Column } from '@/columns/entities/column.entity';
 import { Board } from '@/boards/entities/board.entity';
-import { BoardMember } from '@/boards/entities/board-member.entity';
 import { User } from '@/users/entities/user.entity';
 import { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
+import { BoardPermissionsModule } from '@/boards/board-permissions.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Task, Column, Board, BoardMember, User])],
+  imports: [
+    TypeOrmModule.forFeature([Task, Column, Board, User]),
+    BoardPermissionsModule,
+  ],
   providers: [TasksService],
   controllers: [TasksController],
 })

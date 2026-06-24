@@ -141,3 +141,16 @@ export const isBoardSocketMutationQueuedError = (
   error: unknown,
 ): error is BoardSocketMutationQueuedError =>
   error instanceof BoardSocketMutationQueuedError;
+
+export const isBoardPermissionError = (error: unknown) => {
+  const status = (error as { response?: { status?: number } })?.response?.status;
+  const message =
+    error instanceof Error
+      ? error.message
+      : String((error as { message?: unknown })?.message ?? '');
+
+  return (
+    status === 403 ||
+    /permission|only the board owner|do not have access/i.test(message)
+  );
+};
