@@ -245,6 +245,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/boards/{id}/members/{memberId}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change a board member role */
+        patch: operations["BoardsController_updateMemberRole"];
+        trace?: never;
+    };
     "/api/boards/{id}/share/{memberId}": {
         parameters: {
             query?: never;
@@ -575,12 +592,27 @@ export interface components {
         };
         BoardMemberResponseDto: {
             /** @example member-uuid */
-            id: string;
+            id: string | null;
             /** @example user-uuid */
             userId: string;
             user: components["schemas"]["UserResponseDto"];
+            /** @enum {string} */
+            role: "owner" | "editor" | "viewer";
+            /** @example user-uuid */
+            invitedById: string | null;
             /** @example 2026-05-05T12:00:00.000Z */
             createdAt: string;
+            /** @example 2026-05-05T12:00:00.000Z */
+            updatedAt: string;
+        };
+        BoardCapabilitiesResponseDto: {
+            canReadBoard: boolean;
+            canEditBoardContent: boolean;
+            canManageBoardMembers: boolean;
+            canDeleteBoard: boolean;
+            canManageColumns: boolean;
+            canUseWhiteboard: boolean;
+            canManageBoardSettings: boolean;
         };
         BoardResponseDto: {
             /** @example board-uuid */
@@ -593,6 +625,9 @@ export interface components {
             color?: string;
             /** @example user-uuid */
             ownerId: string;
+            /** @enum {string} */
+            currentUserRole: "owner" | "editor" | "viewer";
+            capabilities: components["schemas"]["BoardCapabilitiesResponseDto"];
             columns?: components["schemas"]["ColumnResponseDto"][];
             members?: components["schemas"]["BoardMemberResponseDto"][];
             /** @example 2026-05-05T12:00:00.000Z */
@@ -605,6 +640,15 @@ export interface components {
             userId?: string;
             /** @description Email пользователя для приглашения */
             email?: string;
+            /**
+             * @default editor
+             * @enum {string}
+             */
+            role?: "editor" | "viewer";
+        };
+        UpdateBoardMemberRoleDto: {
+            /** @enum {string} */
+            role: "editor" | "viewer";
         };
         CreateBoardDto: {
             /** @example Board 1 */
@@ -1110,6 +1154,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BoardMemberResponseDto"][];
+                };
+            };
+        };
+    };
+    BoardsController_updateMemberRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBoardMemberRoleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardMemberResponseDto"];
                 };
             };
         };

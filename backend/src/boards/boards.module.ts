@@ -12,14 +12,16 @@ import { WsJwtGuard } from '@/auth/guards/ws-jwt.guard';
 import { TasksService } from '@/tasks/tasks.service';
 import { Column } from '@/columns/entities/column.entity';
 import { AuthModule } from '@/auth/auth.module';
+import { BoardPermissionsModule } from './board-permissions.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Board, BoardMember, User, Task, Column]),
     forwardRef(() => AuthModule),
+    BoardPermissionsModule,
   ],
   providers: [BoardsService, BoardGateway, WsJwtGuard, TasksService],
   controllers: [BoardsController],
-  exports: [BoardsService],
+  exports: [BoardsService, BoardPermissionsModule],
 })
 export class BoardsModule {}

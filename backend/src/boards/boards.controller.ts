@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
   Req,
@@ -30,6 +31,7 @@ import {
   BoardResponseDto,
   CreateBoardDto,
   ShareBoardDto,
+  UpdateBoardMemberRoleDto,
   UpdateBoardDto,
 } from './dto/board.dto';
 import type { Request } from 'express';
@@ -81,6 +83,23 @@ export class BoardsController {
   @ApiOkResponse({ type: BoardMemberResponseDto, isArray: true })
   members(@Param('id') id: string, @CurrentUser() user: User) {
     return this.boardsService.listMembers(id, user.id);
+  }
+
+  @Patch(':id/members/:memberId/role')
+  @ApiOperation({ summary: 'Change a board member role' })
+  @ApiOkResponse({ type: BoardMemberResponseDto })
+  updateMemberRole(
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+    @Body() dto: UpdateBoardMemberRoleDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.boardsService.updateMemberRole(
+      id,
+      memberId,
+      dto.role,
+      user.id,
+    );
   }
 
   @Delete(':id/share/:memberId')

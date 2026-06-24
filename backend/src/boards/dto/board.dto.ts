@@ -2,6 +2,7 @@ import { ApiProperty, PartialType } from '@nestjs/swagger';
 import {
   IsEmail,
   IsEnum,
+  IsIn,
   IsOptional,
   IsString,
   IsUUID,
@@ -11,6 +12,7 @@ import {
 import { ColumnResponseDto } from '@/columns/dto/column.dto';
 import { UserResponseDto } from '@/users/dto/user.dto';
 import { BoardTemplate } from '../board-templates';
+import { BoardRole } from '../entities/board-role.enum';
 
 export class CreateBoardDto {
   @ApiProperty({ example: 'Board 1' })
@@ -48,9 +50,47 @@ export class ShareBoardDto {
   @IsOptional()
   @IsEmail()
   email?: string;
+
+  @ApiProperty({
+    enum: [BoardRole.EDITOR, BoardRole.VIEWER],
+    default: BoardRole.EDITOR,
+    required: false,
+  })
+  @IsOptional()
+  @IsIn([BoardRole.EDITOR, BoardRole.VIEWER])
+  role?: BoardRole.EDITOR | BoardRole.VIEWER;
 }
 
 export class UpdateBoardDto extends PartialType(CreateBoardDto) {}
+
+export class UpdateBoardMemberRoleDto {
+  @ApiProperty({ enum: [BoardRole.EDITOR, BoardRole.VIEWER] })
+  @IsIn([BoardRole.EDITOR, BoardRole.VIEWER])
+  role: BoardRole.EDITOR | BoardRole.VIEWER;
+}
+
+export class BoardCapabilitiesResponseDto {
+  @ApiProperty()
+  canReadBoard: boolean;
+
+  @ApiProperty()
+  canEditBoardContent: boolean;
+
+  @ApiProperty()
+  canManageBoardMembers: boolean;
+
+  @ApiProperty()
+  canDeleteBoard: boolean;
+
+  @ApiProperty()
+  canManageColumns: boolean;
+
+  @ApiProperty()
+  canUseWhiteboard: boolean;
+
+  @ApiProperty()
+  canManageBoardSettings: boolean;
+}
 
 export class BoardResponseDto {
   @ApiProperty({ example: 'board-uuid' })
@@ -68,6 +108,12 @@ export class BoardResponseDto {
   @ApiProperty({ example: 'user-uuid' })
   ownerId: string;
 
+  @ApiProperty({ enum: BoardRole })
+  currentUserRole: BoardRole;
+
+  @ApiProperty({ type: () => BoardCapabilitiesResponseDto })
+  capabilities: BoardCapabilitiesResponseDto;
+
   @ApiProperty({ type: () => ColumnResponseDto, isArray: true, required: false })
   columns?: ColumnResponseDto[];
 
@@ -82,8 +128,8 @@ export class BoardResponseDto {
 }
 
 export class BoardMemberResponseDto {
-  @ApiProperty({ example: 'member-uuid' })
-  id: string;
+  @ApiProperty({ example: 'member-uuid', nullable: true })
+  id: string | null;
 
   @ApiProperty({ example: 'user-uuid' })
   userId: string;
@@ -91,6 +137,15 @@ export class BoardMemberResponseDto {
   @ApiProperty({ type: () => UserResponseDto })
   user: UserResponseDto;
 
+  @ApiProperty({ enum: BoardRole })
+  role: BoardRole;
+
+  @ApiProperty({ example: 'user-uuid', nullable: true })
+  invitedById: string | null;
+
   @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
   createdAt: string;
+
+  @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
+  updatedAt: string;
 }

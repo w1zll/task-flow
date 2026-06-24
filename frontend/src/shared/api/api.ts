@@ -5,6 +5,9 @@ export type AuthResponse = ApiResponse<'/api/auth/register', 'post'>;
 export type AuthUser = ApiResponse<'/api/auth/me', 'get'>;
 export type WsTokenResponse = { token: string };
 export type Board = ApiResponse<'/api/boards/{id}', 'get'>;
+export type BoardRole = Board['currentUserRole'];
+export type BoardMember =
+  ApiResponse<'/api/boards/{id}/members', 'get'>[number];
 // export type BoardColumn = NonNullable<
 //   ApiResponse<'/api/boards/{id}', 'get'>['columns']
 // >[number];
@@ -117,6 +120,15 @@ export const boardsApi = {
     apiClient.delete<ApiResponse<'/api/boards/{id}/share/{memberId}', 'delete'>>(
       `/api/boards/${boardId}/share/${memberId}`,
     ),
+
+  updateMemberRole: (
+    boardId: string,
+    memberId: string,
+    role: 'editor' | 'viewer',
+  ) =>
+    apiClient.patch<
+      ApiResponse<'/api/boards/{id}/members/{memberId}/role', 'patch'>
+    >(`/api/boards/${boardId}/members/${memberId}/role`, { role }),
 };
 
 export const columnsApi = {

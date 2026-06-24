@@ -1,81 +1,69 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Task } from './entities/task.entity';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { Column } from '@/columns/entities/column.entity';
+import { BoardPermissionsService } from '@/boards/board-permissions.service';
 import { Board } from '@/boards/entities/board.entity';
-import { BoardMember } from '@/boards/entities/board-member.entity';
+import { Column } from '@/columns/entities/column.entity';
+import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
 import { User } from '@/users/entities/user.entity';
+import { toPublicUser } from '@/users/public-user';
 import {
+  AnalyticsQueryDto,
   CreateTaskDto,
   MoveTaskDto,
   ReorderTasksDto,
   UpdateTaskDto,
-  AnalyticsQueryDto,
 } from './dto/task.dto';
-import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
-import { toPublicUser } from '@/users/public-user';
+import { Task } from './entities/task.entity';
 
 @Injectable()
 export class TasksService {
   constructor(
     @InjectRepository(Task)
     private readonly taskRepo: Repository<Task>,
-
     @InjectRepository(Column)
     private readonly columnRepo: Repository<Column>,
-
     @InjectRepository(Board)
     private readonly boardRepo: Repository<Board>,
-
-    @InjectRepository(BoardMember)
-    private readonly memberRepo: Repository<BoardMember>,
-
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
-
     private readonly frontendCache: FrontendCacheService,
+    private readonly boardPermissions: BoardPermissionsService,
   ) {}
 
-  private async verifyColumnAccess(
+  private async verifyColumnWriteAccess(
     columnId: string,
     userId: string,
   ): Promise<Column> {
-    const column = await this.columnRepo.findOne({
-      where: { id: columnId },
-      relations: ['board', 'board.members'],
-    });
-    if (!column) throw new NotFoundException('Колонка не найдена');
+    const column = await this.columnRepo.findOne({ where: { id: columnId } });
+    if (!column) throw new NotFoundException('Column not found');
 
-    if (
-      column.board.ownerId !== userId &&
-      !column.board.members?.some((member) => member.userId === userId)
-    ) {
-      throw new ForbiddenException('Доступ запрещен');
-    }
-
+    await this.boardPermissions.assertCanEditBoardContent(
+      column.boardId,
+      userId,
+    );
     return column;
   }
 
-  private async verifyTaskAccess(id: string, userId: string): Promise<Task> {
+  private async verifyTaskWriteAccess(
+    id: string,
+    userId: string,
+  ): Promise<Task> {
     const task = await this.taskRepo.findOne({
       where: { id },
-      relations: ['column', 'column.board', 'column.board.members', 'assignee'],
+      relations: ['column', 'column.board', 'assignee'],
     });
-    if (!task) throw new NotFoundException('Задача не найдена');
+    if (!task) throw new NotFoundException('Task not found');
 
-    const board = task.column.board;
-    if (
-      board.ownerId !== userId &&
-      !board.members?.some((member) => member.userId === userId)
-    ) {
-      throw new ForbiddenException('Доступ запрещен');
-    }
-
+    await this.boardPermissions.assertCanEditBoardContent(
+      task.column.boardId,
+      userId,
+    );
     return task;
   }
 
@@ -84,20 +72,19 @@ export class TasksService {
     assigneeId: string,
   ): Promise<User> {
     const user = await this.userRepo.findOne({ where: { id: assigneeId } });
-    if (!user) throw new NotFoundException('Пользователь-назначение не найден');
+    if (!user) throw new NotFoundException('Assignee not found');
 
     const board = await this.boardRepo.findOne({
       where: { id: boardId },
       relations: ['members'],
     });
-    if (!board) throw new NotFoundException('Доска не найдена');
-
+    if (!board) throw new NotFoundException('Board not found');
     if (
       board.ownerId !== assigneeId &&
       !board.members?.some((member) => member.userId === assigneeId)
     ) {
       throw new ForbiddenException(
-        'Назначение возможно только участнику доски',
+        'Tasks can only be assigned to board members',
       );
     }
 
@@ -105,22 +92,17 @@ export class TasksService {
   }
 
   async create(dto: CreateTaskDto, userId: string): Promise<Task> {
-    const column = await this.verifyColumnAccess(dto.columnId, userId);
+    const column = await this.verifyColumnWriteAccess(dto.columnId, userId);
     let assignee: User | undefined;
 
     if (dto.assigneeId) {
-      assignee = await this.validateAssignee(
-        column.boardId,
-        dto.assigneeId,
-      );
+      assignee = await this.validateAssignee(column.boardId, dto.assigneeId);
       dto.assigneeName = assignee.name;
     }
-
     if (dto.order === undefined) {
-      const count = await this.taskRepo.count({
+      dto.order = await this.taskRepo.count({
         where: { columnId: dto.columnId },
       });
-      dto.order = count;
     }
 
     const task = this.taskRepo.create({
@@ -134,14 +116,19 @@ export class TasksService {
             ? new Date(dto.completedAt)
             : undefined,
     });
-
     const saved = await this.taskRepo.save(task);
     await this.frontendCache.revalidateBoard(column.boardId);
     return this.withPublicAssignee(saved);
   }
 
-  async update(id: string, dto: UpdateTaskDto, userId: string): Promise<Task> {
-    const task = await this.verifyTaskAccess(id, userId);
+  async update(
+    id: string,
+    dto: UpdateTaskDto,
+    userId: string,
+    expectedBoardId?: string,
+  ): Promise<Task> {
+    const task = await this.verifyTaskWriteAccess(id, userId);
+    this.assertExpectedBoard(task.column.boardId, expectedBoardId);
     const { completedAt, dueDate, ...taskChanges } = dto;
     const wasCompleted = task.isCompleted;
     const sourceOrder = task.order;
@@ -156,7 +143,6 @@ export class TasksService {
     }
 
     Object.assign(task, taskChanges);
-
     if (dto.isCompleted === true && !task.completedAt) {
       task.completedAt = completedAt ? new Date(completedAt) : new Date();
     }
@@ -184,7 +170,6 @@ export class TasksService {
             },
           )
           .execute();
-
         task.order = lastOrder;
       }
     }
@@ -199,18 +184,31 @@ export class TasksService {
   }
 
   async remove(id: string, userId: string): Promise<void> {
-    const task = await this.verifyTaskAccess(id, userId);
+    const task = await this.verifyTaskWriteAccess(id, userId);
     const boardId = task.column.boardId;
     await this.taskRepo.remove(task);
     await this.frontendCache.revalidateBoard(boardId);
   }
 
-  async move(id: string, dto: MoveTaskDto, userId: string): Promise<Task> {
-    const task = await this.verifyTaskAccess(id, userId);
+  async move(
+    id: string,
+    dto: MoveTaskDto,
+    userId: string,
+    expectedBoardId?: string,
+  ): Promise<Task> {
+    const task = await this.verifyTaskWriteAccess(id, userId);
+    this.assertExpectedBoard(task.column.boardId, expectedBoardId);
     const sourceColumnId = task.columnId;
     const sourceOrder = task.order;
-
-    await this.verifyColumnAccess(dto.columnId, userId);
+    const targetColumn = await this.verifyColumnWriteAccess(
+      dto.columnId,
+      userId,
+    );
+    if (targetColumn.boardId !== task.column.boardId) {
+      throw new BadRequestException(
+        'A task cannot be moved to another board',
+      );
+    }
 
     if (sourceColumnId === dto.columnId) {
       if (dto.order === sourceOrder) {
@@ -247,7 +245,6 @@ export class TasksService {
           .execute();
       }
     } else {
-      // Shift tasks in the destination column to make space for the moved task.
       await this.taskRepo
         .createQueryBuilder()
         .update(Task)
@@ -257,8 +254,6 @@ export class TasksService {
           order: dto.order,
         })
         .execute();
-
-      // Normalize source column order after removing the moved task.
       await this.taskRepo
         .createQueryBuilder()
         .update(Task)
@@ -274,7 +269,6 @@ export class TasksService {
       { id: task.id },
       { columnId: dto.columnId, order: dto.order },
     );
-
     const updated = await this.taskRepo.findOne({
       where: { id: task.id },
       relations: ['column', 'column.board', 'assignee'],
@@ -287,16 +281,16 @@ export class TasksService {
     dto: ReorderTasksDto,
     columnId: string,
     userId: string,
-  ): Promise<void> {
-    await this.verifyColumnAccess(columnId, userId);
+    expectedBoardId?: string,
+  ): Promise<string> {
+    const column = await this.verifyColumnWriteAccess(columnId, userId);
+    this.assertExpectedBoard(column.boardId, expectedBoardId);
     const updates = dto.taskIds.map((taskId, index) =>
       this.taskRepo.update({ id: taskId, columnId }, { order: index }),
     );
     await Promise.all(updates);
-    const column = await this.columnRepo.findOne({ where: { id: columnId } });
-    if (column) {
-      await this.frontendCache.revalidateBoard(column.boardId);
-    }
+    await this.frontendCache.revalidateBoard(column.boardId);
+    return column.boardId;
   }
 
   private buildCompletionAnalyticsQuery(
@@ -340,13 +334,20 @@ export class TasksService {
     return task;
   }
 
+  private assertExpectedBoard(
+    actualBoardId: string,
+    expectedBoardId?: string,
+  ): void {
+    if (expectedBoardId && actualBoardId !== expectedBoardId) {
+      throw new BadRequestException('Resource does not belong to this board');
+    }
+  }
+
   async getDailyAnalytics(
     userId: string,
     query: AnalyticsQueryDto,
   ): Promise<{ period: string; count: number }[]> {
-    const qb = this.buildCompletionAnalyticsQuery(userId, query);
-
-    const raw = await qb
+    const raw = await this.buildCompletionAnalyticsQuery(userId, query)
       .select(
         "TO_CHAR(DATE_TRUNC('day', task.completedAt), 'YYYY-MM-DD')",
         'period',
@@ -366,9 +367,7 @@ export class TasksService {
     userId: string,
     query: AnalyticsQueryDto,
   ): Promise<{ period: string; count: number }[]> {
-    const qb = this.buildCompletionAnalyticsQuery(userId, query);
-
-    const raw = await qb
+    const raw = await this.buildCompletionAnalyticsQuery(userId, query)
       .select(
         "TO_CHAR(DATE_TRUNC('week', task.completedAt), 'YYYY-MM-DD')",
         'period',
@@ -388,9 +387,7 @@ export class TasksService {
     userId: string,
     query: AnalyticsQueryDto,
   ): Promise<{ period: string; count: number }[]> {
-    const qb = this.buildCompletionAnalyticsQuery(userId, query);
-
-    const raw = await qb
+    const raw = await this.buildCompletionAnalyticsQuery(userId, query)
       .select(
         "TO_CHAR(DATE_TRUNC('month', task.completedAt), 'YYYY-MM')",
         'period',
@@ -410,9 +407,7 @@ export class TasksService {
     userId: string,
     query: AnalyticsQueryDto,
   ): Promise<{ total: number; onTime: number; late: number }> {
-    const qb = this.buildCompletionAnalyticsQuery(userId, query);
-
-    const summary = await qb
+    const summary = await this.buildCompletionAnalyticsQuery(userId, query)
       .select('COUNT(*)', 'total')
       .addSelect(
         'SUM(CASE WHEN task.dueDate IS NULL OR task.completedAt <= task.dueDate THEN 1 ELSE 0 END)',

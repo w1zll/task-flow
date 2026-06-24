@@ -3,6 +3,7 @@
 import { Board, Task } from '@/shared/api/api';
 import {
   emitBoardSocketMutation,
+  isBoardPermissionError,
   isBoardSocketMutationQueuedError,
 } from '@/shared/lib/boardSocketMutations';
 import {
@@ -42,6 +43,7 @@ interface Props {
   boardId: string;
   isPending?: boolean;
   isDragDisabled?: boolean;
+  canEdit?: boolean;
 }
 
 const PRIORITY_CONFIG = {
@@ -57,6 +59,7 @@ const TaskCard = ({
   boardId,
   isPending = false,
   isDragDisabled = false,
+  canEdit = true,
 }: Props) => {
   const dayjsLocale = useDayjsLocale();
   const openTask = useBoardUIStore((state) => state.openTask);
@@ -76,7 +79,7 @@ const TaskCard = ({
     dayjs(task.dueDate).isBefore(dayjs(), 'day');
 
   const handleToggleCompletion = async () => {
-    if (isCardPending) return;
+    if (isCardPending || !canEdit) return;
 
     const nextIsCompleted = !task.isCompleted;
     const previousBoard = qc.getQueryData<Board>(queryKeys.board(boardId));
@@ -109,14 +112,26 @@ const TaskCard = ({
       qc.invalidateQueries({ queryKey: queryKeys.boardAnalytics(boardId) });
     } catch (error) {
       qc.setQueryData(queryKeys.board(boardId), previousBoard);
+      if (isBoardPermissionError(error)) {
+        void qc.invalidateQueries({
+          queryKey: queryKeys.board(boardId),
+          exact: true,
+        });
+      }
       enqueueSnackbar(
         tNotifications(
-          isBoardSocketMutationQueuedError(error)
-            ? 'taskQueued'
-            : 'taskUpdateError',
+          isBoardPermissionError(error)
+            ? 'permissionDenied'
+            : isBoardSocketMutationQueuedError(error)
+              ? 'taskQueued'
+              : 'taskUpdateError',
         ),
         {
-          variant: isBoardSocketMutationQueuedError(error) ? 'info' : 'error',
+          variant:
+            !isBoardPermissionError(error) &&
+            isBoardSocketMutationQueuedError(error)
+              ? 'info'
+              : 'error',
         },
       );
     } finally {
@@ -128,7 +143,7 @@ const TaskCard = ({
     <Draggable
       draggableId={task.id}
       index={index}
-      isDragDisabled={isCardPending || isDragDisabled}
+      isDragDisabled={isCardPending || isDragDisabled || !canEdit}
     >
       {(provided, snapshot) => (
         <Card
@@ -137,7 +152,7 @@ const TaskCard = ({
           {...provided.dragHandleProps}
           elevation={snapshot.isDragging ? 8 : 0}
           aria-busy={isCardPending}
-          aria-disabled={isCardPending || isDragDisabled}
+          aria-disabled={isCardPending || isDragDisabled || !canEdit}
           onClickCapture={(event) => {
             const { consumeSuppressedTaskClick } = useBoardUIStore.getState();
             const shouldSuppressClick = consumeSuppressedTaskClick(task.id);
@@ -157,8 +172,10 @@ const TaskCard = ({
             bgcolor: task.isCompleted
               ? (theme) => alpha(theme.palette.success.main, 0.06)
               : 'background.paper',
-            cursor: isCardPending ? 'progress' : 'grab',
-            '&:active': { cursor: isCardPending ? 'progress' : 'grabbing' },
+            cursor: isCardPending ? 'progress' : canEdit ? 'grab' : 'pointer',
+            '&:active': {
+              cursor: isCardPending ? 'progress' : canEdit ? 'grabbing' : 'pointer',
+            },
             transform: snapshot.isDragging ? 'rotate(2deg)' : 'none',
             transition: 'transform 0.15s, box-shadow 0.15s, opacity 0.15s',
             position: 'relative',
@@ -230,7 +247,7 @@ const TaskCard = ({
                 <Checkbox
                   size="small"
                   checked={!!task.isCompleted}
-                  disabled={isCardPending}
+                  disabled={isCardPending || !canEdit}
                   onChange={handleToggleCompletion}
                   icon={<RadioButtonUnchecked fontSize="small" />}
                   checkedIcon={<CheckCircleOutlined fontSize="small" />}

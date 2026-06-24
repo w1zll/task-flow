@@ -10,8 +10,9 @@ import {
   useRevokeBoardMember,
   useShareBoard,
   useTaskCompletionSummary,
+  useUpdateBoardMemberRole,
 } from '@/shared/queries/boards.queries';
-import { Board } from '@/shared/api/api';
+import { Board, BoardMember } from '@/shared/api/api';
 import { queryKeys } from '@/shared/queries/board-query-keys';
 import { useBoardUIStore } from '@/shared/store/root.store';
 import { useAuth } from '@/features/auth/useAuth';
@@ -20,13 +21,18 @@ import {
   Box,
   Breadcrumbs,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Drawer,
+  FormControl,
   IconButton,
+  InputLabel,
   Link,
+  MenuItem,
+  Select,
   Skeleton,
   Stack,
   Tab,
@@ -39,7 +45,13 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Add, ArrowBack, Close, QueryStats } from '@mui/icons-material';
+import {
+  Add,
+  ArrowBack,
+  Close,
+  LockOutlined,
+  QueryStats,
+} from '@mui/icons-material';
 import dayjs from 'dayjs';
 import NextLink from 'next/link';
 import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
@@ -48,6 +60,8 @@ import KanbanBoard from './KanbanBoard';
 import TaskDetailModal from './TaskDetailModal';
 import { useQueryClient } from '@tanstack/react-query';
 import UserAvatar from '@/shared/ui/UserAvatar';
+import { useSnackbar } from 'notistack';
+import { isBoardPermissionError } from '@/shared/lib/boardSocketMutations';
 
 interface Props {
   boardId: string;
@@ -81,6 +95,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const t = useTranslations('BoardPage');
   const router = useRouter();
   const qc = useQueryClient();
+  const { enqueueSnackbar } = useSnackbar();
   const [isInitialBoardSynced, setInitialBoardSynced] = useState(!initialBoard);
   const {
     data: queriedBoard,
@@ -101,6 +116,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const [isShareOpen, setShareOpen] = useState(false);
   const [isStatsOpen, setStatsOpen] = useState(false);
   const [shareEmail, setShareEmail] = useState('');
+  const [shareRole, setShareRole] = useState<'editor' | 'viewer'>('editor');
   const [boardScrollWidth, setBoardScrollWidth] = useState(0);
   const boardScrollRef = useRef<HTMLDivElement | null>(null);
   const boardTopScrollRef = useRef<HTMLDivElement | null>(null);
@@ -109,12 +125,18 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const boardMembers = useBoardMembers(boardId);
   const shareBoard = useShareBoard();
   const revokeMember = useRevokeBoardMember();
+  const updateMemberRole = useUpdateBoardMemberRole();
   const summaryAnalytics = useTaskCompletionSummary(boardId);
   const dailyAnalytics = useBoardDailyAnalytics(boardId);
   const weeklyAnalytics = useBoardWeeklyAnalytics(boardId);
   const monthlyAnalytics = useBoardMonthlyAnalytics(boardId);
   const [analyticsPeriod, setAnalyticsPeriod] =
     useState<AnalyticsPeriod>('daily');
+  const canEditBoardContent =
+    board?.capabilities.canEditBoardContent ?? false;
+  const canManageColumns = board?.capabilities.canManageColumns ?? false;
+  const canManageBoardMembers =
+    board?.capabilities.canManageBoardMembers ?? false;
 
   useStableBodyScrollLock(isShareOpen || isStatsOpen);
 
@@ -154,12 +176,27 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     weekly: t('analyticsWeeks'),
     monthly: t('analyticsMonths'),
   };
+  const roleLabels: Record<BoardMember['role'], string> = {
+    owner: t('roleOwner'),
+    editor: t('roleEditor'),
+    viewer: t('roleViewer'),
+  };
 
   useEffect(() => {
     closeTask();
     setAddingColumn(false);
     setAddingTaskInColumn(null);
   }, [boardId, closeTask, setAddingColumn, setAddingTaskInColumn]);
+
+  useEffect(() => {
+    if (!canManageColumns) setAddingColumn(false);
+    if (!canEditBoardContent) setAddingTaskInColumn(null);
+  }, [
+    canEditBoardContent,
+    canManageColumns,
+    setAddingColumn,
+    setAddingTaskInColumn,
+  ]);
 
   useEffect(() => {
     const content = boardContentRef.current;
@@ -208,10 +245,11 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const handleShareBoard = () => {
     if (!shareEmail.trim()) return;
     shareBoard.mutate(
-      { boardId, email: shareEmail.trim() },
+      { boardId, email: shareEmail.trim(), role: shareRole },
       {
         onSuccess: () => {
           setShareEmail('');
+          setShareRole('editor');
           setShareOpen(false);
         },
       },
@@ -219,6 +257,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   };
 
   const handleAddColumn = () => {
+    if (!canManageColumns) return;
     const title = newColTitle.trim();
     if (!title) return;
     createColumn.mutate(
@@ -227,6 +266,22 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
         onSuccess: () => {
           setNewColTitle('');
           setAddingColumn(false);
+        },
+        onError: (error) => {
+          if (isBoardPermissionError(error)) {
+            void qc.invalidateQueries({
+              queryKey: queryKeys.board(boardId),
+              exact: true,
+            });
+          }
+          enqueueSnackbar(
+            t(
+              isBoardPermissionError(error)
+                ? 'permissionDenied'
+                : 'columnCreateError',
+            ),
+            { variant: 'error' },
+          );
         },
       },
     );
@@ -319,15 +374,24 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
               </Typography>
             </Breadcrumbs>
           </Box>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Add />}
-            onClick={() => setAddingColumn(true)}
-            sx={{ flexShrink: 0 }}
-          >
-            {t('addColumn')}
-          </Button>
+          {canManageColumns ? (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Add />}
+              onClick={() => setAddingColumn(true)}
+              sx={{ flexShrink: 0 }}
+            >
+              {t('addColumn')}
+            </Button>
+          ) : board && !canEditBoardContent ? (
+            <Chip
+              size="small"
+              icon={<LockOutlined />}
+              label={t('readOnly')}
+              variant="outlined"
+            />
+          ) : null}
         </Box>
 
         <Stack direction="row" spacing={1}>
@@ -339,13 +403,15 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
           >
             {t('stats')}
           </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => setShareOpen(true)}
-          >
-            {t('share')}
-          </Button>
+          {canManageBoardMembers && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setShareOpen(true)}
+            >
+              {t('share')}
+            </Button>
+          )}
         </Stack>
       </Box>
 
@@ -399,7 +465,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                 <Box sx={{ flexShrink: 0 }}>
                   <KanbanBoard key={boardId} board={board} />
                 </Box>
-                {isAddingColumn ? (
+                {canManageColumns && isAddingColumn ? (
                   <Box
                     sx={{
                       width: 280,
@@ -590,15 +656,15 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
               </Typography>
             ) : boardMembers.data && boardMembers.data.length > 0 ? (
               <Stack spacing={1}>
-                {boardMembers.data
-                  .sort(({ user: userA }: any, { user: userB }: any) => {
-                    // Owner is always first
-                    if (userA.id === board?.ownerId) return -1;
-                    if (userB.id === board?.ownerId) return 1;
-                    return 0;
+                {[...boardMembers.data]
+                  .sort((memberA, memberB) => {
+                    if (memberA.role === 'owner') return -1;
+                    if (memberB.role === 'owner') return 1;
+                    return memberA.user.name.localeCompare(memberB.user.name);
                   })
-                  .map(({ user, id: memberId }: any) => {
-                    const isOwner = user.id === board?.ownerId;
+                  .map((member) => {
+                    const { user } = member;
+                    const isOwner = member.role === 'owner';
                     const isCurrentUser = user.id === currentUser?.id;
                     return (
                       <Box
@@ -607,6 +673,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
+                          gap: 1,
                         }}
                       >
                         <Box
@@ -622,21 +689,9 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                             src={user.avatar}
                             size={30}
                           />
-                          <Typography variant="body2">
-                            {user.name}
-                            {isOwner && (
-                              <Typography
-                                component="span"
-                                variant="caption"
-                                sx={{
-                                  ml: 1,
-                                  color: 'primary.main',
-                                  fontWeight: 600,
-                                }}
-                              >
-                                {t('ownerSuffix')}
-                              </Typography>
-                            )}
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="body2" noWrap>
+                              {user.name}
                             {isCurrentUser && (
                               <Typography
                                 component="span"
@@ -649,25 +704,70 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                                 {t('youSuffix')}
                               </Typography>
                             )}
-                          </Typography>
+                            </Typography>
+                            <Chip
+                              label={roleLabels[member.role]}
+                              size="small"
+                              color={isOwner ? 'primary' : 'default'}
+                              variant={isOwner ? 'filled' : 'outlined'}
+                              sx={{ mt: 0.5, height: 20, fontSize: 11 }}
+                            />
+                          </Box>
                         </Box>
-                        {currentUser?.id === board?.ownerId && !isOwner && (
-                          <Button
-                            size="small"
-                            color="error"
-                            onClick={() =>
-                              revokeMember.mutate({
-                                boardId,
-                                memberId,
-                              })
-                            }
-                          >
-                            {t('remove')}
-                          </Button>
-                        )}
+                        {canManageBoardMembers &&
+                          !isOwner &&
+                          member.id && (
+                            <Stack
+                              direction="row"
+                              spacing={0.5}
+                              sx={{ alignItems: 'center' }}
+                            >
+                              <Select
+                                size="small"
+                                value={member.role}
+                                onChange={(event) =>
+                                  updateMemberRole.mutate({
+                                    boardId,
+                                    memberId: member.id!,
+                                    role: event.target.value as
+                                      | 'editor'
+                                      | 'viewer',
+                                  })
+                                }
+                                disabled={updateMemberRole.isPending}
+                                aria-label={t('memberRole')}
+                                sx={{ minWidth: 98, fontSize: 12 }}
+                              >
+                                <MenuItem value="editor">
+                                  {t('roleEditor')}
+                                </MenuItem>
+                                <MenuItem value="viewer">
+                                  {t('roleViewer')}
+                                </MenuItem>
+                              </Select>
+                              <Button
+                                size="small"
+                                color="error"
+                                disabled={revokeMember.isPending}
+                                onClick={() =>
+                                  revokeMember.mutate({
+                                    boardId,
+                                    memberId: member.id!,
+                                  })
+                                }
+                              >
+                                {t('remove')}
+                              </Button>
+                            </Stack>
+                          )}
                       </Box>
                     );
                   })}
+                {(updateMemberRole.isError || revokeMember.isError) && (
+                  <Typography variant="caption" color="error">
+                    {t('memberUpdateError')}
+                  </Typography>
+                )}
               </Stack>
             ) : (
               <Typography variant="body2" color="text.secondary">
@@ -700,6 +800,19 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
             onChange={(e) => setShareEmail(e.target.value)}
             placeholder="user@example.com"
           />
+          <FormControl size="small" fullWidth>
+            <InputLabel>{t('memberRole')}</InputLabel>
+            <Select
+              label={t('memberRole')}
+              value={shareRole}
+              onChange={(event) =>
+                setShareRole(event.target.value as 'editor' | 'viewer')
+              }
+            >
+              <MenuItem value="editor">{t('roleEditor')}</MenuItem>
+              <MenuItem value="viewer">{t('roleViewer')}</MenuItem>
+            </Select>
+          </FormControl>
           {shareBoard.isError && (
             <Typography variant="body2" color="error">
               {t('shareError')}
