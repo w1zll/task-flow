@@ -116,6 +116,7 @@ export const useCreateBoard = () => {
       description?: string;
       color?: string;
       template: ApiBody<'/api/boards', 'post'>['template'];
+      workspaceId?: string;
     }) => boardsApi.create(data).then((r) => r.data),
     onSuccess: () => invalidateBoards(qc),
   });

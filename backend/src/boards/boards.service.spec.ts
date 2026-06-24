@@ -18,14 +18,25 @@ import {
   BoardPermissionsService,
 } from './board-permissions.service';
 import { BoardRole } from './entities/board-role.enum';
+import { WorkspacesService } from '@/workspaces/workspaces.service';
 
 describe('BoardsService', () => {
   let service: BoardsService;
   let boardRepo: jest.Mocked<Partial<Repository<Board>>>;
   let memberRepo: jest.Mocked<Partial<Repository<BoardMember>>>;
+  let userRepo: jest.Mocked<Partial<Repository<User>>>;
   let columnRepo: jest.Mocked<Partial<Repository<Column>>>;
   let taskRepo: jest.Mocked<Partial<Repository<Task>>>;
   let boardPermissions: jest.Mocked<Partial<BoardPermissionsService>>;
+  let workspacesService: jest.Mocked<Partial<WorkspacesService>>;
+  let boardQueryBuilder: {
+    leftJoin: jest.Mock;
+    where: jest.Mock;
+    andWhere: jest.Mock;
+    orderBy: jest.Mock;
+    distinct: jest.Mock;
+    getMany: jest.Mock;
+  };
 
   const ownerAccess: BoardAccess = {
     role: BoardRole.OWNER,
@@ -47,6 +58,7 @@ describe('BoardsService', () => {
       description: null,
       color: '#6366f1',
       ownerId: 'user-1',
+      workspaceId: 'workspace-1',
       columns: [],
       members: [],
       createdAt: new Date('2026-06-01T00:00:00.000Z'),
@@ -55,9 +67,18 @@ describe('BoardsService', () => {
     }) as Board;
 
   beforeEach(async () => {
+    boardQueryBuilder = {
+      leftJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      distinct: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([]),
+    };
     boardRepo = {
       create: jest.fn((data) => data as Board),
       findOne: jest.fn(),
+      createQueryBuilder: jest.fn(() => boardQueryBuilder as any),
       save: jest.fn(async (board: Board) =>
         createBoard({
           ...board,
@@ -69,6 +90,9 @@ describe('BoardsService', () => {
       findOne: jest.fn(),
       remove: jest.fn(),
       save: jest.fn(async (member: BoardMember) => member),
+    };
+    userRepo = {
+      findOne: jest.fn(),
     };
     columnRepo = {
       create: jest.fn((data) => data as Column[]),
@@ -94,6 +118,16 @@ describe('BoardsService', () => {
       assertCanManageBoardSettings: jest.fn().mockResolvedValue(ownerAccess),
       assertCanDeleteBoard: jest.fn().mockResolvedValue(ownerAccess),
     };
+    workspacesService = {
+      getActiveWorkspace: jest.fn().mockResolvedValue({
+        workspace: { id: 'workspace-1' },
+        role: 'owner',
+      }),
+      assertMember: jest.fn().mockResolvedValue({
+        workspace: { id: 'workspace-1' },
+        role: 'owner',
+      }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -108,7 +142,7 @@ describe('BoardsService', () => {
         },
         {
           provide: getRepositoryToken(User),
-          useValue: {},
+          useValue: userRepo,
         },
         {
           provide: getRepositoryToken(Column),
@@ -126,6 +160,10 @@ describe('BoardsService', () => {
           provide: BoardPermissionsService,
           useValue: boardPermissions,
         },
+        {
+          provide: WorkspacesService,
+          useValue: workspacesService,
+        },
       ],
     }).compile();
 
@@ -142,9 +180,51 @@ describe('BoardsService', () => {
     expect(boardRepo.create).toHaveBeenCalledWith({
       title: 'Empty board',
       ownerId: 'user-1',
+      workspaceId: 'workspace-1',
     });
     expect(columnRepo.save).not.toHaveBeenCalled();
     expect(board.columns).toEqual([]);
+  });
+
+  it('lists only boards from the active workspace', async () => {
+    await service.findAll('user-1');
+
+    expect(workspacesService.getActiveWorkspace).toHaveBeenCalledWith(
+      'user-1',
+    );
+    expect(boardQueryBuilder.where).toHaveBeenCalledWith(
+      'board.workspaceId = :workspaceId',
+      { workspaceId: 'workspace-1' },
+    );
+    expect(boardQueryBuilder.andWhere).toHaveBeenCalledWith(
+      '(board.ownerId = :userId OR member.userId = :userId)',
+      { userId: 'user-1' },
+    );
+  });
+
+  it('creates a board in an explicitly selected workspace', async () => {
+    workspacesService.assertMember!.mockResolvedValueOnce({
+      workspace: { id: 'workspace-2' } as never,
+      role: 'member' as never,
+    });
+
+    await service.create(
+      {
+        title: 'Design board',
+        workspaceId: 'workspace-2',
+      },
+      'user-1',
+    );
+
+    expect(workspacesService.assertMember).toHaveBeenCalledWith(
+      'workspace-2',
+      'user-1',
+    );
+    expect(boardRepo.create).toHaveBeenCalledWith({
+      title: 'Design board',
+      ownerId: 'user-1',
+      workspaceId: 'workspace-2',
+    });
   });
 
   it('creates Scrum columns in order', async () => {
@@ -288,10 +368,38 @@ describe('BoardsService', () => {
     expect(memberRepo.save).not.toHaveBeenCalled();
   });
 
+  it('does not share a board with a user from another workspace', async () => {
+    boardRepo.findOne!.mockResolvedValue(
+      createBoard({ workspaceId: 'workspace-1' }),
+    );
+    userRepo.findOne!.mockResolvedValue({
+      id: 'outside-user',
+      email: 'outside@example.com',
+    } as User);
+    workspacesService.assertMember!.mockRejectedValueOnce(
+      new ForbiddenException(),
+    );
+
+    await expect(
+      service.share(
+        'board-1',
+        { email: 'outside@example.com' },
+        'user-1',
+      ),
+    ).rejects.toThrow('The user must belong to the board workspace');
+
+    expect(memberRepo.save).not.toHaveBeenCalled();
+  });
+
   it('creates a welcome board with completed tasks relative to registration', async () => {
     const registeredAt = new Date('2026-06-10T12:00:00.000Z');
 
-    const board = await service.createWelcomeBoard('user-1', registeredAt, 'ru');
+    const board = await service.createWelcomeBoard(
+      'user-1',
+      'workspace-1',
+      registeredAt,
+      'ru',
+    );
     const savedTasks = (taskRepo.save as jest.Mock).mock.calls[0][0] as Task[];
     const completedTasks = savedTasks.filter((task) => task.isCompleted);
 

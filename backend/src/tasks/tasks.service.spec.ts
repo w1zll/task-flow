@@ -10,12 +10,16 @@ import { TasksService } from './tasks.service';
 import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
 import { BoardPermissionsService } from '@/boards/board-permissions.service';
 import { ForbiddenException } from '@nestjs/common';
+import { WorkspacesService } from '@/workspaces/workspaces.service';
 
 describe('TasksService', () => {
   let service: TasksService;
   let taskRepo: jest.Mocked<Partial<Repository<Task>>>;
   let columnRepo: jest.Mocked<Partial<Repository<Column>>>;
+  let boardRepo: jest.Mocked<Partial<Repository<Board>>>;
+  let userRepo: jest.Mocked<Partial<Repository<User>>>;
   let boardPermissions: jest.Mocked<Partial<BoardPermissionsService>>;
+  let workspacesService: jest.Mocked<Partial<WorkspacesService>>;
   let mockQueryBuilder: {
     update: jest.Mock;
     set: jest.Mock;
@@ -55,6 +59,7 @@ describe('TasksService', () => {
         board: {
           id: 'board-1',
           ownerId: userId,
+          workspaceId: 'workspace-1',
           members: [],
         },
       },
@@ -89,6 +94,12 @@ describe('TasksService', () => {
     columnRepo = {
       findOne: jest.fn(),
     };
+    boardRepo = {
+      findOne: jest.fn(),
+    };
+    userRepo = {
+      findOne: jest.fn(),
+    };
     boardPermissions = {
       assertCanEditBoardContent: jest.fn().mockResolvedValue({
         role: 'editor',
@@ -101,6 +112,12 @@ describe('TasksService', () => {
           canUseWhiteboard: true,
           canManageBoardSettings: false,
         },
+      }),
+    };
+    workspacesService = {
+      assertMember: jest.fn().mockResolvedValue({
+        workspace: { id: 'workspace-1' },
+        role: 'member',
       }),
     };
 
@@ -117,7 +134,7 @@ describe('TasksService', () => {
         },
         {
           provide: getRepositoryToken(Board),
-          useValue: {},
+          useValue: boardRepo,
         },
         {
           provide: getRepositoryToken(BoardMember),
@@ -125,7 +142,7 @@ describe('TasksService', () => {
         },
         {
           provide: getRepositoryToken(User),
-          useValue: {},
+          useValue: userRepo,
         },
         {
           provide: FrontendCacheService,
@@ -134,6 +151,10 @@ describe('TasksService', () => {
         {
           provide: BoardPermissionsService,
           useValue: boardPermissions,
+        },
+        {
+          provide: WorkspacesService,
+          useValue: workspacesService,
         },
       ],
     }).compile();
@@ -181,6 +202,7 @@ describe('TasksService', () => {
       board: {
         id: 'board-1',
         ownerId: userId,
+        workspaceId: 'workspace-1',
         members: [],
       },
     } as Column);
@@ -225,6 +247,39 @@ describe('TasksService', () => {
         'viewer-1',
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(taskRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('does not assign a task to a user from another workspace', async () => {
+    columnRepo.findOne!.mockResolvedValue({
+      id: 'column-1',
+      boardId: 'board-1',
+    } as Column);
+    userRepo.findOne!.mockResolvedValue({
+      id: 'outside-user',
+      name: 'Outside User',
+    } as User);
+    boardRepo.findOne!.mockResolvedValue({
+      id: 'board-1',
+      ownerId: 'outside-user',
+      workspaceId: 'workspace-1',
+      members: [],
+    } as Board);
+    workspacesService.assertMember!.mockRejectedValueOnce(
+      new ForbiddenException(),
+    );
+
+    await expect(
+      service.create(
+        {
+          title: 'Cross-workspace assignment',
+          columnId: 'column-1',
+          assigneeId: 'outside-user',
+        },
+        userId,
+      ),
+    ).rejects.toThrow('Assignee must belong to the board workspace');
 
     expect(taskRepo.save).not.toHaveBeenCalled();
   });

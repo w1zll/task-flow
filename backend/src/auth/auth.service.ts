@@ -17,6 +17,7 @@ import { BoardsService } from '@/boards/boards.service';
 import { AppLocale } from '@/common/locale/request-locale';
 import { AvatarService } from '@/users/avatar.service';
 import { AvatarUploadFile } from '@/storage/storage.types';
+import { WorkspacesService } from '@/workspaces/workspaces.service';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +35,7 @@ export class AuthService {
     private readonly boardsService: BoardsService,
 
     private readonly avatarService: AvatarService,
+    private readonly workspacesService: WorkspacesService,
   ) {}
 
   async register(
@@ -51,8 +53,13 @@ export class AuthService {
 
     try {
       user = await this.avatarService.initializeAvatar(user, avatarFile);
+      const workspace = await this.workspacesService.createPersonalWorkspace(
+        user,
+        locale,
+      );
       await this.boardsService.createWelcomeBoard(
         user.id,
+        workspace.id,
         user.createdAt ?? new Date(),
         locale,
       );
@@ -226,6 +233,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         avatar: user.avatar,
+        activeWorkspaceId: user.activeWorkspaceId,
       },
     };
   }

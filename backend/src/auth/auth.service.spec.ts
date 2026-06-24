@@ -10,6 +10,7 @@ import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { BoardsService } from '@/boards/boards.service';
 import { AvatarService } from '@/users/avatar.service';
+import { WorkspacesService } from '@/workspaces/workspaces.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -19,6 +20,7 @@ describe('AuthService', () => {
   let configService: ConfigService;
   let boardsService: BoardsService;
   let avatarService: AvatarService;
+  let workspacesService: WorkspacesService;
 
   const mockUserRepo = {
     findOne: jest.fn(),
@@ -60,6 +62,13 @@ describe('AuthService', () => {
     removeStoredAvatar: jest.fn(),
   };
 
+  const mockWorkspacesService = {
+    createPersonalWorkspace: jest.fn(async (user: User) => {
+      user.activeWorkspaceId = 'workspace-1';
+      return { id: 'workspace-1' };
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -88,6 +97,10 @@ describe('AuthService', () => {
           provide: AvatarService,
           useValue: mockAvatarService,
         },
+        {
+          provide: WorkspacesService,
+          useValue: mockWorkspacesService,
+        },
       ],
     }).compile();
 
@@ -100,6 +113,7 @@ describe('AuthService', () => {
     configService = module.get<ConfigService>(ConfigService);
     boardsService = module.get<BoardsService>(BoardsService);
     avatarService = module.get<AvatarService>(AvatarService);
+    workspacesService = module.get<WorkspacesService>(WorkspacesService);
   });
 
   afterEach(() => {
@@ -134,6 +148,7 @@ describe('AuthService', () => {
           email: dto.email,
           name: dto.name,
           avatar: initializedUser.avatar,
+          activeWorkspaceId: 'workspace-1',
         },
       };
 
@@ -161,7 +176,12 @@ describe('AuthService', () => {
       );
       expect(boardsService.createWelcomeBoard).toHaveBeenCalledWith(
         user.id,
+        'workspace-1',
         user.createdAt,
+        'en',
+      );
+      expect(workspacesService.createPersonalWorkspace).toHaveBeenCalledWith(
+        initializedUser,
         'en',
       );
       expect(result).toEqual(tokenPair);
@@ -196,6 +216,7 @@ describe('AuthService', () => {
 
       expect(boardsService.createWelcomeBoard).toHaveBeenCalledWith(
         user.id,
+        'workspace-1',
         user.createdAt,
         'ru',
       );
@@ -267,7 +288,13 @@ describe('AuthService', () => {
       const tokenPair = {
         accessToken: 'access',
         refreshToken: 'refresh',
-        user: { id: '1', email: dto.email, name: 'Test', avatar: undefined },
+        user: {
+          id: '1',
+          email: dto.email,
+          name: 'Test',
+          avatar: undefined,
+          activeWorkspaceId: undefined,
+        },
       };
 
       mockUserRepo.findOne.mockResolvedValue(user);

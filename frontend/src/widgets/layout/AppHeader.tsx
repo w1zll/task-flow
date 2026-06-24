@@ -23,6 +23,7 @@ import { useState } from 'react';
 import NextLink from 'next/link';
 import LocaleSwitcher from './LocaleSwitcher';
 import UserAvatar from '@/shared/ui/UserAvatar';
+import WorkspaceSwitcher from './WorkspaceSwitcher';
 
 const AppHeader = ({
   initialThemeMode,
@@ -54,7 +55,8 @@ const AppHeader = ({
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: { xs: 1, sm: 4 },
+            gap: { xs: 0.5, sm: 2, md: 4 },
+            minWidth: 0,
           }}
         >
           <Link
@@ -83,7 +85,11 @@ const AppHeader = ({
             </Box>
             <Typography
               variant="h6"
-              sx={{ letterSpacing: '-0.02em', fontWeight: 700 }}
+              sx={{
+                display: { xs: 'none', md: 'block' },
+                letterSpacing: '-0.02em',
+                fontWeight: 700,
+              }}
             >
               TaskFlow
             </Typography>
@@ -102,6 +108,7 @@ const AppHeader = ({
           >
             {t('myBoards')}
           </Link>
+          {user && <WorkspaceSwitcher />}
         </Box>
 
         <Box sx={{ display: 'flex', marginLeft: 'auto', gap: 1 }}>
