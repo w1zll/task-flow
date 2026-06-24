@@ -8,7 +8,9 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
+  UpdateDateColumn,
 } from 'typeorm';
+import { BoardRole } from './board-role.enum';
 
 @Entity('board_members')
 @Unique(['boardId', 'userId'])
@@ -30,6 +32,23 @@ export class BoardMember {
   @JoinColumn({ name: 'userId' })
   user: User;
 
+  @Column({
+    type: 'enum',
+    enum: BoardRole,
+    default: BoardRole.EDITOR,
+  })
+  role: BoardRole;
+
+  @Column({ type: 'uuid', nullable: true })
+  invitedById: string | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'invitedById' })
+  invitedBy: User | null;
+
   @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

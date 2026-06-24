@@ -120,6 +120,9 @@
     "share": "Share",
     "stats": "Stats",
     "addColumn": "Add column",
+    "readOnly": "View only",
+    "permissionDenied": "Your role does not allow this change.",
+    "columnCreateError": "Failed to create column.",
     "taskStats": "Task statistics",
     "onTime": "Completed on time: {count}",
     "late": "Completed late: {count}",
@@ -134,7 +137,12 @@
     "loading": "Loading...",
     "ownerSuffix": "(owner)",
     "youSuffix": "(you)",
+    "memberRole": "Role",
+    "roleOwner": "Owner",
+    "roleEditor": "Editor",
+    "roleViewer": "Viewer",
     "remove": "Remove",
+    "memberUpdateError": "Failed to update board member.",
     "noMembers": "No members.",
     "columnTitle": "Column title",
     "shareTitle": "Share board",
@@ -220,24 +228,33 @@
     "created": "Created:",
     "updated": "Updated:",
     "deleteTask": "Delete task",
+    "readOnly": "You have view-only access to this task.",
+    "close": "Close",
     "cancel": "Cancel",
     "save": "Save",
     "saving": "Saving…"
   },
   "Notifications": {
     "columnMoveError": "Failed to move columns",
+    "columnUpdateError": "Failed to update column",
+    "columnDeleteError": "Failed to delete column",
+    "taskCreateError": "Failed to create task",
     "taskMoveError": "Failed to move task",
     "taskUpdateError": "Failed to update task",
+    "taskDeleteError": "Failed to delete task",
+    "permissionDenied": "Your role does not allow this change.",
     "taskQueued": "No connection. Change added to pending changes."
   },
   "PendingChanges": {
     "title": "Unsaved changes",
     "description": "There are {count} task changes waiting for connection. Apply them now?",
+    "readOnlyDescription": "There are {count} pending changes, but your current role is view-only. They cannot be applied.",
     "apply": "Apply",
     "applying": "Applying...",
     "discard": "Discard",
     "applied": "Pending changes applied",
     "discarded": "Pending changes discarded",
-    "applyError": "Failed to apply pending changes"
+    "applyError": "Failed to apply pending changes",
+    "permissionChanged": "Some pending changes were discarded because your permissions changed."
   }
 }

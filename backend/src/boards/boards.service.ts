@@ -4,13 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Board } from './entities/board.entity';
-import { BoardMember } from './entities/board-member.entity';
-import { User } from '@/users/entities/user.entity';
 import { Repository } from 'typeorm';
-import { CreateBoardDto, ShareBoardDto, UpdateBoardDto } from './dto/board.dto';
 import { Column } from '@/columns/entities/column.entity';
+import { AppLocale } from '@/common/locale/request-locale';
+import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
 import { Task } from '@/tasks/entities/task.entity';
+import { User } from '@/users/entities/user.entity';
+import { toPublicUser } from '@/users/public-user';
 import {
   BoardTemplate,
   SCRUM_COLUMN_KEYS,
@@ -18,33 +18,34 @@ import {
   createWelcomeTasks,
   getWelcomeBoardText,
 } from './board-templates';
-import { AppLocale } from '@/common/locale/request-locale';
-import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
-import { toPublicUser } from '@/users/public-user';
+import {
+  BoardAccess,
+  BoardPermissionsService,
+} from './board-permissions.service';
+import { CreateBoardDto, ShareBoardDto, UpdateBoardDto } from './dto/board.dto';
+import { BoardMember } from './entities/board-member.entity';
+import { BoardRole } from './entities/board-role.enum';
+import { Board } from './entities/board.entity';
 
 @Injectable()
 export class BoardsService {
   constructor(
     @InjectRepository(Board)
     private readonly boardRepo: Repository<Board>,
-
     @InjectRepository(BoardMember)
     private readonly memberRepo: Repository<BoardMember>,
-
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
-
     @InjectRepository(Column)
     private readonly columnRepo: Repository<Column>,
-
     @InjectRepository(Task)
     private readonly taskRepo: Repository<Task>,
-
     private readonly frontendCache: FrontendCacheService,
+    private readonly boardPermissions: BoardPermissionsService,
   ) {}
 
   async findAll(userId: string): Promise<Board[]> {
-    return this.boardRepo
+    const boards = await this.boardRepo
       .createQueryBuilder('board')
       .leftJoin('board.members', 'member')
       .where('board.ownerId = :userId OR member.userId = :userId', {
@@ -53,6 +54,15 @@ export class BoardsService {
       .orderBy('board.createdAt', 'DESC')
       .distinct(true)
       .getMany();
+
+    return Promise.all(
+      boards.map(async (board) =>
+        this.attachAccess(
+          board,
+          await this.boardPermissions.getAccess(board.id, userId),
+        ),
+      ),
+    );
   }
 
   async findOne(id: string, userId: string): Promise<Board> {
@@ -69,40 +79,38 @@ export class BoardsService {
         columns: { order: 'ASC' },
       } as any,
     });
+    if (!board) throw new NotFoundException('Board not found');
 
-    if (!board) throw new NotFoundException('Доска не найдена');
-    if (
-      !(
-        board.ownerId === userId ||
-        board.members?.some((m) => m.userId === userId)
-      )
-    ) {
-      throw new ForbiddenException('Доступ запрещен');
-    }
-
-    board.columns.forEach((col) => {
-      col.tasks?.forEach((task) => {
+    const access = await this.boardPermissions.assertCanRead(id, userId);
+    board.columns?.forEach((column) => {
+      column.tasks?.forEach((task) => {
         if (task.assignee) task.assignee = toPublicUser(task.assignee);
       });
-      col.tasks?.sort((a, b) => a.order - b.order);
+      column.tasks?.sort((a, b) => a.order - b.order);
     });
     board.members?.forEach((member) => {
       member.user = toPublicUser(member.user);
     });
-    return board;
+    const owner = await this.userRepo.findOne({ where: { id: board.ownerId } });
+    if (owner) {
+      const ownerAsMember = {
+        id: null,
+        boardId: board.id,
+        userId: board.ownerId,
+        user: toPublicUser(owner),
+        role: BoardRole.OWNER,
+        invitedById: null,
+        createdAt: board.createdAt,
+        updatedAt: board.updatedAt,
+      } as unknown as BoardMember;
+      board.members = [ownerAsMember, ...(board.members ?? [])];
+    }
+
+    return this.attachAccess(board, access);
   }
 
   async ensureAccess(id: string, userId: string): Promise<void> {
-    const board = await this.boardRepo.findOne({
-      where: { id },
-      select: { id: true, ownerId: true },
-    });
-
-    if (!board) throw new NotFoundException('Доска не найдена');
-    if (board.ownerId === userId) return;
-    if (await this.isBoardMember(id, userId)) return;
-
-    throw new ForbiddenException('Доступ запрещен');
+    await this.boardPermissions.assertCanRead(id, userId);
   }
 
   async create(
@@ -119,7 +127,7 @@ export class BoardsService {
       board.columns = await this.createScrumColumnsForBoard(board.id, locale);
     }
 
-    return board;
+    return this.attachRole(board, BoardRole.OWNER);
   }
 
   async createWelcomeBoard(
@@ -144,7 +152,6 @@ export class BoardsService {
     const tasks = this.taskRepo.create(
       createWelcomeTasks(columnsByKey, registeredAt, locale),
     );
-
     const savedTasks = await this.taskRepo.save(tasks);
 
     board.columns = columns.map((column) => ({
@@ -154,7 +161,7 @@ export class BoardsService {
         .sort((a, b) => a.order - b.order),
     }));
 
-    return board;
+    return this.attachRole(board, BoardRole.OWNER);
   }
 
   private async createScrumColumnsForBoard(
@@ -170,15 +177,22 @@ export class BoardsService {
     dto: UpdateBoardDto,
     userId: string,
   ): Promise<Board> {
-    const board = await this.findOne(id, userId);
+    const access =
+      await this.boardPermissions.assertCanManageBoardSettings(id, userId);
+    const board = await this.boardRepo.findOne({ where: { id } });
+    if (!board) throw new NotFoundException('Board not found');
+
     Object.assign(board, dto);
     const saved = await this.boardRepo.save(board);
     await this.frontendCache.revalidateBoard(id);
-    return saved;
+    return this.attachAccess(saved, access);
   }
 
   async remove(id: string, userId: string): Promise<void> {
-    const board = await this.findOne(id, userId);
+    await this.boardPermissions.assertCanDeleteBoard(id, userId);
+    const board = await this.boardRepo.findOne({ where: { id } });
+    if (!board) throw new NotFoundException('Board not found');
+
     await this.boardRepo.remove(board);
     await this.frontendCache.revalidateBoard(id);
   }
@@ -188,50 +202,49 @@ export class BoardsService {
     dto: ShareBoardDto,
     userId: string,
   ): Promise<BoardMember> {
-    const board = await this.boardRepo.findOne({ where: { id: boardId } });
-    if (!board) throw new NotFoundException('Доска не найдена');
-    if (board.ownerId !== userId)
-      throw new ForbiddenException('Только владелец может делиться доской');
+    await this.boardPermissions.assertCanManageBoardMembers(boardId, userId);
 
     const target = dto.userId
       ? await this.userRepo.findOne({ where: { id: dto.userId } })
       : dto.email
         ? await this.userRepo.findOne({ where: { email: dto.email } })
         : null;
-
     if (!target) {
-      throw new NotFoundException('Пользователь для приглашения не найден');
+      throw new NotFoundException('User to invite was not found');
     }
-
     if (target.id === userId) {
-      throw new ForbiddenException('Владелец уже имеет доступ к доске');
+      throw new ForbiddenException('The board owner already has access');
     }
 
     const existing = await this.memberRepo.findOne({
       where: { boardId, userId: target.id },
+      relations: ['user'],
     });
-    if (existing) return existing;
+    if (existing) {
+      existing.user = toPublicUser(existing.user);
+      return existing;
+    }
 
-    const member = this.memberRepo.create({ boardId, userId: target.id });
+    const member = this.memberRepo.create({
+      boardId,
+      userId: target.id,
+      role: dto.role ?? BoardRole.EDITOR,
+      invitedById: userId,
+    });
     const saved = await this.memberRepo.save(member);
     const boardMember = await this.memberRepo.findOne({
       where: { id: saved.id },
       relations: ['user'],
     });
-    await this.frontendCache.revalidateBoard(boardId);
     boardMember.user = toPublicUser(boardMember.user);
+    await this.frontendCache.revalidateBoard(boardId);
     return boardMember;
   }
 
   async listMembers(boardId: string, userId: string): Promise<BoardMember[]> {
+    await this.boardPermissions.assertCanRead(boardId, userId);
     const board = await this.boardRepo.findOne({ where: { id: boardId } });
-    if (!board) throw new NotFoundException('Доска не найдена');
-    if (
-      board.ownerId !== userId &&
-      !(await this.isBoardMember(boardId, userId))
-    ) {
-      throw new ForbiddenException('Доступ запрещен');
-    }
+    if (!board) throw new NotFoundException('Board not found');
 
     const owner = await this.userRepo.findOne({ where: { id: board.ownerId } });
     const members = (
@@ -248,16 +261,13 @@ export class BoardsService {
       boardId,
       userId: board.ownerId,
       user: toPublicUser(owner),
+      role: BoardRole.OWNER,
+      invitedById: null,
+      createdAt: board.createdAt,
+      updatedAt: board.updatedAt,
     } as unknown as BoardMember;
-    return [ownerAsMember, ...members];
 
-    // return [
-    //   this.userRepo.findOne({ where: { id: userId } }),
-    //   ...this.memberRepo.find({
-    //     where: { boardId },
-    //     relations: ['user'],
-    //   }),
-    // ];
+    return [ownerAsMember, ...members];
   }
 
   async revokeMember(
@@ -265,25 +275,49 @@ export class BoardsService {
     memberId: string,
     userId: string,
   ): Promise<void> {
-    const board = await this.boardRepo.findOne({ where: { id: boardId } });
-    if (!board) throw new NotFoundException('Доска не найдена');
-    if (board.ownerId !== userId)
-      throw new ForbiddenException('Только владелец может отзывать доступ');
-
+    await this.boardPermissions.assertCanManageBoardMembers(boardId, userId);
     const member = await this.memberRepo.findOne({ where: { id: memberId } });
     if (!member || member.boardId !== boardId) {
-      throw new NotFoundException('Участник не найден');
+      throw new NotFoundException('Board member not found');
     }
 
     await this.memberRepo.remove(member);
     await this.frontendCache.revalidateBoard(boardId);
   }
 
-  private async isBoardMember(
+  async updateMemberRole(
     boardId: string,
+    memberId: string,
+    role: BoardRole.EDITOR | BoardRole.VIEWER,
     userId: string,
-  ): Promise<boolean> {
-    const count = await this.memberRepo.count({ where: { boardId, userId } });
-    return count > 0;
+  ): Promise<BoardMember> {
+    await this.boardPermissions.assertCanManageBoardMembers(boardId, userId);
+    const member = await this.memberRepo.findOne({
+      where: { id: memberId },
+      relations: ['user'],
+    });
+    if (!member || member.boardId !== boardId) {
+      throw new NotFoundException('Board member not found');
+    }
+
+    member.role = role;
+    const saved = await this.memberRepo.save(member);
+    saved.user = toPublicUser(saved.user);
+    await this.frontendCache.revalidateBoard(boardId);
+    return saved;
+  }
+
+  private attachRole(board: Board, role: BoardRole): Board {
+    return this.attachAccess(board, {
+      role,
+      capabilities: this.boardPermissions.getCapabilities(role),
+    });
+  }
+
+  private attachAccess(board: Board, access: BoardAccess): Board {
+    return Object.assign(board, {
+      currentUserRole: access.role,
+      capabilities: access.capabilities,
+    });
   }
 }

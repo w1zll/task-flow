@@ -77,10 +77,12 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
         payload.taskId,
         payload.changes,
         userId,
+        payload.boardId,
       );
+      const boardId = updated.column.boardId;
 
-      this.server.to(`board-${payload.boardId}`).emit('task:update', {
-        boardId: payload.boardId,
+      this.server.to(`board-${boardId}`).emit('task:update', {
+        boardId,
         task: updated,
       });
       ack?.({ ok: true });
@@ -115,10 +117,12 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
           order: payload.order,
         },
         userId,
+        payload.boardId,
       );
+      const boardId = updated.column.boardId;
 
-      this.server.to(`board-${payload.boardId}`).emit('task:moved', {
-        boardId: payload.boardId,
+      this.server.to(`board-${boardId}`).emit('task:moved', {
+        boardId,
         task: updated,
       });
       ack?.({ ok: true });
@@ -144,10 +148,15 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     try {
       const userId = (client as any).user.sub;
-      await this.tasksService.reorder(payload, payload.columnId, userId);
+      const boardId = await this.tasksService.reorder(
+        payload,
+        payload.columnId,
+        userId,
+        payload.boardId,
+      );
 
-      this.server.to(`board-${payload.boardId}`).emit('task:reordered', {
-        boardId: payload.boardId,
+      this.server.to(`board-${boardId}`).emit('task:reordered', {
+        boardId,
         columnId: payload.columnId,
         taskIds: payload.taskIds,
       });

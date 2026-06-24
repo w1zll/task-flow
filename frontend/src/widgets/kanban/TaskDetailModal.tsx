@@ -3,6 +3,7 @@
 import { Board, Task } from '@/shared/api/api';
 import {
   emitBoardSocketMutation,
+  isBoardPermissionError,
   isBoardSocketMutationQueuedError,
 } from '@/shared/lib/boardSocketMutations';
 import { getSocket } from '@/shared/lib/socket';
@@ -91,6 +92,7 @@ const TaskDetailModal = ({ board }: Props) => {
   const [labelInput, setLabelInput] = useState('');
   const [isDirty, setIsDirty] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const canEdit = board.capabilities.canEditBoardContent;
 
   useEffect(() => {
     if (task) {
@@ -132,12 +134,13 @@ const TaskDetailModal = ({ board }: Props) => {
   }, [board.id, task?.id]);
 
   const patch = <K extends keyof Task>(key: K, value: Task[K]) => {
+    if (!canEdit) return;
     setForm((p) => ({ ...p, [key]: value }));
     setIsDirty(true);
   };
 
   const handleSave = async () => {
-    if (!task) return;
+    if (!task || !canEdit) return;
 
     const isCompletionChange =
       form.isCompleted !== undefined && form.isCompleted !== task.isCompleted;
@@ -180,13 +183,24 @@ const TaskDetailModal = ({ board }: Props) => {
       boardUI.closeTask();
     } catch (error) {
       qc.setQueryData(queryKeys.board(board.id), previousBoard);
+      if (isBoardPermissionError(error)) {
+        void qc.invalidateQueries({
+          queryKey: queryKeys.board(board.id),
+          exact: true,
+        });
+      }
       const isQueuedUpdate = isBoardSocketMutationQueuedError(error);
       enqueueSnackbar(
         tNotifications(
-          isQueuedUpdate ? 'taskQueued' : 'taskUpdateError',
+          isBoardPermissionError(error)
+            ? 'permissionDenied'
+            : isQueuedUpdate
+              ? 'taskQueued'
+              : 'taskUpdateError',
         ),
         {
-          variant: isQueuedUpdate ? 'info' : 'error',
+          variant:
+            !isBoardPermissionError(error) && isQueuedUpdate ? 'info' : 'error',
         },
       );
       if (isQueuedUpdate) {
@@ -198,9 +212,29 @@ const TaskDetailModal = ({ board }: Props) => {
   };
 
   const handleDelete = () => {
-    if (!task) return;
-    deleteTask.mutate({ id: task.id, boardId: board.id });
-    boardUI.closeTask();
+    if (!task || !canEdit) return;
+    deleteTask.mutate(
+      { id: task.id, boardId: board.id },
+      {
+        onSuccess: () => boardUI.closeTask(),
+        onError: (error) => {
+          if (isBoardPermissionError(error)) {
+            void qc.invalidateQueries({
+              queryKey: queryKeys.board(board.id),
+              exact: true,
+            });
+          }
+          enqueueSnackbar(
+            tNotifications(
+              isBoardPermissionError(error)
+                ? 'permissionDenied'
+                : 'taskDeleteError',
+            ),
+            { variant: 'error' },
+          );
+        },
+      },
+    );
   };
 
   const addLabel = (label: string) => {
@@ -266,6 +300,7 @@ const TaskDetailModal = ({ board }: Props) => {
           label={t('title')}
           fullWidth
           value={form.title ?? ''}
+          disabled={!canEdit}
           onChange={(e) => patch('title', e.target.value as any)}
           slotProps={{ htmlInput: { style: { fontWeight: 600 } } }}
         />
@@ -274,6 +309,7 @@ const TaskDetailModal = ({ board }: Props) => {
           control={
             <Switch
               checked={!!form.isCompleted}
+              disabled={!canEdit}
               onChange={(event) =>
                 patch('isCompleted', event.target.checked as any)
               }
@@ -297,6 +333,7 @@ const TaskDetailModal = ({ board }: Props) => {
           multiline
           rows={3}
           value={form.description ?? ''}
+          disabled={!canEdit}
           onChange={(e) => patch('description', e.target.value as any)}
           placeholder={t('descriptionPlaceholder')}
         />
@@ -307,6 +344,7 @@ const TaskDetailModal = ({ board }: Props) => {
             <Select
               label={t('priority')}
               value={form.priority ?? 'medium'}
+              disabled={!canEdit}
               onChange={(e) => patch('priority', e.target.value as any)}
               renderValue={(val) => {
                 const opt = PRIORITY_OPTIONS.find((o) => o.value === val);
@@ -333,6 +371,7 @@ const TaskDetailModal = ({ board }: Props) => {
             size="small"
             sx={{ minWidth: 160 }}
             value={form.dueDate ?? ''}
+            disabled={!canEdit}
             onChange={(e) => patch('dueDate', e.target.value as any)}
             slotProps={{
               inputLabel: { shrink: true },
@@ -351,6 +390,7 @@ const TaskDetailModal = ({ board }: Props) => {
             <Select
               label={t('assignee')}
               value={form.assigneeId ?? ''}
+              disabled={!canEdit}
               onChange={(e) => {
                 const selected = e.target.value as string;
                 const member = board.members?.find(
@@ -411,10 +451,16 @@ const TaskDetailModal = ({ board }: Props) => {
                   size="small"
                   variant={active ? 'filled' : 'outlined'}
                   color={active ? 'primary' : 'default'}
-                  onClick={() =>
-                    active ? removeLabel(preset) : addLabel(preset)
+                  onClick={
+                    canEdit
+                      ? () =>
+                          active ? removeLabel(preset) : addLabel(preset)
+                      : undefined
                   }
-                  sx={{ cursor: 'pointer', fontSize: 11 }}
+                  sx={{
+                    cursor: canEdit ? 'pointer' : 'default',
+                    fontSize: 11,
+                  }}
                 />
               );
             })}
@@ -425,6 +471,7 @@ const TaskDetailModal = ({ board }: Props) => {
               size="small"
               placeholder={t('newLabel')}
               value={labelInput}
+              disabled={!canEdit}
               onChange={(e) => setLabelInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -438,6 +485,7 @@ const TaskDetailModal = ({ board }: Props) => {
               size="small"
               variant="outlined"
               onClick={() => addLabel(labelInput)}
+              disabled={!canEdit}
             >
               {t('add')}
             </Button>
@@ -455,7 +503,7 @@ const TaskDetailModal = ({ board }: Props) => {
                     label={label}
                     size="small"
                     color="secondary"
-                    onDelete={() => removeLabel(label)}
+                    onDelete={canEdit ? () => removeLabel(label) : undefined}
                     sx={{ fontSize: 11 }}
                   />
                 ))}
@@ -478,27 +526,35 @@ const TaskDetailModal = ({ board }: Props) => {
       <Divider />
 
       <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
-        <Button
-          color="error"
-          startIcon={<Delete />}
-          onClick={handleDelete}
-          size="small"
-        >
-          {t('deleteTask')}
-        </Button>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button onClick={() => boardUI.closeTask()} size="small">
-            {t('cancel')}
-          </Button>
+        {canEdit ? (
           <Button
-            variant="contained"
-            startIcon={<Save />}
-            onClick={handleSave}
-            disabled={!isDirty || isUpdating}
+            color="error"
+            startIcon={<Delete />}
+            onClick={handleDelete}
             size="small"
           >
-            {isUpdating ? t('saving') : t('save')}
+            {t('deleteTask')}
           </Button>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            {t('readOnly')}
+          </Typography>
+        )}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button onClick={() => boardUI.closeTask()} size="small">
+            {canEdit ? t('cancel') : t('close')}
+          </Button>
+          {canEdit && (
+            <Button
+              variant="contained"
+              startIcon={<Save />}
+              onClick={handleSave}
+              disabled={!isDirty || isUpdating}
+              size="small"
+            >
+              {isUpdating ? t('saving') : t('save')}
+            </Button>
+          )}
         </Box>
       </DialogActions>
     </Dialog>

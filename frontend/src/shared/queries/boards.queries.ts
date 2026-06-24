@@ -258,11 +258,13 @@ export const useShareBoard = () => {
       boardId: string;
       email?: string;
       userId?: string;
+      role?: 'editor' | 'viewer';
     }) =>
       boardsApi
         .share(params.boardId, {
           email: params.email,
           userId: params.userId,
+          role: params.role,
         })
         .then((r) => r.data),
     onSuccess: (_, { boardId }) => {
@@ -291,6 +293,28 @@ export const useRevokeBoardMember = () => {
       boardId: string;
       memberId: string;
     }) => boardsApi.revokeMember(boardId, memberId),
+    onSuccess: (_, { boardId }) => {
+      invalidateBoardWithList(qc, boardId);
+      invalidateBoardMembers(qc, boardId);
+    },
+  });
+};
+
+export const useUpdateBoardMemberRole = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      boardId,
+      memberId,
+      role,
+    }: {
+      boardId: string;
+      memberId: string;
+      role: 'editor' | 'viewer';
+    }) =>
+      boardsApi
+        .updateMemberRole(boardId, memberId, role)
+        .then((response) => response.data),
     onSuccess: (_, { boardId }) => {
       invalidateBoardWithList(qc, boardId);
       invalidateBoardMembers(qc, boardId);

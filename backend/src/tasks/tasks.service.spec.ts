@@ -8,11 +8,14 @@ import { User } from '@/users/entities/user.entity';
 import { Task, TaskPriority } from './entities/task.entity';
 import { TasksService } from './tasks.service';
 import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
+import { BoardPermissionsService } from '@/boards/board-permissions.service';
+import { ForbiddenException } from '@nestjs/common';
 
 describe('TasksService', () => {
   let service: TasksService;
   let taskRepo: jest.Mocked<Partial<Repository<Task>>>;
   let columnRepo: jest.Mocked<Partial<Repository<Column>>>;
+  let boardPermissions: jest.Mocked<Partial<BoardPermissionsService>>;
   let mockQueryBuilder: {
     update: jest.Mock;
     set: jest.Mock;
@@ -86,6 +89,20 @@ describe('TasksService', () => {
     columnRepo = {
       findOne: jest.fn(),
     };
+    boardPermissions = {
+      assertCanEditBoardContent: jest.fn().mockResolvedValue({
+        role: 'editor',
+        capabilities: {
+          canReadBoard: true,
+          canEditBoardContent: true,
+          canManageBoardMembers: false,
+          canDeleteBoard: false,
+          canManageColumns: true,
+          canUseWhiteboard: true,
+          canManageBoardSettings: false,
+        },
+      }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -113,6 +130,10 @@ describe('TasksService', () => {
         {
           provide: FrontendCacheService,
           useValue: { revalidateBoard: jest.fn() },
+        },
+        {
+          provide: BoardPermissionsService,
+          useValue: boardPermissions,
         },
       ],
     }).compile();
@@ -180,6 +201,32 @@ describe('TasksService', () => {
       }),
     );
     expect(result.dueDate).toBeNull();
+    expect(boardPermissions.assertCanEditBoardContent).toHaveBeenCalledWith(
+      'board-1',
+      userId,
+    );
+  });
+
+  it('does not allow a viewer to create a task', async () => {
+    columnRepo.findOne!.mockResolvedValue({
+      id: 'column-1',
+      boardId: 'board-1',
+    } as Column);
+    boardPermissions.assertCanEditBoardContent!.mockRejectedValueOnce(
+      new ForbiddenException(),
+    );
+
+    await expect(
+      service.create(
+        {
+          title: 'Forbidden task',
+          columnId: 'column-1',
+        },
+        'viewer-1',
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(taskRepo.save).not.toHaveBeenCalled();
   });
 
   it('sets completedAt when completing a task without a timestamp', async () => {

@@ -13,6 +13,7 @@ import { Box } from '@mui/material';
 import { useBoardSocket } from '@/shared/hooks/useBoardSocket';
 import {
   emitBoardSocketMutation,
+  isBoardPermissionError,
   isBoardSocketMutationQueuedError,
 } from '@/shared/lib/boardSocketMutations';
 
@@ -34,6 +35,8 @@ const KanbanBoard = ({ board }: Props) => {
 
   const [localBoard, setLocalBoard] = useState<Board>(board);
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
+  const canEditBoardContent = board.capabilities.canEditBoardContent;
+  const canManageColumns = board.capabilities.canManageColumns;
 
   useEffect(() => {
     setLocalBoard(board);
@@ -41,6 +44,8 @@ const KanbanBoard = ({ board }: Props) => {
 
   const handleDragStart = (start: any) => {
     if (pendingTaskId) return;
+    if (start.type === 'COLUMN' && !canManageColumns) return;
+    if (start.type === 'TASK' && !canEditBoardContent) return;
     if (start.type === 'TASK') {
       startDrag(start.draggableId);
     }
@@ -53,6 +58,8 @@ const KanbanBoard = ({ board }: Props) => {
     }
     endDrag();
 
+    if (type === 'COLUMN' && !canManageColumns) return;
+    if (type === 'TASK' && !canEditBoardContent) return;
     if (!destination) return;
     if (
       source.droppableId === destination.droppableId &&
@@ -84,7 +91,20 @@ const KanbanBoard = ({ board }: Props) => {
         });
       } catch (error) {
         setLocalBoard(previousBoard);
-        enqueueSnackbar(t('columnMoveError'), { variant: 'error' });
+        if (isBoardPermissionError(error)) {
+          void qc.invalidateQueries({
+            queryKey: queryKeys.board(board.id),
+            exact: true,
+          });
+        }
+        enqueueSnackbar(
+          t(
+            isBoardPermissionError(error)
+              ? 'permissionDenied'
+              : 'columnMoveError',
+          ),
+          { variant: 'error' },
+        );
       }
 
       return;
@@ -168,14 +188,26 @@ const KanbanBoard = ({ board }: Props) => {
     } catch (error) {
       setLocalBoard(previousBoard);
       qc.setQueryData(queryKeys.board(board.id), previousBoard);
+      if (isBoardPermissionError(error)) {
+        void qc.invalidateQueries({
+          queryKey: queryKeys.board(board.id),
+          exact: true,
+        });
+      }
       enqueueSnackbar(
         t(
-          isBoardSocketMutationQueuedError(error)
-            ? 'taskQueued'
-            : 'taskMoveError',
+          isBoardPermissionError(error)
+            ? 'permissionDenied'
+            : isBoardSocketMutationQueuedError(error)
+              ? 'taskQueued'
+              : 'taskMoveError',
         ),
         {
-          variant: isBoardSocketMutationQueuedError(error) ? 'info' : 'error',
+          variant:
+            !isBoardPermissionError(error) &&
+            isBoardSocketMutationQueuedError(error)
+              ? 'info'
+              : 'error',
         },
       );
     } finally {
@@ -203,7 +235,8 @@ const KanbanBoard = ({ board }: Props) => {
                 board={localBoard}
                 index={index}
                 pendingTaskId={pendingTaskId}
-                isTaskDragDisabled={!!pendingTaskId}
+                isColumnDragDisabled={!canManageColumns || !!pendingTaskId}
+                isTaskDragDisabled={!canEditBoardContent || !!pendingTaskId}
               />
             ))}
             {provided.placeholder}

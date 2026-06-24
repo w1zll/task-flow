@@ -24,12 +24,17 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
 import TaskCard from './TaskCard';
+import { useSnackbar } from 'notistack';
+import { isBoardPermissionError } from '@/shared/lib/boardSocketMutations';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/shared/queries/board-query-keys';
 
 interface Props {
   column: BoardColumn;
   board: Board;
   index: number;
   pendingTaskId?: string | null;
+  isColumnDragDisabled?: boolean;
   isTaskDragDisabled?: boolean;
 }
 
@@ -38,9 +43,13 @@ const KanbanColumn = ({
   board,
   index,
   pendingTaskId,
+  isColumnDragDisabled = false,
   isTaskDragDisabled = false,
 }: Props) => {
   const t = useTranslations('KanbanColumn');
+  const tNotifications = useTranslations('Notifications');
+  const { enqueueSnackbar } = useSnackbar();
+  const qc = useQueryClient();
   const addingTaskInColumnId = useBoardUIStore(
     (state) => state.addingTaskInColumnId,
   );
@@ -55,6 +64,8 @@ const KanbanColumn = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(column.title);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const canEditBoardContent = board.capabilities.canEditBoardContent;
+  const canManageColumns = board.capabilities.canManageColumns;
 
   useEffect(() => {
     setTitleInput(column.title);
@@ -63,6 +74,7 @@ const KanbanColumn = ({
   const isAddingTask = addingTaskInColumnId === column.id;
 
   const handleAddTask = () => {
+    if (!canEditBoardContent) return;
     const title = newTaskTitle.trim();
     if (!title) return;
     createTask.mutate(
@@ -72,32 +84,66 @@ const KanbanColumn = ({
           setNewTaskTitle('');
           setAddingTaskInColumn(null);
         },
+        onError: (error) => handleMutationError(error, 'taskCreateError'),
       },
     );
   };
 
   const handleRenameColumn = () => {
+    if (!canManageColumns) return;
     const title = titleInput.trim();
     if (title && title !== column.title) {
-      updateColumn.mutate({
-        id: column.id,
-        data: { title },
-        boardId: board.id,
-      });
+      updateColumn.mutate(
+        {
+          id: column.id,
+          data: { title },
+          boardId: board.id,
+        },
+        {
+          onError: (error) => handleMutationError(error, 'columnUpdateError'),
+        },
+      );
     }
     setIsEditingTitle(false);
   };
 
   const handleDeleteColumn = () => {
+    if (!canManageColumns) return;
     setMenuAnchor(null);
-    deleteColumn.mutate({ id: column.id, boardId: board.id });
+    deleteColumn.mutate(
+      { id: column.id, boardId: board.id },
+      {
+        onError: (error) => handleMutationError(error, 'columnDeleteError'),
+      },
+    );
+  };
+
+  const handleMutationError = (
+    error: unknown,
+    fallbackKey:
+      | 'taskCreateError'
+      | 'columnUpdateError'
+      | 'columnDeleteError',
+  ) => {
+    if (isBoardPermissionError(error)) {
+      void qc.invalidateQueries({
+        queryKey: queryKeys.board(board.id),
+        exact: true,
+      });
+    }
+    enqueueSnackbar(
+      tNotifications(
+        isBoardPermissionError(error) ? 'permissionDenied' : fallbackKey,
+      ),
+      { variant: 'error' },
+    );
   };
 
   return (
     <Draggable
       draggableId={column.id}
       index={index}
-      isDragDisabled={isTaskDragDisabled}
+      isDragDisabled={isColumnDragDisabled}
     >
       {(provided, snapshot) => (
         <Paper
@@ -131,7 +177,7 @@ const KanbanColumn = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              cursor: isTaskDragDisabled ? 'default' : 'grab',
+              cursor: isColumnDragDisabled ? 'default' : 'grab',
             }}
           >
             {isEditingTitle ? (
@@ -204,22 +250,28 @@ const KanbanColumn = ({
               </Box>
             )}
 
-            <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
-              <Tooltip title={t('addTask')}>
-                <IconButton
-                  size="small"
-                  onClick={() => setAddingTaskInColumn(column.id)}
-                >
-                  <Add fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <IconButton
-                size="small"
-                onClick={(e) => setMenuAnchor(e.currentTarget)}
-              >
-                <MoreHoriz fontSize="small" />
-              </IconButton>
-            </Box>
+            {(canEditBoardContent || canManageColumns) && (
+              <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+                {canEditBoardContent && (
+                  <Tooltip title={t('addTask')}>
+                    <IconButton
+                      size="small"
+                      onClick={() => setAddingTaskInColumn(column.id)}
+                    >
+                      <Add fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {canManageColumns && (
+                  <IconButton
+                    size="small"
+                    onClick={(e) => setMenuAnchor(e.currentTarget)}
+                  >
+                    <MoreHoriz fontSize="small" />
+                  </IconButton>
+                )}
+              </Box>
+            )}
           </Box>
 
           <Droppable droppableId={column.id} type="TASK">
@@ -248,6 +300,7 @@ const KanbanColumn = ({
                     boardId={board.id}
                     isPending={task.id === pendingTaskId}
                     isDragDisabled={isTaskDragDisabled}
+                    canEdit={canEditBoardContent}
                   />
                 ))}
                 {provided.placeholder}
@@ -255,7 +308,7 @@ const KanbanColumn = ({
             )}
           </Droppable>
 
-          {isAddingTask ? (
+          {canEditBoardContent && isAddingTask ? (
             <Box sx={{ px: 1.5, pb: 1.5 }}>
               <TextField
                 autoFocus
@@ -292,7 +345,7 @@ const KanbanColumn = ({
                 </Button>
               </Box>
             </Box>
-          ) : (
+          ) : canEditBoardContent ? (
             <Box sx={{ px: 1.5, pb: 1.5 }}>
               <Button
                 size="small"
@@ -307,25 +360,30 @@ const KanbanColumn = ({
                 {t('addTask')}
               </Button>
             </Box>
-          )}
+          ) : null}
 
-          <Menu
-            anchorEl={menuAnchor}
-            open={!!menuAnchor}
-            onClose={() => setMenuAnchor(null)}
-          >
-            <MenuItem
-              onClick={(e) => {
-                setMenuAnchor(null);
-                setIsEditingTitle(true);
-              }}
+          {canManageColumns && (
+            <Menu
+              anchorEl={menuAnchor}
+              open={!!menuAnchor}
+              onClose={() => setMenuAnchor(null)}
             >
-              <Edit fontSize="small" sx={{ mr: 1 }} /> {t('rename')}
-            </MenuItem>
-            <MenuItem onClick={handleDeleteColumn} sx={{ color: 'error.main' }}>
-              <Delete fontSize="small" sx={{ mr: 1 }} /> {t('delete')}
-            </MenuItem>
-          </Menu>
+              <MenuItem
+                onClick={() => {
+                  setMenuAnchor(null);
+                  setIsEditingTitle(true);
+                }}
+              >
+                <Edit fontSize="small" sx={{ mr: 1 }} /> {t('rename')}
+              </MenuItem>
+              <MenuItem
+                onClick={handleDeleteColumn}
+                sx={{ color: 'error.main' }}
+              >
+                <Delete fontSize="small" sx={{ mr: 1 }} /> {t('delete')}
+              </MenuItem>
+            </Menu>
+          )}
         </Paper>
       )}
     </Draggable>

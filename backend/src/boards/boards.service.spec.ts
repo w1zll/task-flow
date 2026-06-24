@@ -13,6 +13,11 @@ import { BoardMember } from './entities/board-member.entity';
 import { Board } from './entities/board.entity';
 import { BoardsService } from './boards.service';
 import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
+import {
+  BoardAccess,
+  BoardPermissionsService,
+} from './board-permissions.service';
+import { BoardRole } from './entities/board-role.enum';
 
 describe('BoardsService', () => {
   let service: BoardsService;
@@ -20,6 +25,20 @@ describe('BoardsService', () => {
   let memberRepo: jest.Mocked<Partial<Repository<BoardMember>>>;
   let columnRepo: jest.Mocked<Partial<Repository<Column>>>;
   let taskRepo: jest.Mocked<Partial<Repository<Task>>>;
+  let boardPermissions: jest.Mocked<Partial<BoardPermissionsService>>;
+
+  const ownerAccess: BoardAccess = {
+    role: BoardRole.OWNER,
+    capabilities: {
+      canReadBoard: true,
+      canEditBoardContent: true,
+      canManageBoardMembers: true,
+      canDeleteBoard: true,
+      canManageColumns: true,
+      canUseWhiteboard: true,
+      canManageBoardSettings: true,
+    },
+  };
 
   const createBoard = (overrides: Partial<Board> = {}) =>
     ({
@@ -47,9 +66,9 @@ describe('BoardsService', () => {
       ),
     };
     memberRepo = {
-      count: jest.fn(async () => 0),
       findOne: jest.fn(),
       remove: jest.fn(),
+      save: jest.fn(async (member: BoardMember) => member),
     };
     columnRepo = {
       create: jest.fn((data) => data as Column[]),
@@ -67,6 +86,13 @@ describe('BoardsService', () => {
     taskRepo = {
       create: jest.fn((data) => data as Task[]),
       save: jest.fn(async (tasks: Task[]) => tasks),
+    };
+    boardPermissions = {
+      getCapabilities: jest.fn(() => ({ ...ownerAccess.capabilities })),
+      assertCanRead: jest.fn().mockResolvedValue(ownerAccess),
+      assertCanManageBoardMembers: jest.fn().mockResolvedValue(ownerAccess),
+      assertCanManageBoardSettings: jest.fn().mockResolvedValue(ownerAccess),
+      assertCanDeleteBoard: jest.fn().mockResolvedValue(ownerAccess),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -95,6 +121,10 @@ describe('BoardsService', () => {
         {
           provide: FrontendCacheService,
           useValue: { revalidateBoard: jest.fn() },
+        },
+        {
+          provide: BoardPermissionsService,
+          useValue: boardPermissions,
         },
       ],
     }).compile();
@@ -148,44 +178,31 @@ describe('BoardsService', () => {
     );
   });
 
-  it('allows board owner access without member lookup', async () => {
-    boardRepo.findOne!.mockResolvedValue(createBoard());
-
+  it('delegates board access checks to the permission service', async () => {
     await expect(
       service.ensureAccess('board-1', 'user-1'),
     ).resolves.toBeUndefined();
 
-    expect(boardRepo.findOne).toHaveBeenCalledWith({
-      where: { id: 'board-1' },
-      select: { id: true, ownerId: true },
-    });
-    expect(memberRepo.count).not.toHaveBeenCalled();
+    expect(boardPermissions.assertCanRead).toHaveBeenCalledWith(
+      'board-1',
+      'user-1',
+    );
   });
 
-  it('allows board member access', async () => {
-    boardRepo.findOne!.mockResolvedValue(createBoard());
-    memberRepo.count!.mockResolvedValue(1);
-
-    await expect(
-      service.ensureAccess('board-1', 'user-2'),
-    ).resolves.toBeUndefined();
-
-    expect(memberRepo.count).toHaveBeenCalledWith({
-      where: { boardId: 'board-1', userId: 'user-2' },
-    });
-  });
-
-  it('throws not found when checking access to a missing board', async () => {
-    boardRepo.findOne!.mockResolvedValue(null);
+  it('passes through missing-board access errors', async () => {
+    boardPermissions.assertCanRead!.mockRejectedValueOnce(
+      new NotFoundException(),
+    );
 
     await expect(
       service.ensureAccess('missing-board', 'user-1'),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('throws forbidden when user cannot access board', async () => {
-    boardRepo.findOne!.mockResolvedValue(createBoard());
-    memberRepo.count!.mockResolvedValue(0);
+  it('passes through forbidden access errors', async () => {
+    boardPermissions.assertCanRead!.mockRejectedValueOnce(
+      new ForbiddenException(),
+    );
 
     await expect(
       service.ensureAccess('board-1', 'user-2'),
@@ -198,7 +215,6 @@ describe('BoardsService', () => {
       boardId: 'board-1',
       userId: 'user-2',
     } as BoardMember;
-    boardRepo.findOne!.mockResolvedValue(createBoard());
     memberRepo.findOne!.mockResolvedValue(member);
 
     await service.revokeMember('board-1', 'membership-1', 'user-1');
@@ -210,7 +226,6 @@ describe('BoardsService', () => {
   });
 
   it('does not revoke a membership belonging to another board', async () => {
-    boardRepo.findOne!.mockResolvedValue(createBoard());
     memberRepo.findOne!.mockResolvedValue({
       id: 'membership-1',
       boardId: 'board-2',
@@ -222,6 +237,55 @@ describe('BoardsService', () => {
     ).rejects.toBeInstanceOf(NotFoundException);
 
     expect(memberRepo.remove).not.toHaveBeenCalled();
+  });
+
+  it('allows the owner to change a member role', async () => {
+    const member = {
+      id: 'membership-1',
+      boardId: 'board-1',
+      userId: 'user-2',
+      role: BoardRole.EDITOR,
+      user: {
+        id: 'user-2',
+        email: 'member@example.com',
+        name: 'Member',
+      },
+    } as BoardMember;
+    memberRepo.findOne!.mockResolvedValue(member);
+
+    const result = await service.updateMemberRole(
+      'board-1',
+      'membership-1',
+      BoardRole.VIEWER,
+      'user-1',
+    );
+
+    expect(boardPermissions.assertCanManageBoardMembers).toHaveBeenCalledWith(
+      'board-1',
+      'user-1',
+    );
+    expect(memberRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ role: BoardRole.VIEWER }),
+    );
+    expect(result.role).toBe(BoardRole.VIEWER);
+  });
+
+  it('does not change a member role without member-management permission', async () => {
+    boardPermissions.assertCanManageBoardMembers!.mockRejectedValueOnce(
+      new ForbiddenException(),
+    );
+
+    await expect(
+      service.updateMemberRole(
+        'board-1',
+        'membership-1',
+        BoardRole.VIEWER,
+        'editor-1',
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(memberRepo.findOne).not.toHaveBeenCalled();
+    expect(memberRepo.save).not.toHaveBeenCalled();
   });
 
   it('creates a welcome board with completed tasks relative to registration', async () => {
