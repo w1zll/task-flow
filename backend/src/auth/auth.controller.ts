@@ -213,6 +213,7 @@ export class AuthController {
       email: user.email,
       name: user.name,
       avatar: user.avatar,
+      activeWorkspaceId: user.activeWorkspaceId,
     };
   }
 }

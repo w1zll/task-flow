@@ -20,6 +20,7 @@ import {
   UpdateTaskDto,
 } from './dto/task.dto';
 import { Task } from './entities/task.entity';
+import { WorkspacesService } from '@/workspaces/workspaces.service';
 
 @Injectable()
 export class TasksService {
@@ -34,6 +35,7 @@ export class TasksService {
     private readonly userRepo: Repository<User>,
     private readonly frontendCache: FrontendCacheService,
     private readonly boardPermissions: BoardPermissionsService,
+    private readonly workspacesService: WorkspacesService,
   ) {}
 
   private async verifyColumnWriteAccess(
@@ -79,6 +81,16 @@ export class TasksService {
       relations: ['members'],
     });
     if (!board) throw new NotFoundException('Board not found');
+    try {
+      await this.workspacesService.assertMember(
+        board.workspaceId,
+        assigneeId,
+      );
+    } catch {
+      throw new ForbiddenException(
+        'Assignee must belong to the board workspace',
+      );
+    }
     if (
       board.ownerId !== assigneeId &&
       !board.members?.some((member) => member.userId === assigneeId)

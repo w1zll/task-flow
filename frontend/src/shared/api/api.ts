@@ -8,6 +8,9 @@ export type Board = ApiResponse<'/api/boards/{id}', 'get'>;
 export type BoardRole = Board['currentUserRole'];
 export type BoardMember =
   ApiResponse<'/api/boards/{id}/members', 'get'>[number];
+export type Workspace = ApiResponse<'/api/workspaces', 'get'>[number];
+export type WorkspaceMember =
+  ApiResponse<'/api/workspaces/{id}/members', 'get'>[number];
 // export type BoardColumn = NonNullable<
 //   ApiResponse<'/api/boards/{id}', 'get'>['columns']
 // >[number];
@@ -129,6 +132,27 @@ export const boardsApi = {
     apiClient.patch<
       ApiResponse<'/api/boards/{id}/members/{memberId}/role', 'patch'>
     >(`/api/boards/${boardId}/members/${memberId}/role`, { role }),
+};
+
+export const workspacesApi = {
+  getAll: () =>
+    apiClient.get<ApiResponse<'/api/workspaces', 'get'>>('/api/workspaces'),
+
+  create: (data: ApiBody<'/api/workspaces', 'post'>) =>
+    apiClient.post<ApiResponse<'/api/workspaces', 'post'>>(
+      '/api/workspaces',
+      data,
+    ),
+
+  switchActive: (id: string) =>
+    apiClient.put<ApiResponse<'/api/workspaces/{id}/active', 'put'>>(
+      `/api/workspaces/${id}/active`,
+    ),
+
+  getMembers: (id: string) =>
+    apiClient.get<ApiResponse<'/api/workspaces/{id}/members', 'get'>>(
+      `/api/workspaces/${id}/members`,
+    ),
 };
 
 export const columnsApi = {

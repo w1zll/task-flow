@@ -174,6 +174,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List workspaces available to the current user */
+        get: operations["WorkspacesController_findAll"];
+        put?: never;
+        /** Create a workspace */
+        post: operations["WorkspacesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{id}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the active workspace */
+        put: operations["WorkspacesController_switchActive"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List workspace members */
+        get: operations["WorkspacesController_members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/boards": {
         parameters: {
             query?: never;
@@ -499,6 +551,7 @@ export interface components {
             email: string;
             name: string;
             avatar?: string;
+            activeWorkspaceId?: string | null;
         };
         AuthResponseDto: {
             user: components["schemas"]["UserDto"];
@@ -524,6 +577,39 @@ export interface components {
             createdAt: string;
             /** @example 2026-05-12T12:00:00.000Z */
             expiresAt: string;
+        };
+        CreateWorkspaceDto: {
+            /** @example Product Team */
+            name: string;
+        };
+        WorkspaceResponseDto: {
+            /** @example workspace-uuid */
+            id: string;
+            /** @example Product Team */
+            name: string;
+            isPersonal: boolean;
+            /** @example user-uuid */
+            ownerId: string;
+            /** @enum {string} */
+            currentUserRole: "owner" | "admin" | "member";
+            isActive: boolean;
+            /** @example 2026-06-25T12:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-06-25T12:00:00.000Z */
+            updatedAt: string;
+        };
+        WorkspaceMemberResponseDto: {
+            /** @example membership-uuid */
+            id: string;
+            /** @example user-uuid */
+            userId: string;
+            /** @enum {string} */
+            role: "owner" | "admin" | "member";
+            user: components["schemas"]["UserResponseDto"];
+            /** @example 2026-06-25T12:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-06-25T12:00:00.000Z */
+            updatedAt: string;
         };
         TaskResponseDto: {
             /** @example task-uuid */
@@ -625,6 +711,8 @@ export interface components {
             color?: string;
             /** @example user-uuid */
             ownerId: string;
+            /** @example workspace-uuid */
+            workspaceId: string;
             /** @enum {string} */
             currentUserRole: "owner" | "editor" | "viewer";
             capabilities: components["schemas"]["BoardCapabilitiesResponseDto"];
@@ -662,6 +750,8 @@ export interface components {
              * @enum {string}
              */
             template: "empty" | "scrum";
+            /** @example workspace-uuid */
+            workspaceId?: string;
         };
         UpdateBoardDto: {
             /** @example Board 1 */
@@ -670,11 +760,6 @@ export interface components {
             description?: string;
             /** @example #6366f1 */
             color?: string;
-            /**
-             * @default empty
-             * @enum {string}
-             */
-            template: "empty" | "scrum";
         };
         CreateColumnDto: {
             /** @example To Do */
@@ -1002,6 +1087,90 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    WorkspacesController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponseDto"][];
+                };
+            };
+        };
+    };
+    WorkspacesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWorkspaceDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspacesController_switchActive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspacesController_members: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceMemberResponseDto"][];
+                };
             };
         };
     };
