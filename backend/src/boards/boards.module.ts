@@ -13,12 +13,14 @@ import { TasksService } from '@/tasks/tasks.service';
 import { Column } from '@/columns/entities/column.entity';
 import { AuthModule } from '@/auth/auth.module';
 import { BoardPermissionsModule } from './board-permissions.module';
+import { WorkspacesModule } from '@/workspaces/workspaces.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Board, BoardMember, User, Task, Column]),
     forwardRef(() => AuthModule),
     BoardPermissionsModule,
+    WorkspacesModule,
   ],
   providers: [BoardsService, BoardGateway, WsJwtGuard, TasksService],
   controllers: [BoardsController],

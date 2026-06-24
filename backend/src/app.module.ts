@@ -16,6 +16,9 @@ import { ColumnsModule } from './columns/columns.module';
 import { TasksModule } from './tasks/tasks.module';
 import { FrontendCacheModule } from './common/frontend-cache/frontend-cache.module';
 import { StorageModule } from './storage/storage.module';
+import { Workspace } from './workspaces/entities/workspace.entity';
+import { WorkspaceMember } from './workspaces/entities/workspace-member.entity';
+import { WorkspacesModule } from './workspaces/workspaces.module';
 
 @Module({
   imports: [
@@ -38,8 +41,18 @@ import { StorageModule } from './storage/storage.module';
           username: config.get('DB_USERNAME'),
           password: config.get('DB_PASSWORD'),
           database: config.get('DB_NAME'),
-          entities: [User, Board, BoardMember, Column, Task, RefreshToken],
-          synchronize: process.env.NODE_ENV === 'development',
+          entities: [
+            User,
+            Workspace,
+            WorkspaceMember,
+            Board,
+            BoardMember,
+            Column,
+            Task,
+            RefreshToken,
+          ],
+          synchronize: false,
+          // synchronize: process.env.NODE_ENV === 'development',
           // logging: config.get('NODE_ENV') === 'development',
         };
       },
@@ -49,6 +62,7 @@ import { StorageModule } from './storage/storage.module';
     StorageModule,
     FrontendCacheModule,
     UsersModule,
+    WorkspacesModule,
     BoardsModule,
     ColumnsModule,
     TasksModule,

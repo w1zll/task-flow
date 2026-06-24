@@ -4,4 +4,6 @@ export const queryKeys = {
   boardMembers: (id: string) => ['boards', id, 'members'] as const,
   tasks: (columnId: string) => ['tasks', columnId] as const,
   boardAnalytics: (id?: string) => ['boards', id, 'analytics'] as const,
+  workspaces: ['workspaces'] as const,
+  workspaceMembers: (id: string) => ['workspaces', id, 'members'] as const,
 };

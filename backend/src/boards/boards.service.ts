@@ -26,6 +26,7 @@ import { CreateBoardDto, ShareBoardDto, UpdateBoardDto } from './dto/board.dto';
 import { BoardMember } from './entities/board-member.entity';
 import { BoardRole } from './entities/board-role.enum';
 import { Board } from './entities/board.entity';
+import { WorkspacesService } from '@/workspaces/workspaces.service';
 
 @Injectable()
 export class BoardsService {
@@ -42,13 +43,19 @@ export class BoardsService {
     private readonly taskRepo: Repository<Task>,
     private readonly frontendCache: FrontendCacheService,
     private readonly boardPermissions: BoardPermissionsService,
+    private readonly workspacesService: WorkspacesService,
   ) {}
 
   async findAll(userId: string): Promise<Board[]> {
+    const { workspace } =
+      await this.workspacesService.getActiveWorkspace(userId);
     const boards = await this.boardRepo
       .createQueryBuilder('board')
       .leftJoin('board.members', 'member')
-      .where('board.ownerId = :userId OR member.userId = :userId', {
+      .where('board.workspaceId = :workspaceId', {
+        workspaceId: workspace.id,
+      })
+      .andWhere('(board.ownerId = :userId OR member.userId = :userId)', {
         userId,
       })
       .orderBy('board.createdAt', 'DESC')
@@ -118,9 +125,23 @@ export class BoardsService {
     userId: string,
     locale: AppLocale = 'en',
   ): Promise<Board> {
-    const { template = BoardTemplate.EMPTY, ...boardDto } = dto;
+    const {
+      template = BoardTemplate.EMPTY,
+      workspaceId: requestedWorkspaceId,
+      ...boardDto
+    } = dto;
+    const workspaceAccess = requestedWorkspaceId
+      ? await this.workspacesService.assertMember(
+          requestedWorkspaceId,
+          userId,
+        )
+      : await this.workspacesService.getActiveWorkspace(userId);
     const board = await this.boardRepo.save(
-      this.boardRepo.create({ ...boardDto, ownerId: userId }),
+      this.boardRepo.create({
+        ...boardDto,
+        ownerId: userId,
+        workspaceId: workspaceAccess.workspace.id,
+      }),
     );
 
     if (template === BoardTemplate.SCRUM) {
@@ -132,6 +153,7 @@ export class BoardsService {
 
   async createWelcomeBoard(
     userId: string,
+    workspaceId: string,
     registeredAt = new Date(),
     locale: AppLocale = 'en',
   ): Promise<Board> {
@@ -142,6 +164,7 @@ export class BoardsService {
         description: boardText.description,
         color: '#6366f1',
         ownerId: userId,
+        workspaceId,
       }),
     );
 
@@ -203,6 +226,11 @@ export class BoardsService {
     userId: string,
   ): Promise<BoardMember> {
     await this.boardPermissions.assertCanManageBoardMembers(boardId, userId);
+    const board = await this.boardRepo.findOne({
+      where: { id: boardId },
+      select: { id: true, workspaceId: true },
+    });
+    if (!board) throw new NotFoundException('Board not found');
 
     const target = dto.userId
       ? await this.userRepo.findOne({ where: { id: dto.userId } })
@@ -214,6 +242,16 @@ export class BoardsService {
     }
     if (target.id === userId) {
       throw new ForbiddenException('The board owner already has access');
+    }
+    try {
+      await this.workspacesService.assertMember(
+        board.workspaceId,
+        target.id,
+      );
+    } catch {
+      throw new ForbiddenException(
+        'The user must belong to the board workspace',
+      );
     }
 
     const existing = await this.memberRepo.findOne({

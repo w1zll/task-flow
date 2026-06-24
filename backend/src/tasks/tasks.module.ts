@@ -7,11 +7,13 @@ import { User } from '@/users/entities/user.entity';
 import { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
 import { BoardPermissionsModule } from '@/boards/board-permissions.module';
+import { WorkspacesModule } from '@/workspaces/workspaces.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Task, Column, Board, User]),
     BoardPermissionsModule,
+    WorkspacesModule,
   ],
   providers: [TasksService],
   controllers: [TasksController],

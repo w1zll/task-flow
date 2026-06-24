@@ -1,4 +1,4 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger';
 import {
   IsEmail,
   IsEnum,
@@ -38,6 +38,11 @@ export class CreateBoardDto {
   @IsOptional()
   @IsEnum(BoardTemplate)
   template?: BoardTemplate;
+
+  @ApiProperty({ example: 'workspace-uuid', required: false })
+  @IsOptional()
+  @IsUUID()
+  workspaceId?: string;
 }
 
 export class ShareBoardDto {
@@ -61,7 +66,9 @@ export class ShareBoardDto {
   role?: BoardRole.EDITOR | BoardRole.VIEWER;
 }
 
-export class UpdateBoardDto extends PartialType(CreateBoardDto) {}
+export class UpdateBoardDto extends PartialType(
+  OmitType(CreateBoardDto, ['template', 'workspaceId'] as const),
+) {}
 
 export class UpdateBoardMemberRoleDto {
   @ApiProperty({ enum: [BoardRole.EDITOR, BoardRole.VIEWER] })
@@ -107,6 +114,9 @@ export class BoardResponseDto {
 
   @ApiProperty({ example: 'user-uuid' })
   ownerId: string;
+
+  @ApiProperty({ example: 'workspace-uuid' })
+  workspaceId: string;
 
   @ApiProperty({ enum: BoardRole })
   currentUserRole: BoardRole;

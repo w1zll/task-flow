@@ -60,6 +60,9 @@ export class UserDto {
 
   @ApiProperty({ required: false })
   avatar?: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  activeWorkspaceId?: string | null;
 }
 
 export class AuthResponseDto {

@@ -7,6 +7,10 @@ import {
   useDeleteBoard,
 } from '@/shared/queries/boards.queries';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
+import {
+  useSwitchWorkspace,
+  useWorkspaces,
+} from '@/shared/queries/workspaces.queries';
 import { Add, Delete, MoreVert, ViewKanban } from '@mui/icons-material';
 import {
   Box,
@@ -19,8 +23,11 @@ import {
   DialogTitle,
   Grid,
   IconButton,
+  FormControl,
+  InputLabel,
   Menu,
   MenuItem,
+  Select,
   Skeleton,
   TextField,
   ToggleButton,
@@ -53,6 +60,11 @@ const BoardsClientPage = () => {
   const { data: boards, isLoading } = useBoards();
   const createBoard = useCreateBoard();
   const deleteBoard = useDeleteBoard();
+  const workspaces = useWorkspaces();
+  const switchWorkspace = useSwitchWorkspace();
+  const activeWorkspace = workspaces.data?.find(
+    (workspace) => workspace.isActive,
+  );
 
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({
@@ -60,6 +72,7 @@ const BoardsClientPage = () => {
     description: '',
     color: BOARD_COLORS[0],
     template: 'empty' as BoardTemplate,
+    workspaceId: '',
   });
   const [menuAnchor, setMenuAnchor] = useState<{
     el: HTMLElement;
@@ -70,7 +83,10 @@ const BoardsClientPage = () => {
 
   const handleCreate = () => {
     if (!form.title.trim()) return;
-    createBoard.mutate(form, {
+    const workspaceId = form.workspaceId || activeWorkspace?.id;
+    if (!workspaceId) return;
+
+    createBoard.mutate({ ...form, workspaceId }, {
       onSuccess: (board) => {
         setCreateOpen(false);
         setForm({
@@ -78,10 +94,26 @@ const BoardsClientPage = () => {
           description: '',
           color: BOARD_COLORS[0],
           template: 'empty',
+          workspaceId: '',
         });
-        router.push(`/boards/${board.id}`);
+        const openBoard = () => router.push(`/boards/${board.id}`);
+        if (workspaceId !== activeWorkspace?.id) {
+          switchWorkspace.mutate(workspaceId, {
+            onSuccess: openBoard,
+          });
+        } else {
+          openBoard();
+        }
       },
     });
+  };
+
+  const openCreateDialog = () => {
+    setForm((previous) => ({
+      ...previous,
+      workspaceId: activeWorkspace?.id ?? '',
+    }));
+    setCreateOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -109,11 +141,16 @@ const BoardsClientPage = () => {
             <Typography variant="body2" color="text.secondary">
               {t('boardsCount', { count: boards?.length ?? 0 })}
             </Typography>
+            {activeWorkspace && (
+              <Typography variant="caption" color="text.secondary">
+                {t('activeWorkspace', { name: activeWorkspace.name })}
+              </Typography>
+            )}
           </Box>
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => setCreateOpen(true)}
+            onClick={openCreateDialog}
           >
             {t('newBoard')}
           </Button>
@@ -172,17 +209,19 @@ const BoardsClientPage = () => {
                       >
                         {board.title}
                       </Typography>
-                      <IconButton
-                        size="small"
-                        sx={{ ml: 1, mt: -0.5 }}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setMenuAnchor({ el: e.currentTarget, board });
-                        }}
-                      >
-                        <MoreVert fontSize="small" />
-                      </IconButton>
+                      {board.capabilities.canDeleteBoard && (
+                        <IconButton
+                          size="small"
+                          sx={{ ml: 1, mt: -0.5 }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setMenuAnchor({ el: e.currentTarget, board });
+                          }}
+                        >
+                          <MoreVert fontSize="small" />
+                        </IconButton>
+                      )}
                     </Box>
                     {board.description && (
                       <Typography
@@ -230,7 +269,7 @@ const BoardsClientPage = () => {
                 <Button
                   variant="contained"
                   startIcon={<Add />}
-                  onClick={() => setCreateOpen(true)}
+                  onClick={openCreateDialog}
                   sx={{ mt: 1 }}
                 >
                   {t('emptyAction')}
@@ -276,6 +315,25 @@ const BoardsClientPage = () => {
             value={form.title}
             onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
           />
+          <FormControl fullWidth>
+            <InputLabel>{t('workspace')}</InputLabel>
+            <Select
+              label={t('workspace')}
+              value={form.workspaceId}
+              onChange={(event) =>
+                setForm((previous) => ({
+                  ...previous,
+                  workspaceId: event.target.value,
+                }))
+              }
+            >
+              {workspaces.data?.map((workspace) => (
+                <MenuItem key={workspace.id} value={workspace.id}>
+                  {workspace.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <TextField
             label={t('boardDescription')}
             fullWidth
@@ -348,7 +406,11 @@ const BoardsClientPage = () => {
           <Button
             variant="contained"
             onClick={handleCreate}
-            disabled={createBoard.isPending}
+            disabled={
+              createBoard.isPending ||
+              switchWorkspace.isPending ||
+              !form.workspaceId
+            }
           >
             {createBoard.isPending ? t('creating') : t('create')}
           </Button>

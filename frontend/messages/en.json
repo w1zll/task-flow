@@ -95,6 +95,7 @@
     "title": "My boards",
     "description": "Manage your boards",
     "boardsCount": "{count} boards",
+    "activeWorkspace": "Workspace: {name}",
     "newBoard": "New board",
     "emptyTitle": "You have no boards",
     "emptyAction": "Create your first board",
@@ -105,6 +106,7 @@
     "template": "Template",
     "templateEmpty": "Empty board",
     "templateScrum": "Scrum",
+    "workspace": "Workspace",
     "color": "Color",
     "cancel": "Cancel",
     "creating": "Creating...",
@@ -146,8 +148,8 @@
     "noMembers": "No members.",
     "columnTitle": "Column title",
     "shareTitle": "Share board",
-    "shareDescription": "Send an invitation by email to give access to the board.",
-    "shareError": "Failed to send invitation.",
+    "shareDescription": "Enter the email of an existing workspace member to give them access to the board.",
+    "shareError": "Failed to share the board. Make sure this user belongs to the workspace.",
     "shareSend": "Send",
     "add": "Add",
     "cancel": "Cancel"
@@ -188,6 +190,39 @@
     "signIn": "Sign in",
     "profile": "Profile",
     "logout": "Sign out"
+  },
+  "WorkspaceSwitcher": {
+    "title": "Workspaces",
+    "personal": "Personal workspace",
+    "settings": "Workspace settings",
+    "create": "Create workspace",
+    "createTitle": "New workspace",
+    "name": "Workspace name",
+    "cancel": "Cancel",
+    "creating": "Creating...",
+    "createAction": "Create",
+    "switchError": "Failed to switch workspace",
+    "createError": "Failed to create workspace",
+    "role": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    }
+  },
+  "WorkspaceSettings": {
+    "title": "Workspace settings",
+    "description": "Workspace details and members",
+    "back": "Back to boards",
+    "notFound": "Workspace not found or access denied.",
+    "personal": "Personal workspace",
+    "membersTitle": "Members",
+    "membersDescription": "People who can participate in boards and future teams in this workspace.",
+    "membersError": "Failed to load workspace members.",
+    "role": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    }
   },
   "KanbanColumn": {
     "addTask": "Add task",

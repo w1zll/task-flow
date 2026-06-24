@@ -7,12 +7,16 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
 import { RefreshToken } from '@/auth/entities/refresh-token.entity';
 import { Board } from '@/boards/entities/board.entity';
 import { BoardMember } from '@/boards/entities/board-member.entity';
+import { Workspace } from '@/workspaces/entities/workspace.entity';
+import { WorkspaceMember } from '@/workspaces/entities/workspace-member.entity';
 
 @Entity('users')
 export class User {
@@ -49,6 +53,19 @@ export class User {
 
   @OneToMany(() => BoardMember, (member) => member.user)
   boardMemberships: BoardMember[];
+
+  @OneToMany(() => Workspace, (workspace) => workspace.owner)
+  ownedWorkspaces: Workspace[];
+
+  @OneToMany(() => WorkspaceMember, (member) => member.user)
+  workspaceMemberships: WorkspaceMember[];
+
+  @Column({ type: 'uuid', nullable: true })
+  activeWorkspaceId: string | null;
+
+  @ManyToOne(() => Workspace, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'activeWorkspaceId' })
+  activeWorkspace: Workspace | null;
 
   @OneToMany(() => RefreshToken, (token) => token.user)
   refreshTokens: RefreshToken[];

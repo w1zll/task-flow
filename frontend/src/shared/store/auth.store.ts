@@ -7,6 +7,7 @@ export interface AuthUser {
   email: string;
   name: string;
   avatar?: string;
+  activeWorkspaceId?: string | null;
 }
 
 interface AuthState {
@@ -17,6 +18,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   hydrate: (user: AuthUser | null) => void;
   logout: () => void;
+  setActiveWorkspace: (workspaceId: string) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -32,4 +34,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       isAuthenticated: user !== null,
     }),
   logout: () => set({ user: null, isAuthenticated: false }),
+  setActiveWorkspace: (activeWorkspaceId) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, activeWorkspaceId } : null,
+    })),
 }));
