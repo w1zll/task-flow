@@ -34,6 +34,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
 import { useRef, useState } from 'react';
 import { useSnackbar } from 'notistack';
+import UserAvatar from '@/shared/ui/UserAvatar';
 
 interface Props {
   task: Task;
@@ -255,33 +256,12 @@ const TaskCard = ({
             </Tooltip>
             {task.assigneeName && (
               <Tooltip title={task.assigneeName}>
-                <Box
-                  sx={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: '50%',
-                    bgcolor: 'primary.main',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontSize: 9,
-                      color: 'white',
-                      fontWeight: 700,
-                      lineHeight: 1,
-                    }}
-                  >
-                    {task.assigneeName
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .toUpperCase()
-                      .slice(0, 2)}
-                  </Typography>
+                <Box>
+                  <UserAvatar
+                    name={task.assigneeName}
+                    src={task.assignee?.avatar}
+                    size={20}
+                  />
                 </Box>
               </Tooltip>
             )}

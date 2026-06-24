@@ -18,6 +18,7 @@ import {
   AnalyticsQueryDto,
 } from './dto/task.dto';
 import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
+import { toPublicUser } from '@/users/public-user';
 
 @Injectable()
 export class TasksService {
@@ -105,9 +106,10 @@ export class TasksService {
 
   async create(dto: CreateTaskDto, userId: string): Promise<Task> {
     const column = await this.verifyColumnAccess(dto.columnId, userId);
+    let assignee: User | undefined;
 
     if (dto.assigneeId) {
-      const assignee = await this.validateAssignee(
+      assignee = await this.validateAssignee(
         column.boardId,
         dto.assigneeId,
       );
@@ -123,6 +125,7 @@ export class TasksService {
 
     const task = this.taskRepo.create({
       ...dto,
+      assignee,
       dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
       completedAt:
         dto.isCompleted && !dto.completedAt
@@ -134,7 +137,7 @@ export class TasksService {
 
     const saved = await this.taskRepo.save(task);
     await this.frontendCache.revalidateBoard(column.boardId);
-    return saved;
+    return this.withPublicAssignee(saved);
   }
 
   async update(id: string, dto: UpdateTaskDto, userId: string): Promise<Task> {
@@ -149,6 +152,7 @@ export class TasksService {
         dto.assigneeId,
       );
       task.assigneeName = assignee.name;
+      task.assignee = assignee;
     }
 
     Object.assign(task, taskChanges);
@@ -191,7 +195,7 @@ export class TasksService {
 
     const saved = await this.taskRepo.save(task);
     await this.frontendCache.revalidateBoard(task.column.boardId);
-    return saved;
+    return this.withPublicAssignee(saved);
   }
 
   async remove(id: string, userId: string): Promise<void> {
@@ -276,7 +280,7 @@ export class TasksService {
       relations: ['column', 'column.board', 'assignee'],
     });
     await this.frontendCache.revalidateBoard(updated.column.boardId);
-    return updated;
+    return this.withPublicAssignee(updated);
   }
 
   async reorder(
@@ -327,6 +331,13 @@ export class TasksService {
     }
 
     return qb;
+  }
+
+  private withPublicAssignee(task: Task): Task {
+    if (task?.assignee) {
+      task.assignee = toPublicUser(task.assignee);
+    }
+    return task;
   }
 
   async getDailyAnalytics(

@@ -7,12 +7,17 @@ import {
   HttpStatus,
   Param,
   Post,
+  Put,
   Req,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
@@ -21,8 +26,10 @@ import {
 import { AuthService } from './auth.service';
 import {
   AuthResponseDto,
+  AvatarUploadDto,
   LoginDto,
   RegisterDto,
+  RegisterRequestDto,
   SessionDto,
   UserDto,
   WsTokenResponseDto,
@@ -33,6 +40,9 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { MessageDto } from '@/common/dto/message-response.dto';
 import { detectRequestLocale } from '@/common/locale/request-locale';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { avatarUploadOptions } from '@/storage/avatar-upload.constants';
+import type { AvatarUploadFile } from '@/storage/storage.types';
 
 const REFRESH_COOKIE = 'refresh_token';
 export const ACCESS_COOKIE = 'access_token';
@@ -50,16 +60,21 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @UseInterceptors(FileInterceptor('avatar', avatarUploadOptions))
+  @ApiConsumes('multipart/form-data', 'application/json')
+  @ApiBody({ type: RegisterRequestDto })
   @ApiOperation({ summary: 'Регистрация пользователя' })
   @ApiCreatedResponse({ type: AuthResponseDto })
   async register(
     @Body() dto: RegisterDto,
+    @UploadedFile() avatarFile: AvatarUploadFile | undefined,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.register(
       dto,
       detectRequestLocale(req),
+      avatarFile,
     );
     this.setTokenCookies(res, result.accessToken, result.refreshToken);
     return { user: result.user };
@@ -114,12 +129,33 @@ export class AuthController {
     type: UserDto,
   })
   async me(@CurrentUser() user: User) {
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      avatar: user.avatar,
-    };
+    return this.toUserDto(user);
+  }
+
+  @Put('avatar')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('avatar', avatarUploadOptions))
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: AvatarUploadDto })
+  @ApiOperation({ summary: 'Upload a new profile avatar' })
+  @ApiOkResponse({ type: UserDto })
+  async updateAvatar(
+    @CurrentUser() user: User,
+    @UploadedFile() avatarFile: AvatarUploadFile,
+  ) {
+    const updated = await this.authService.updateAvatar(user, avatarFile);
+    return this.toUserDto(updated);
+  }
+
+  @Delete('avatar')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reset profile avatar to the default' })
+  @ApiOkResponse({ type: UserDto })
+  async resetAvatar(@CurrentUser() user: User) {
+    const updated = await this.authService.resetAvatar(user);
+    return this.toUserDto(updated);
   }
 
   @Get('ws-token')
@@ -169,5 +205,14 @@ export class AuthController {
       ...COOKIE_OPTIONS,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 d
     });
+  }
+
+  private toUserDto(user: User): UserDto {
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+    };
   }
 }

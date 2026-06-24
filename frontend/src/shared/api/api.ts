@@ -14,11 +14,28 @@ export type BoardColumn = Omit<
 >;
 export type Task = ApiResponse<'/api/tasks/{id}', 'put'>;
 
+export interface RegisterPayload {
+  email: string;
+  name: string;
+  password: string;
+  avatar?: File;
+}
+
+const createAvatarForm = (data: RegisterPayload) => {
+  const form = new FormData();
+  form.append('email', data.email);
+  form.append('name', data.name);
+  form.append('password', data.password);
+  if (data.avatar) form.append('avatar', data.avatar);
+  return form;
+};
+
 export const authApi = {
-  register: async (data: ApiBody<'/api/auth/register', 'post'>) =>
+  register: async (data: RegisterPayload) =>
     apiClient.post<ApiResponse<'/api/auth/register', 'post'>>(
       '/api/auth/register',
-      data,
+      createAvatarForm(data),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
     ),
 
   login: (data: { email: string; password: string }) =>
@@ -47,6 +64,21 @@ export const authApi = {
   revokeSession: (id: string) =>
     apiClient.delete<ApiResponse<'/api/auth/sessions/{id}', 'delete'>>(
       `/api/auth/sessions/${id}`,
+    ),
+
+  updateAvatar: (avatar: File) => {
+    const form = new FormData();
+    form.append('avatar', avatar);
+    return apiClient.put<ApiResponse<'/api/auth/avatar', 'put'>>(
+      '/api/auth/avatar',
+      form,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    );
+  },
+
+  resetAvatar: () =>
+    apiClient.delete<ApiResponse<'/api/auth/avatar', 'delete'>>(
+      '/api/auth/avatar',
     ),
 };
 

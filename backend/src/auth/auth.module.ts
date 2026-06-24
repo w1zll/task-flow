@@ -9,6 +9,7 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthController } from './auth.controller';
 import { BoardsModule } from '@/boards/boards.module';
+import { UsersModule } from '@/users/users.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { BoardsModule } from '@/boards/boards.module';
       inject: [ConfigService],
     }),
     TypeOrmModule.forFeature([User, RefreshToken]),
+    UsersModule,
     forwardRef(() => BoardsModule),
   ],
   providers: [AuthService, JwtStrategy],

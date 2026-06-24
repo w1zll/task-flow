@@ -20,6 +20,7 @@ import {
 } from './board-templates';
 import { AppLocale } from '@/common/locale/request-locale';
 import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
+import { toPublicUser } from '@/users/public-user';
 
 @Injectable()
 export class BoardsService {
@@ -57,7 +58,13 @@ export class BoardsService {
   async findOne(id: string, userId: string): Promise<Board> {
     const board = await this.boardRepo.findOne({
       where: { id },
-      relations: ['columns', 'columns.tasks', 'members', 'members.user'],
+      relations: [
+        'columns',
+        'columns.tasks',
+        'columns.tasks.assignee',
+        'members',
+        'members.user',
+      ],
       order: {
         columns: { order: 'ASC' },
       } as any,
@@ -74,7 +81,13 @@ export class BoardsService {
     }
 
     board.columns.forEach((col) => {
+      col.tasks?.forEach((task) => {
+        if (task.assignee) task.assignee = toPublicUser(task.assignee);
+      });
       col.tasks?.sort((a, b) => a.order - b.order);
+    });
+    board.members?.forEach((member) => {
+      member.user = toPublicUser(member.user);
     });
     return board;
   }
@@ -206,6 +219,7 @@ export class BoardsService {
       relations: ['user'],
     });
     await this.frontendCache.revalidateBoard(boardId);
+    boardMember.user = toPublicUser(boardMember.user);
     return boardMember;
   }
 
@@ -220,15 +234,20 @@ export class BoardsService {
     }
 
     const owner = await this.userRepo.findOne({ where: { id: board.ownerId } });
-    const members = await this.memberRepo.find({
-      where: { boardId },
-      relations: ['user'],
-    });
+    const members = (
+      await this.memberRepo.find({
+        where: { boardId },
+        relations: ['user'],
+      })
+    ).map((member) => ({
+      ...member,
+      user: toPublicUser(member.user),
+    })) as BoardMember[];
     const ownerAsMember = {
       id: null,
       boardId,
       userId: board.ownerId,
-      user: owner,
+      user: toPublicUser(owner),
     } as unknown as BoardMember;
     return [ownerAsMember, ...members];
 
