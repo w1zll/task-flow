@@ -47,6 +47,7 @@ import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import KanbanBoard from './KanbanBoard';
 import TaskDetailModal from './TaskDetailModal';
 import { useQueryClient } from '@tanstack/react-query';
+import UserAvatar from '@/shared/ui/UserAvatar';
 
 interface Props {
   boardId: string;
@@ -608,34 +609,48 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                           justifyContent: 'space-between',
                         }}
                       >
-                        <Typography variant="body2">
-                          {user.name}
-                          {isOwner && (
-                            <Typography
-                              component="span"
-                              variant="caption"
-                              sx={{
-                                ml: 1,
-                                color: 'primary.main',
-                                fontWeight: 600,
-                              }}
-                            >
-                              {t('ownerSuffix')}
-                            </Typography>
-                          )}
-                          {isCurrentUser && (
-                            <Typography
-                              component="span"
-                              variant="caption"
-                              sx={{
-                                ml: 1,
-                                color: 'primary.main',
-                              }}
-                            >
-                              {t('youSuffix')}
-                            </Typography>
-                          )}
-                        </Typography>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            minWidth: 0,
+                          }}
+                        >
+                          <UserAvatar
+                            name={user.name}
+                            src={user.avatar}
+                            size={30}
+                          />
+                          <Typography variant="body2">
+                            {user.name}
+                            {isOwner && (
+                              <Typography
+                                component="span"
+                                variant="caption"
+                                sx={{
+                                  ml: 1,
+                                  color: 'primary.main',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {t('ownerSuffix')}
+                              </Typography>
+                            )}
+                            {isCurrentUser && (
+                              <Typography
+                                component="span"
+                                variant="caption"
+                                sx={{
+                                  ml: 1,
+                                  color: 'primary.main',
+                                }}
+                              >
+                                {t('youSuffix')}
+                              </Typography>
+                            )}
+                          </Typography>
+                        </Box>
                         {currentUser?.id === board?.ownerId && !isOwner && (
                           <Button
                             size="small"

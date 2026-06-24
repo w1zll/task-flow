@@ -2,6 +2,7 @@
 
 import { useAuth } from '../useAuth';
 import { useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import NextLink from 'next/link';
 import {
@@ -14,16 +15,48 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { ViewKanban } from '@mui/icons-material';
+import { PhotoCamera, ViewKanban } from '@mui/icons-material';
+import UserAvatar from '@/shared/ui/UserAvatar';
+import {
+  AVATAR_ACCEPT,
+  AvatarValidationError,
+  validateAvatarFile,
+} from '@/shared/lib/avatar';
 
 const RegisterForm = () => {
   const t = useTranslations('Auth.Register');
   const { register, isRegisterLoading } = useAuth();
   const [form, setForm] = useState({ email: '', name: '', password: '' });
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarError, setAvatarError] =
+    useState<AvatarValidationError | null>(null);
+
+  useEffect(() => {
+    if (!avatar) {
+      setAvatarPreview(null);
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(avatar);
+    setAvatarPreview(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [avatar]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    register(form);
+    register({ ...form, avatar: avatar ?? undefined });
+  };
+
+  const handleAvatarChange = (file?: File) => {
+    if (!file) return;
+    const validationError = validateAvatarFile(file);
+    setAvatarError(validationError);
+    if (validationError) {
+      setAvatar(null);
+      return;
+    }
+    setAvatar(file);
   };
 
   const field = (key: keyof typeof form) => ({
@@ -35,7 +68,10 @@ const RegisterForm = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: {
+          xs: 'calc(100dvh - 56px)',
+          sm: 'calc(100dvh - 64px)',
+        },
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -48,7 +84,7 @@ const RegisterForm = () => {
       }}
     >
       <Card sx={{ width: '100%', maxWidth: 420, p: 1 }}>
-        <CardContent sx={{ p: 4 }}>
+        <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4 }}>
             <Box
               sx={{
@@ -80,6 +116,51 @@ const RegisterForm = () => {
             onSubmit={handleSubmit}
             sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
           >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                p: 1.5,
+                border: '1px solid',
+                borderColor: avatarError ? 'error.main' : 'divider',
+                borderRadius: 2,
+              }}
+            >
+              <UserAvatar
+                name={form.name}
+                src={avatarPreview}
+                size={56}
+              />
+              <Box sx={{ minWidth: 0 }}>
+                <Button
+                  component="label"
+                  size="small"
+                  startIcon={<PhotoCamera />}
+                  disabled={isRegisterLoading}
+                >
+                  {avatar ? t('changeAvatar') : t('chooseAvatar')}
+                  <input
+                    hidden
+                    type="file"
+                    accept={AVATAR_ACCEPT}
+                    onChange={(event) => {
+                      handleAvatarChange(event.target.files?.[0]);
+                      event.target.value = '';
+                    }}
+                  />
+                </Button>
+                <Typography
+                  variant="caption"
+                  color={avatarError ? 'error' : 'text.secondary'}
+                  sx={{ display: 'block' }}
+                >
+                  {avatarError
+                    ? t(`avatarError.${avatarError}`)
+                    : t('avatarHint')}
+                </Typography>
+              </Box>
+            </Box>
             <TextField
               label={t('name')}
               required

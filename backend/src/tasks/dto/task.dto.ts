@@ -11,6 +11,7 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { TaskPriority } from '../entities/task.entity';
+import { UserResponseDto } from '@/users/dto/user.dto';
 
 export class CreateTaskDto {
   @ApiProperty({ example: 'Task 1' })
@@ -97,6 +98,9 @@ export class TaskResponseDto {
 
   @ApiProperty({ required: false })
   assigneeName?: string;
+
+  @ApiProperty({ type: () => UserResponseDto, required: false })
+  assignee?: UserResponseDto;
 
   @ApiProperty({ required: false })
   isCompleted: boolean;

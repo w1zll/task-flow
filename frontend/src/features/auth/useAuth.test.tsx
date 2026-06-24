@@ -45,7 +45,7 @@ describe('useAuth', () => {
     };
     mockUseAuthStore.mockReturnValue(mockStore);
 
-    mockRouter = { push: jest.fn() };
+    mockRouter = { push: jest.fn(), refresh: jest.fn() };
     mockUseRouter.mockReturnValue(mockRouter);
 
     mockSnackbar = { enqueueSnackbar: jest.fn() };
@@ -119,5 +119,37 @@ describe('useAuth', () => {
     });
   });
 
-  // Add more tests for register and logout
+  describe('register', () => {
+    it('should pass the optional avatar file to the registration API', async () => {
+      const avatar = new File(['avatar'], 'avatar.png', {
+        type: 'image/png',
+      });
+      const registrationData = {
+        email: 'test@example.com',
+        password: 'password',
+        name: 'Test User',
+        avatar,
+      };
+      const response = {
+        user: {
+          id: '1',
+          email: registrationData.email,
+          name: registrationData.name,
+          avatar: '/api/storage/avatars/avatar.png',
+        },
+      };
+
+      // @ts-expect-error Mocked response intentionally omits Axios metadata.
+      mockAuthApi.register.mockResolvedValue({ data: response });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      result.current.register(registrationData);
+
+      await waitFor(() => {
+        expect(mockAuthApi.register).toHaveBeenCalledWith(registrationData);
+        expect(mockStore.setUser).toHaveBeenCalledWith(response.user);
+        expect(mockRouter.push).toHaveBeenCalledWith('/boards');
+      });
+    });
+  });
 });

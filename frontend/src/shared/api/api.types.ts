@@ -105,6 +105,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Upload a new profile avatar */
+        put: operations["AuthController_updateAvatar"];
+        post?: never;
+        /** Reset profile avatar to the default */
+        delete: operations["AuthController_resetAvatar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/ws-token": {
         parameters: {
             query?: never;
@@ -445,6 +463,20 @@ export interface components {
             /** @example password123 */
             password: string;
         };
+        RegisterRequestDto: {
+            /** @example john@example.com */
+            email: string;
+            /** @example John Doe */
+            name: string;
+            /** @example password123 */
+            password: string;
+            /** Format: binary */
+            avatar?: string;
+        };
+        AvatarUploadDto: {
+            /** Format: binary */
+            avatar: string;
+        };
         UserDto: {
             id: string;
             email: string;
@@ -501,6 +533,7 @@ export interface components {
             /** @example assignee-user-uuid */
             assigneeId?: string;
             assigneeName?: string;
+            assignee?: components["schemas"]["UserResponseDto"];
             isCompleted?: boolean;
             /** @example 2026-05-05T12:00:00.000Z */
             completedAt?: string;
@@ -734,7 +767,8 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RegisterDto"];
+                "multipart/form-data": components["schemas"]["RegisterRequestDto"];
+                "application/json": components["schemas"]["RegisterRequestDto"];
             };
         };
         responses: {
@@ -810,6 +844,48 @@ export interface operations {
         };
     };
     AuthController_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+        };
+    };
+    AuthController_updateAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["AvatarUploadDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDto"];
+                };
+            };
+        };
+    };
+    AuthController_resetAvatar: {
         parameters: {
             query?: never;
             header?: never;
