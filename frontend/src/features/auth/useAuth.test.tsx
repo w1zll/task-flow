@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
-import { authApi } from '@/shared/api/api';
+import { authApi, workspaceInvitesApi } from '@/shared/api/api';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 
@@ -19,6 +19,8 @@ const mockUseAuthStore = useAuthStore as jest.MockedFunction<
   typeof useAuthStore
 >;
 const mockAuthApi = authApi as jest.Mocked<typeof authApi>;
+const mockWorkspaceInvitesApi =
+  workspaceInvitesApi as jest.Mocked<typeof workspaceInvitesApi>;
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
 const mockUseSnackbar = useSnackbar as jest.MockedFunction<typeof useSnackbar>;
 
@@ -41,6 +43,7 @@ describe('useAuth', () => {
       isAuthenticated: false,
       isLoading: false,
       setUser: jest.fn(),
+      setActiveWorkspace: jest.fn(),
       logout: jest.fn(),
     };
     mockUseAuthStore.mockReturnValue(mockStore);
@@ -54,6 +57,8 @@ describe('useAuth', () => {
     mockAuthApi.login = jest.fn();
     mockAuthApi.register = jest.fn();
     mockAuthApi.logout = jest.fn();
+    mockWorkspaceInvitesApi.accept = jest.fn();
+    sessionStorage.clear();
   });
 
   afterEach(() => {
@@ -115,6 +120,47 @@ describe('useAuth', () => {
             variant: 'error',
           },
         );
+      });
+    });
+
+    it('should accept a pending workspace invite after login', async () => {
+      const loginData = { email: 'test@example.com', password: 'password' };
+      const response = {
+        user: { id: '1', email: 'test@example.com', name: 'Test' },
+      };
+      sessionStorage.setItem(
+        'taskflow.pendingWorkspaceInvite',
+        'invite-token',
+      );
+      // @ts-expect-error Mocked response intentionally omits Axios metadata.
+      mockAuthApi.login.mockResolvedValue({ data: response });
+      mockWorkspaceInvitesApi.accept.mockResolvedValue({
+        data: {
+          id: 'workspace-2',
+          name: 'Invited Workspace',
+          isPersonal: false,
+          ownerId: 'owner-1',
+          currentUserRole: 'member',
+          isActive: true,
+          createdAt: '2026-06-25T00:00:00.000Z',
+          updatedAt: '2026-06-25T00:00:00.000Z',
+        },
+      } as any);
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      result.current.login(loginData);
+
+      await waitFor(() => {
+        expect(mockWorkspaceInvitesApi.accept).toHaveBeenCalledWith(
+          'invite-token',
+        );
+        expect(mockStore.setActiveWorkspace).toHaveBeenCalledWith(
+          'workspace-2',
+        );
+        expect(mockRouter.push).toHaveBeenCalledWith('/boards');
+        expect(
+          sessionStorage.getItem('taskflow.pendingWorkspaceInvite'),
+        ).toBeNull();
       });
     });
   });

@@ -22,10 +22,7 @@ import {
   Breadcrumbs,
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
+  Divider,
   Drawer,
   FormControl,
   IconButton,
@@ -49,7 +46,9 @@ import {
   Add,
   ArrowBack,
   Close,
+  GroupOutlined,
   LockOutlined,
+  PersonAddAltOutlined,
   QueryStats,
 } from '@mui/icons-material';
 import dayjs from 'dayjs';
@@ -62,6 +61,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import UserAvatar from '@/shared/ui/UserAvatar';
 import { useSnackbar } from 'notistack';
 import { isBoardPermissionError } from '@/shared/lib/boardSocketMutations';
+import { useWorkspaceMembers } from '@/shared/queries/workspaces.queries';
+import { getAvailableWorkspaceMembers } from '@/shared/lib/board-members';
 
 interface Props {
   boardId: string;
@@ -113,9 +114,9 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const { user: currentUser } = useAuth();
 
   const [newColTitle, setNewColTitle] = useState('');
-  const [isShareOpen, setShareOpen] = useState(false);
+  const [isMembersOpen, setMembersOpen] = useState(false);
   const [isStatsOpen, setStatsOpen] = useState(false);
-  const [shareEmail, setShareEmail] = useState('');
+  const [shareUserId, setShareUserId] = useState('');
   const [shareRole, setShareRole] = useState<'editor' | 'viewer'>('editor');
   const [boardScrollWidth, setBoardScrollWidth] = useState(0);
   const boardScrollRef = useRef<HTMLDivElement | null>(null);
@@ -137,8 +138,24 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const canManageColumns = board?.capabilities.canManageColumns ?? false;
   const canManageBoardMembers =
     board?.capabilities.canManageBoardMembers ?? false;
+  const workspaceMembers = useWorkspaceMembers(
+    board?.workspaceId ?? '',
+    isMembersOpen && canManageBoardMembers,
+  );
+  const availableWorkspaceMembers = useMemo(
+    () =>
+      getAvailableWorkspaceMembers(
+        workspaceMembers.data,
+        boardMembers.data,
+      ),
+    [boardMembers.data, workspaceMembers.data],
+  );
+  const isShareMembersLoading =
+    workspaceMembers.isLoading || boardMembers.isLoading;
+  const isShareMembersError =
+    workspaceMembers.isError || boardMembers.isError;
 
-  useStableBodyScrollLock(isShareOpen || isStatsOpen);
+  useStableBodyScrollLock(isMembersOpen || isStatsOpen);
 
   useEffect(() => {
     if (!initialBoard) return;
@@ -243,14 +260,14 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   };
 
   const handleShareBoard = () => {
-    if (!shareEmail.trim()) return;
+    if (!shareUserId) return;
     shareBoard.mutate(
-      { boardId, email: shareEmail.trim(), role: shareRole },
+      { boardId, userId: shareUserId, role: shareRole },
       {
         onSuccess: () => {
-          setShareEmail('');
+          setShareUserId('');
           setShareRole('editor');
-          setShareOpen(false);
+          enqueueSnackbar(t('memberAdded'), { variant: 'success' });
         },
       },
     );
@@ -399,19 +416,24 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
             variant={isStatsOpen ? 'contained' : 'outlined'}
             size="small"
             startIcon={<QueryStats />}
-            onClick={() => setStatsOpen((open) => !open)}
+            onClick={() => {
+              setMembersOpen(false);
+              setStatsOpen((open) => !open);
+            }}
           >
             {t('stats')}
           </Button>
-          {canManageBoardMembers && (
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setShareOpen(true)}
-            >
-              {t('share')}
-            </Button>
-          )}
+          <Button
+            variant={isMembersOpen ? 'contained' : 'outlined'}
+            size="small"
+            startIcon={<GroupOutlined />}
+            onClick={() => {
+              setStatsOpen(false);
+              setMembersOpen((open) => !open);
+            }}
+          >
+            {t('members')}
+          </Button>
         </Stack>
       </Box>
 
@@ -638,198 +660,330 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
               )}
             </Box>
           </Box>
+        </Box>
+      </Drawer>
+
+      <Drawer
+        anchor="right"
+        open={isMembersOpen}
+        onClose={() => setMembersOpen(false)}
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: '100%', sm: 460 },
+              bgcolor: 'background.paper',
+              borderLeft: '1px solid',
+              borderColor: 'divider',
+            },
+          },
+        }}
+      >
+        <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Box
             sx={{
-              p: 2,
-              bgcolor: 'background.default',
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'divider',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
             }}
           >
-            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-              {t('members')}
-            </Typography>
-            {boardMembers.isLoading ? (
-              <Typography variant="body2" color="text.secondary">
-                {t('loading')}
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                {t('members')}
               </Typography>
-            ) : boardMembers.data && boardMembers.data.length > 0 ? (
-              <Stack spacing={1}>
-                {[...boardMembers.data]
-                  .sort((memberA, memberB) => {
-                    if (memberA.role === 'owner') return -1;
-                    if (memberB.role === 'owner') return 1;
-                    return memberA.user.name.localeCompare(memberB.user.name);
-                  })
-                  .map((member) => {
-                    const { user } = member;
-                    const isOwner = member.role === 'owner';
-                    const isCurrentUser = user.id === currentUser?.id;
-                    return (
-                      <Box
-                        key={user.id}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: 1,
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            minWidth: 0,
-                          }}
+              <Typography variant="body2" color="text.secondary">
+                {t('membersDescription')}
+              </Typography>
+            </Box>
+            <IconButton size="small" onClick={() => setMembersOpen(false)}>
+              <Close fontSize="small" />
+            </IconButton>
+          </Box>
+
+          {canManageBoardMembers && (
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: 'background.default',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+                <PersonAddAltOutlined color="primary" fontSize="small" />
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  {t('addMember')}
+                </Typography>
+              </Stack>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 2 }}
+              >
+                {t('shareDescription')}
+              </Typography>
+
+              <Stack spacing={1.5}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel>{t('shareMember')}</InputLabel>
+                  <Select
+                    label={t('shareMember')}
+                    value={shareUserId}
+                    onChange={(event) => setShareUserId(event.target.value)}
+                    disabled={
+                      isShareMembersLoading ||
+                      availableWorkspaceMembers.length === 0
+                    }
+                    renderValue={(value) => {
+                      const selectedMember = availableWorkspaceMembers.find(
+                        (member) => member.userId === value,
+                      );
+                      if (!selectedMember) return '';
+
+                      return (
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          sx={{ alignItems: 'center' }}
                         >
                           <UserAvatar
-                            name={user.name}
-                            src={user.avatar}
+                            name={selectedMember.user.name}
+                            src={selectedMember.user.avatar}
+                            size={24}
+                          />
+                          <Typography variant="body2" noWrap>
+                            {selectedMember.user.name}
+                          </Typography>
+                        </Stack>
+                      );
+                    }}
+                  >
+                    {availableWorkspaceMembers.map((member) => (
+                      <MenuItem key={member.userId} value={member.userId}>
+                        <Stack
+                          direction="row"
+                          spacing={1.25}
+                          sx={{ alignItems: 'center', minWidth: 0 }}
+                        >
+                          <UserAvatar
+                            name={member.user.name}
+                            src={member.user.avatar}
                             size={30}
                           />
                           <Box sx={{ minWidth: 0 }}>
                             <Typography variant="body2" noWrap>
-                              {user.name}
+                              {member.user.name}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              noWrap
+                            >
+                              {member.user.email}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <Stack direction="row" spacing={1}>
+                  <FormControl size="small" sx={{ minWidth: 130 }}>
+                    <InputLabel>{t('memberRole')}</InputLabel>
+                    <Select
+                      label={t('memberRole')}
+                      value={shareRole}
+                      onChange={(event) =>
+                        setShareRole(
+                          event.target.value as 'editor' | 'viewer',
+                        )
+                      }
+                    >
+                      <MenuItem value="editor">{t('roleEditor')}</MenuItem>
+                      <MenuItem value="viewer">{t('roleViewer')}</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <Button
+                    variant="contained"
+                    startIcon={<PersonAddAltOutlined />}
+                    onClick={handleShareBoard}
+                    disabled={
+                      shareBoard.isPending ||
+                      isShareMembersLoading ||
+                      !shareUserId
+                    }
+                    sx={{ flex: 1 }}
+                  >
+                    {t('addMember')}
+                  </Button>
+                </Stack>
+              </Stack>
+
+              {isShareMembersLoading && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mt: 1 }}
+                >
+                  {t('shareMembersLoading')}
+                </Typography>
+              )}
+              {!isShareMembersLoading &&
+                !isShareMembersError &&
+                availableWorkspaceMembers.length === 0 && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mt: 1 }}
+                  >
+                    {t('shareNoAvailableMembers')}
+                  </Typography>
+                )}
+              {isShareMembersError && (
+                <Typography
+                  variant="caption"
+                  color="error"
+                  sx={{ display: 'block', mt: 1 }}
+                >
+                  {t('shareMembersError')}
+                </Typography>
+              )}
+              {shareBoard.isError && (
+                <Typography
+                  variant="caption"
+                  color="error"
+                  sx={{ display: 'block', mt: 1 }}
+                >
+                  {t('shareError')}
+                </Typography>
+              )}
+            </Box>
+          )}
+
+          <Divider />
+
+          {boardMembers.isLoading ? (
+            <Typography variant="body2" color="text.secondary">
+              {t('loading')}
+            </Typography>
+          ) : boardMembers.data && boardMembers.data.length > 0 ? (
+            <Stack spacing={1.5}>
+              {[...boardMembers.data]
+                .sort((memberA, memberB) => {
+                  if (memberA.role === 'owner') return -1;
+                  if (memberB.role === 'owner') return 1;
+                  return memberA.user.name.localeCompare(memberB.user.name);
+                })
+                .map((member) => {
+                  const { user } = member;
+                  const isOwner = member.role === 'owner';
+                  const isCurrentUser = user.id === currentUser?.id;
+
+                  return (
+                    <Box
+                      key={user.id}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 1.5,
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        spacing={1.25}
+                        sx={{ alignItems: 'center', minWidth: 0 }}
+                      >
+                        <UserAvatar
+                          name={user.name}
+                          src={user.avatar}
+                          size={36}
+                        />
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="body2" noWrap>
+                            {user.name}
                             {isCurrentUser && (
                               <Typography
                                 component="span"
                                 variant="caption"
-                                sx={{
-                                  ml: 1,
-                                  color: 'primary.main',
-                                }}
+                                sx={{ ml: 1, color: 'primary.main' }}
                               >
                                 {t('youSuffix')}
                               </Typography>
                             )}
-                            </Typography>
-                            <Chip
-                              label={roleLabels[member.role]}
-                              size="small"
-                              color={isOwner ? 'primary' : 'default'}
-                              variant={isOwner ? 'filled' : 'outlined'}
-                              sx={{ mt: 0.5, height: 20, fontSize: 11 }}
-                            />
-                          </Box>
+                          </Typography>
+                          <Chip
+                            label={roleLabels[member.role]}
+                            size="small"
+                            color={isOwner ? 'primary' : 'default'}
+                            variant={isOwner ? 'filled' : 'outlined'}
+                            sx={{ mt: 0.5, height: 20, fontSize: 11 }}
+                          />
                         </Box>
-                        {canManageBoardMembers &&
-                          !isOwner &&
-                          member.id && (
-                            <Stack
-                              direction="row"
-                              spacing={0.5}
-                              sx={{ alignItems: 'center' }}
-                            >
-                              <Select
-                                size="small"
-                                value={member.role}
-                                onChange={(event) =>
-                                  updateMemberRole.mutate({
-                                    boardId,
-                                    memberId: member.id!,
-                                    role: event.target.value as
-                                      | 'editor'
-                                      | 'viewer',
-                                  })
-                                }
-                                disabled={updateMemberRole.isPending}
-                                aria-label={t('memberRole')}
-                                sx={{ minWidth: 98, fontSize: 12 }}
-                              >
-                                <MenuItem value="editor">
-                                  {t('roleEditor')}
-                                </MenuItem>
-                                <MenuItem value="viewer">
-                                  {t('roleViewer')}
-                                </MenuItem>
-                              </Select>
-                              <Button
-                                size="small"
-                                color="error"
-                                disabled={revokeMember.isPending}
-                                onClick={() =>
-                                  revokeMember.mutate({
-                                    boardId,
-                                    memberId: member.id!,
-                                  })
-                                }
-                              >
-                                {t('remove')}
-                              </Button>
-                            </Stack>
-                          )}
-                      </Box>
-                    );
-                  })}
-                {(updateMemberRole.isError || revokeMember.isError) && (
-                  <Typography variant="caption" color="error">
-                    {t('memberUpdateError')}
-                  </Typography>
-                )}
-              </Stack>
-            ) : (
-              <Typography variant="body2" color="text.secondary">
-                {t('noMembers')}
-              </Typography>
-            )}
-          </Box>
-        </Box>
-      </Drawer>
+                      </Stack>
 
-      <Dialog open={isShareOpen} onClose={() => setShareOpen(false)}>
-        <DialogTitle>{t('shareTitle')}</DialogTitle>
-        <DialogContent
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-            minWidth: 320,
-            pt: 1,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            {t('shareDescription')}
-          </Typography>
-          <TextField
-            label="Email"
-            size="small"
-            fullWidth
-            value={shareEmail}
-            onChange={(e) => setShareEmail(e.target.value)}
-            placeholder="user@example.com"
-          />
-          <FormControl size="small" fullWidth>
-            <InputLabel>{t('memberRole')}</InputLabel>
-            <Select
-              label={t('memberRole')}
-              value={shareRole}
-              onChange={(event) =>
-                setShareRole(event.target.value as 'editor' | 'viewer')
-              }
-            >
-              <MenuItem value="editor">{t('roleEditor')}</MenuItem>
-              <MenuItem value="viewer">{t('roleViewer')}</MenuItem>
-            </Select>
-          </FormControl>
-          {shareBoard.isError && (
-            <Typography variant="body2" color="error">
-              {t('shareError')}
+                      {canManageBoardMembers && !isOwner && member.id && (
+                        <Stack
+                          direction="row"
+                          spacing={0.5}
+                          sx={{ alignItems: 'center' }}
+                        >
+                          <Select
+                            size="small"
+                            value={member.role}
+                            onChange={(event) =>
+                              updateMemberRole.mutate({
+                                boardId,
+                                memberId: member.id!,
+                                role: event.target.value as
+                                  | 'editor'
+                                  | 'viewer',
+                              })
+                            }
+                            disabled={updateMemberRole.isPending}
+                            aria-label={t('memberRole')}
+                            sx={{ minWidth: 105, fontSize: 12 }}
+                          >
+                            <MenuItem value="editor">
+                              {t('roleEditor')}
+                            </MenuItem>
+                            <MenuItem value="viewer">
+                              {t('roleViewer')}
+                            </MenuItem>
+                          </Select>
+                          <Button
+                            size="small"
+                            color="error"
+                            disabled={revokeMember.isPending}
+                            onClick={() =>
+                              revokeMember.mutate({
+                                boardId,
+                                memberId: member.id!,
+                              })
+                            }
+                          >
+                            {t('remove')}
+                          </Button>
+                        </Stack>
+                      )}
+                    </Box>
+                  );
+                })}
+              {(updateMemberRole.isError || revokeMember.isError) && (
+                <Typography variant="caption" color="error">
+                  {t('memberUpdateError')}
+                </Typography>
+              )}
+            </Stack>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              {t('noMembers')}
             </Typography>
           )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setShareOpen(false)}>{t('cancel')}</Button>
-          <Button
-            variant="contained"
-            onClick={handleShareBoard}
-            disabled={shareBoard.isPending || !shareEmail.trim()}
-          >
-            {t('shareSend')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </Drawer>
 
       {board && <TaskDetailModal board={board} />}
     </Box>

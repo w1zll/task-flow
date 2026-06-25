@@ -19,6 +19,8 @@ import { StorageModule } from './storage/storage.module';
 import { Workspace } from './workspaces/entities/workspace.entity';
 import { WorkspaceMember } from './workspaces/entities/workspace-member.entity';
 import { WorkspacesModule } from './workspaces/workspaces.module';
+import { WorkspaceInvite } from './workspaces/entities/workspace-invite.entity';
+import { WorkspaceInviteAuditEvent } from './workspaces/entities/workspace-invite-audit-event.entity';
 
 @Module({
   imports: [
@@ -45,6 +47,8 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
             User,
             Workspace,
             WorkspaceMember,
+            WorkspaceInvite,
+            WorkspaceInviteAuditEvent,
             Board,
             BoardMember,
             Column,

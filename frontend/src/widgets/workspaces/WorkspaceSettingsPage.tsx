@@ -1,24 +1,46 @@
 'use client';
 
 import {
+  useRemoveWorkspaceMember,
+  useUpdateWorkspaceMemberRole,
   useWorkspaceMembers,
   useWorkspaces,
 } from '@/shared/queries/workspaces.queries';
+import { useAuthStore } from '@/shared/store/root.store';
 import UserAvatar from '@/shared/ui/UserAvatar';
-import { ArrowBack, Business, Person } from '@mui/icons-material';
+import {
+  ArrowBack,
+  Business,
+  DeleteOutlined,
+  Person,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
   Skeleton,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useSnackbar } from 'notistack';
+import { useState } from 'react';
+import WorkspaceInvitesSection from './WorkspaceInvitesSection';
 
 interface Props {
   workspaceId: string;
@@ -26,9 +48,17 @@ interface Props {
 
 const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
   const t = useTranslations('WorkspaceSettings');
+  const { enqueueSnackbar } = useSnackbar();
+  const currentUser = useAuthStore((state) => state.user);
+  const [memberToRemoveId, setMemberToRemoveId] = useState<string | null>(null);
   const workspaces = useWorkspaces();
   const members = useWorkspaceMembers(workspaceId);
+  const updateMemberRole = useUpdateWorkspaceMemberRole(workspaceId);
+  const removeMember = useRemoveWorkspaceMember(workspaceId);
   const workspace = workspaces.data?.find((item) => item.id === workspaceId);
+  const memberToRemove = members.data?.find(
+    (member) => member.id === memberToRemoveId,
+  );
 
   if (workspaces.isLoading) {
     return (
@@ -118,41 +148,156 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
           </Alert>
         ) : (
           <Stack divider={<Divider flexItem />}>
-            {members.data?.map((member) => (
-              <Box
-                key={member.id}
-                sx={{
-                  px: { xs: 2, sm: 3 },
-                  py: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                }}
-              >
-                <UserAvatar
-                  name={member.user.name}
-                  src={member.user.avatar}
-                  size={38}
-                />
-                <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                    {member.user.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" noWrap>
-                    {member.user.email}
-                  </Typography>
+            {members.data?.map((member) => {
+              const canChangeRole =
+                workspace.currentUserRole === 'owner' &&
+                member.role !== 'owner';
+              const canRemove =
+                member.role !== 'owner' &&
+                member.userId !== currentUser?.id &&
+                (workspace.currentUserRole === 'owner' ||
+                  (workspace.currentUserRole === 'admin' &&
+                    member.role === 'member'));
+
+              return (
+                <Box
+                  key={member.id}
+                  sx={{
+                    px: { xs: 2, sm: 3 },
+                    py: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                  }}
+                >
+                  <UserAvatar
+                    name={member.user.name}
+                    src={member.user.avatar}
+                    size={38}
+                  />
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                      {member.user.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {member.user.email}
+                    </Typography>
+                  </Box>
+
+                  {canChangeRole ? (
+                    <FormControl size="small" sx={{ minWidth: 138 }}>
+                      <InputLabel id={`member-role-${member.id}`}>
+                        {t('memberRole')}
+                      </InputLabel>
+                      <Select
+                        labelId={`member-role-${member.id}`}
+                        label={t('memberRole')}
+                        value={member.role}
+                        disabled={updateMemberRole.isPending}
+                        onChange={(event) =>
+                          updateMemberRole.mutate(
+                            {
+                              memberId: member.id,
+                              role: event.target.value as 'admin' | 'member',
+                            },
+                            {
+                              onSuccess: () =>
+                                enqueueSnackbar(t('memberRoleUpdated'), {
+                                  variant: 'success',
+                                }),
+                              onError: () =>
+                                enqueueSnackbar(t('memberUpdateError'), {
+                                  variant: 'error',
+                                }),
+                            },
+                          )
+                        }
+                      >
+                        <MenuItem value="admin">{t('role.admin')}</MenuItem>
+                        <MenuItem value="member">{t('role.member')}</MenuItem>
+                      </Select>
+                    </FormControl>
+                  ) : (
+                    <Chip
+                      icon={<Person />}
+                      size="small"
+                      variant="outlined"
+                      label={t(`role.${member.role}`)}
+                    />
+                  )}
+
+                  {canRemove && (
+                    <Tooltip title={t('removeMember')}>
+                      <IconButton
+                        color="error"
+                        aria-label={t('removeMember')}
+                        onClick={() => setMemberToRemoveId(member.id)}
+                      >
+                        <DeleteOutlined />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </Box>
-                <Chip
-                  icon={<Person />}
-                  size="small"
-                  variant="outlined"
-                  label={t(`role.${member.role}`)}
-                />
-              </Box>
-            ))}
+              );
+            })}
           </Stack>
         )}
       </Paper>
+
+      {(workspace.currentUserRole === 'owner' ||
+        workspace.currentUserRole === 'admin') && (
+        <WorkspaceInvitesSection
+          workspaceId={workspaceId}
+          currentUserRole={workspace.currentUserRole}
+        />
+      )}
+
+      <Dialog
+        open={Boolean(memberToRemove)}
+        onClose={() => {
+          if (!removeMember.isPending) setMemberToRemoveId(null);
+        }}
+      >
+        <DialogTitle>{t('removeMemberTitle')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t('removeMemberConfirm', {
+              name: memberToRemove?.user.name ?? '',
+            })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            disabled={removeMember.isPending}
+            onClick={() => setMemberToRemoveId(null)}
+          >
+            {t('cancel')}
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={!memberToRemove || removeMember.isPending}
+            onClick={() => {
+              if (!memberToRemove) return;
+
+              removeMember.mutate(memberToRemove.id, {
+                onSuccess: () => {
+                  setMemberToRemoveId(null);
+                  enqueueSnackbar(t('memberRemoved'), {
+                    variant: 'success',
+                  });
+                },
+                onError: () =>
+                  enqueueSnackbar(t('memberRemoveError'), {
+                    variant: 'error',
+                  }),
+              });
+            }}
+          >
+            {removeMember.isPending ? t('removingMember') : t('removeMember')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

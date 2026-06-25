@@ -13,6 +13,8 @@ import { CreateWorkspaceDto } from './dto/workspace.dto';
 import { WorkspaceMember } from './entities/workspace-member.entity';
 import { WorkspaceRole } from './entities/workspace-role.enum';
 import { Workspace } from './entities/workspace.entity';
+import { BoardMember } from '@/boards/entities/board-member.entity';
+import { Board } from '@/boards/entities/board.entity';
 
 export interface WorkspaceAccess {
   workspace: Workspace;
@@ -192,6 +194,100 @@ export class WorkspacesService {
       ...member,
       user: toPublicUser(member.user),
     })) as WorkspaceMember[];
+  }
+
+  async updateMemberRole(
+    workspaceId: string,
+    memberId: string,
+    role: WorkspaceRole.ADMIN | WorkspaceRole.MEMBER,
+    userId: string,
+  ): Promise<WorkspaceMember> {
+    const access = await this.assertMember(workspaceId, userId);
+    if (access.role !== WorkspaceRole.OWNER) {
+      throw new ForbiddenException(
+        'Only the workspace owner can change member roles',
+      );
+    }
+
+    const member = await this.memberRepo.findOne({
+      where: { id: memberId, workspaceId },
+      relations: ['user'],
+    });
+    if (!member) throw new NotFoundException('Workspace member not found');
+    if (
+      member.role === WorkspaceRole.OWNER ||
+      member.userId === access.workspace.ownerId
+    ) {
+      throw new ForbiddenException('The workspace owner role cannot change');
+    }
+
+    member.role = role;
+    const saved = await this.memberRepo.save(member);
+    saved.user = toPublicUser(member.user) as User;
+    return saved;
+  }
+
+  async removeMember(
+    workspaceId: string,
+    memberId: string,
+    userId: string,
+  ): Promise<void> {
+    const access = await this.assertMember(workspaceId, userId);
+    if (
+      access.role !== WorkspaceRole.OWNER &&
+      access.role !== WorkspaceRole.ADMIN
+    ) {
+      throw new ForbiddenException(
+        'Only workspace owners and admins can remove members',
+      );
+    }
+
+    const member = await this.memberRepo.findOne({
+      where: { id: memberId, workspaceId },
+    });
+    if (!member) throw new NotFoundException('Workspace member not found');
+    if (
+      member.role === WorkspaceRole.OWNER ||
+      member.userId === access.workspace.ownerId
+    ) {
+      throw new ForbiddenException('The workspace owner cannot be removed');
+    }
+    if (member.userId === userId) {
+      throw new ForbiddenException(
+        'Use a dedicated leave workspace action to remove yourself',
+      );
+    }
+    if (
+      access.role === WorkspaceRole.ADMIN &&
+      member.role !== WorkspaceRole.MEMBER
+    ) {
+      throw new ForbiddenException('Admins can remove only workspace members');
+    }
+
+    await this.memberRepo.manager.transaction(async (manager) => {
+      await manager.getRepository(Board).update(
+        {
+          workspaceId,
+          ownerId: member.userId,
+        },
+        {
+          ownerId: access.workspace.ownerId,
+        },
+      );
+      await manager
+        .getRepository(BoardMember)
+        .createQueryBuilder()
+        .delete()
+        .where('"userId" = :targetUserId', {
+          targetUserId: member.userId,
+        })
+        .andWhere(
+          '"boardId" IN (SELECT "id" FROM "boards" WHERE "workspaceId" = :workspaceId)',
+          { workspaceId },
+        )
+        .execute();
+      await manager.getRepository(WorkspaceMember).remove(member);
+    });
   }
 
   private async createOwnedWorkspace(

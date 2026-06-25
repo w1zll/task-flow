@@ -11,6 +11,12 @@ export type BoardMember =
 export type Workspace = ApiResponse<'/api/workspaces', 'get'>[number];
 export type WorkspaceMember =
   ApiResponse<'/api/workspaces/{id}/members', 'get'>[number];
+export type WorkspaceInvite =
+  ApiResponse<'/api/workspaces/{workspaceId}/invites', 'get'>[number];
+export type CreatedWorkspaceInvite =
+  ApiResponse<'/api/workspaces/{workspaceId}/invites', 'post'>;
+export type WorkspaceInvitePreview =
+  ApiResponse<'/api/workspace-invites/{token}', 'get'>;
 // export type BoardColumn = NonNullable<
 //   ApiResponse<'/api/boards/{id}', 'get'>['columns']
 // >[number];
@@ -153,6 +159,51 @@ export const workspacesApi = {
     apiClient.get<ApiResponse<'/api/workspaces/{id}/members', 'get'>>(
       `/api/workspaces/${id}/members`,
     ),
+
+  updateMemberRole: (
+    workspaceId: string,
+    memberId: string,
+    role: 'admin' | 'member',
+  ) =>
+    apiClient.patch<
+      ApiResponse<
+        '/api/workspaces/{id}/members/{memberId}/role',
+        'patch'
+      >
+    >(`/api/workspaces/${workspaceId}/members/${memberId}/role`, { role }),
+
+  removeMember: (workspaceId: string, memberId: string) =>
+    apiClient.delete(`/api/workspaces/${workspaceId}/members/${memberId}`),
+
+  getInvites: (id: string) =>
+    apiClient.get<
+      ApiResponse<'/api/workspaces/{workspaceId}/invites', 'get'>
+    >(`/api/workspaces/${id}/invites`),
+
+  createInvite: (
+    id: string,
+    data: ApiBody<'/api/workspaces/{workspaceId}/invites', 'post'>,
+  ) =>
+    apiClient.post<
+      ApiResponse<'/api/workspaces/{workspaceId}/invites', 'post'>
+    >(`/api/workspaces/${id}/invites`, data),
+
+  revokeInvite: (workspaceId: string, inviteId: string) =>
+    apiClient.delete(
+      `/api/workspaces/${workspaceId}/invites/${inviteId}`,
+    ),
+};
+
+export const workspaceInvitesApi = {
+  preview: (token: string) =>
+    apiClient.get<ApiResponse<'/api/workspace-invites/{token}', 'get'>>(
+      `/api/workspace-invites/${encodeURIComponent(token)}`,
+    ),
+
+  accept: (token: string) =>
+    apiClient.post<
+      ApiResponse<'/api/workspace-invites/{token}/accept', 'post'>
+    >(`/api/workspace-invites/${encodeURIComponent(token)}/accept`),
 };
 
 export const columnsApi = {
