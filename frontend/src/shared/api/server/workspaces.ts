@@ -4,6 +4,7 @@ import {
   Workspace,
   WorkspaceInvite,
   WorkspaceMember,
+  Team,
 } from '@/shared/api/api';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -59,3 +60,8 @@ export const getWorkspaceInvitesForCurrentUser = (
   workspaceId: string,
 ): Promise<WorkspaceInvite[]> =>
   fetchWorkspaceApi(`/api/workspaces/${workspaceId}/invites`);
+
+export const getWorkspaceTeamsForCurrentUser = (
+  workspaceId: string,
+): Promise<Team[]> =>
+  fetchWorkspaceApi(`/api/workspaces/${workspaceId}/teams`);

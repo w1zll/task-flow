@@ -21,6 +21,9 @@ import { WorkspaceMember } from './workspaces/entities/workspace-member.entity';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 import { WorkspaceInvite } from './workspaces/entities/workspace-invite.entity';
 import { WorkspaceInviteAuditEvent } from './workspaces/entities/workspace-invite-audit-event.entity';
+import { Team } from './teams/entities/team.entity';
+import { TeamMember } from './teams/entities/team-member.entity';
+import { TeamsModule } from './teams/teams.module';
 
 @Module({
   imports: [
@@ -49,6 +52,8 @@ import { WorkspaceInviteAuditEvent } from './workspaces/entities/workspace-invit
             WorkspaceMember,
             WorkspaceInvite,
             WorkspaceInviteAuditEvent,
+            Team,
+            TeamMember,
             Board,
             BoardMember,
             Column,
@@ -67,6 +72,7 @@ import { WorkspaceInviteAuditEvent } from './workspaces/entities/workspace-invit
     FrontendCacheModule,
     UsersModule,
     WorkspacesModule,
+    TeamsModule,
     BoardsModule,
     ColumnsModule,
     TasksModule,

@@ -11,6 +11,7 @@ import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.ser
 import { BoardPermissionsService } from '@/boards/board-permissions.service';
 import { ForbiddenException } from '@nestjs/common';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
+import { Team } from '@/teams/entities/team.entity';
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -18,6 +19,7 @@ describe('TasksService', () => {
   let columnRepo: jest.Mocked<Partial<Repository<Column>>>;
   let boardRepo: jest.Mocked<Partial<Repository<Board>>>;
   let userRepo: jest.Mocked<Partial<Repository<User>>>;
+  let teamRepo: jest.Mocked<Partial<Repository<Team>>>;
   let boardPermissions: jest.Mocked<Partial<BoardPermissionsService>>;
   let workspacesService: jest.Mocked<Partial<WorkspacesService>>;
   let mockQueryBuilder: {
@@ -100,6 +102,9 @@ describe('TasksService', () => {
     userRepo = {
       findOne: jest.fn(),
     };
+    teamRepo = {
+      findOne: jest.fn(),
+    };
     boardPermissions = {
       assertCanEditBoardContent: jest.fn().mockResolvedValue({
         role: 'editor',
@@ -143,6 +148,10 @@ describe('TasksService', () => {
         {
           provide: getRepositoryToken(User),
           useValue: userRepo,
+        },
+        {
+          provide: getRepositoryToken(Team),
+          useValue: teamRepo,
         },
         {
           provide: FrontendCacheService,
@@ -280,6 +289,67 @@ describe('TasksService', () => {
         userId,
       ),
     ).rejects.toThrow('Assignee must belong to the board workspace');
+
+    expect(taskRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('assigns a task to a team from the board workspace', async () => {
+    columnRepo.findOne!.mockResolvedValue({
+      id: 'column-1',
+      boardId: 'board-1',
+    } as Column);
+    boardRepo.findOne!.mockResolvedValue({
+      id: 'board-1',
+      workspaceId: 'workspace-1',
+    } as Board);
+    teamRepo.findOne!.mockResolvedValue({
+      id: 'team-1',
+      name: 'Design',
+      workspaceId: 'workspace-1',
+    } as Team);
+
+    const result = await service.create(
+      {
+        title: 'Design task',
+        columnId: 'column-1',
+        teamId: 'team-1',
+      },
+      userId,
+    );
+
+    expect(taskRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        teamId: 'team-1',
+        team: expect.objectContaining({ id: 'team-1' }),
+      }),
+    );
+    expect(result.teamId).toBe('team-1');
+  });
+
+  it('does not assign a task to a team from another workspace', async () => {
+    columnRepo.findOne!.mockResolvedValue({
+      id: 'column-1',
+      boardId: 'board-1',
+    } as Column);
+    boardRepo.findOne!.mockResolvedValue({
+      id: 'board-1',
+      workspaceId: 'workspace-1',
+    } as Board);
+    teamRepo.findOne!.mockResolvedValue({
+      id: 'team-2',
+      workspaceId: 'workspace-2',
+    } as Team);
+
+    await expect(
+      service.create(
+        {
+          title: 'Cross-workspace team task',
+          columnId: 'column-1',
+          teamId: 'team-2',
+        },
+        userId,
+      ),
+    ).rejects.toThrow('Task team must belong to the board workspace');
 
     expect(taskRepo.save).not.toHaveBeenCalled();
   });

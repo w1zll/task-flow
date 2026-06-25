@@ -2,6 +2,7 @@ import WorkspaceSettingsPage from '@/widgets/workspaces/WorkspaceSettingsPage';
 import {
   getWorkspaceInvitesForCurrentUser,
   getWorkspaceMembersForCurrentUser,
+  getWorkspaceTeamsForCurrentUser,
   getWorkspacesForCurrentUser,
 } from '@/shared/api/server/workspaces';
 import { queryKeys } from '@/shared/queries/board-query-keys';
@@ -41,14 +42,16 @@ const WorkspaceSettingsRoute = async ({ params }: Props) => {
     const canManageInvites =
       workspace.currentUserRole === 'owner' ||
       workspace.currentUserRole === 'admin';
-    const [members, invites] = await Promise.all([
+    const [members, teams, invites] = await Promise.all([
       getWorkspaceMembersForCurrentUser(id),
+      getWorkspaceTeamsForCurrentUser(id),
       canManageInvites
         ? getWorkspaceInvitesForCurrentUser(id)
         : Promise.resolve(null),
     ]);
 
     queryClient.setQueryData(queryKeys.workspaceMembers(id), members);
+    queryClient.setQueryData(queryKeys.workspaceTeams(id), teams);
     if (invites) {
       queryClient.setQueryData(queryKeys.workspaceInvites(id), invites);
     }
