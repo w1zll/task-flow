@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { WorkspaceMember } from './workspace-member.entity';
 import { WorkspaceInvite } from './workspace-invite.entity';
+import { Team } from '@/teams/entities/team.entity';
 
 @Entity('workspaces')
 export class Workspace {
@@ -43,6 +44,9 @@ export class Workspace {
 
   @OneToMany(() => WorkspaceInvite, (invite) => invite.workspace)
   invites: WorkspaceInvite[];
+
+  @OneToMany(() => Team, (team) => team.workspace)
+  teams: Team[];
 
   @CreateDateColumn()
   createdAt: Date;

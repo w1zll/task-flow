@@ -17,6 +17,13 @@ export type CreatedWorkspaceInvite =
   ApiResponse<'/api/workspaces/{workspaceId}/invites', 'post'>;
 export type WorkspaceInvitePreview =
   ApiResponse<'/api/workspace-invites/{token}', 'get'>;
+export type Team =
+  ApiResponse<'/api/workspaces/{workspaceId}/teams', 'get'>[number];
+export type TeamMember =
+  ApiResponse<
+    '/api/workspaces/{workspaceId}/teams/{teamId}/members',
+    'post'
+  >;
 // export type BoardColumn = NonNullable<
 //   ApiResponse<'/api/boards/{id}', 'get'>['columns']
 // >[number];
@@ -206,6 +213,73 @@ export const workspaceInvitesApi = {
     >(`/api/workspace-invites/${encodeURIComponent(token)}/accept`),
 };
 
+export const teamsApi = {
+  getAll: (workspaceId: string) =>
+    apiClient.get<
+      ApiResponse<'/api/workspaces/{workspaceId}/teams', 'get'>
+    >(`/api/workspaces/${workspaceId}/teams`),
+
+  getMine: (workspaceId: string) =>
+    apiClient.get<
+      ApiResponse<'/api/workspaces/{workspaceId}/teams/mine', 'get'>
+    >(`/api/workspaces/${workspaceId}/teams/mine`),
+
+  create: (
+    workspaceId: string,
+    data: ApiBody<'/api/workspaces/{workspaceId}/teams', 'post'>,
+  ) =>
+    apiClient.post<
+      ApiResponse<'/api/workspaces/{workspaceId}/teams', 'post'>
+    >(`/api/workspaces/${workspaceId}/teams`, data),
+
+  update: (
+    workspaceId: string,
+    teamId: string,
+    data: ApiBody<
+      '/api/workspaces/{workspaceId}/teams/{teamId}',
+      'patch'
+    >,
+  ) =>
+    apiClient.patch<
+      ApiResponse<
+        '/api/workspaces/{workspaceId}/teams/{teamId}',
+        'patch'
+      >
+    >(`/api/workspaces/${workspaceId}/teams/${teamId}`, data),
+
+  remove: (workspaceId: string, teamId: string) =>
+    apiClient.delete(
+      `/api/workspaces/${workspaceId}/teams/${teamId}`,
+    ),
+
+  addMember: (workspaceId: string, teamId: string, userId: string) =>
+    apiClient.post<
+      ApiResponse<
+        '/api/workspaces/{workspaceId}/teams/{teamId}/members',
+        'post'
+      >
+    >(`/api/workspaces/${workspaceId}/teams/${teamId}/members`, {
+      userId,
+    }),
+
+  removeMember: (
+    workspaceId: string,
+    teamId: string,
+    memberId: string,
+  ) =>
+    apiClient.delete(
+      `/api/workspaces/${workspaceId}/teams/${teamId}/members/${memberId}`,
+    ),
+
+  getTasks: (workspaceId: string, teamId: string) =>
+    apiClient.get<
+      ApiResponse<
+        '/api/workspaces/{workspaceId}/teams/{teamId}/tasks',
+        'get'
+      >
+    >(`/api/workspaces/${workspaceId}/teams/${teamId}/tasks`),
+};
+
 export const columnsApi = {
   create: (data: { title: string; boardId: string; order?: number }) =>
     apiClient.post<ApiResponse<'/api/columns', 'post'>>('/api/columns', data),
@@ -237,6 +311,7 @@ export const taskApi = {
     labels?: string[];
     dueDate?: string;
     assigneeId?: string;
+    teamId?: string | null;
     isCompleted?: boolean;
     completedAt?: string;
     assigneeName?: string;

@@ -3,7 +3,12 @@
 import { useAuth } from '@/features/auth/useAuth';
 import { useThemeStore } from '@/shared/store/root.store';
 import type { ThemeMode } from '@/shared/store/theme.store';
-import { DarkMode, LightMode, Logout, ViewKanban } from '@mui/icons-material';
+import {
+  DarkMode,
+  LightMode,
+  Logout,
+  ViewKanban,
+} from '@mui/icons-material';
 import {
   AppBar,
   Box,
@@ -74,14 +79,16 @@ const AppHeader = ({
               sx={{
                 width: 32,
                 height: 32,
-                borderRadius: 1.5,
+                borderRadius: '6px',
                 bgcolor: 'primary.main',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <ViewKanban sx={{ color: 'white', fontSize: 18 }} />
+              <ViewKanban
+                sx={{ color: 'primary.contrastText', fontSize: 18 }}
+              />
             </Box>
             <Typography
               variant="h6"

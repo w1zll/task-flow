@@ -63,6 +63,7 @@ import { useSnackbar } from 'notistack';
 import { isBoardPermissionError } from '@/shared/lib/boardSocketMutations';
 import { useWorkspaceMembers } from '@/shared/queries/workspaces.queries';
 import { getAvailableWorkspaceMembers } from '@/shared/lib/board-members';
+import { useWorkspaceTeams } from '@/shared/queries/teams.queries';
 
 interface Props {
   boardId: string;
@@ -141,6 +142,10 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const workspaceMembers = useWorkspaceMembers(
     board?.workspaceId ?? '',
     isMembersOpen && canManageBoardMembers,
+  );
+  const workspaceTeams = useWorkspaceTeams(
+    board?.workspaceId ?? '',
+    isMembersOpen,
   );
   const availableWorkspaceMembers = useMemo(
     () =>
@@ -439,7 +444,14 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
 
       <Box sx={{ flex: 1, minWidth: 0, overflowX: 'hidden', py: 1 }}>
         {isLoading ? (
-          <Box sx={{ display: 'flex', gap: 2, height: '100%' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              height: '100%',
+              px: { xs: 2, sm: 3 },
+            }}
+          >
             {Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} variant="rounded" width={280} height={400} />
             ))}
@@ -481,7 +493,10 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: 2,
-                  minWidth: 'max-content',
+                  width: 'max-content',
+                  minWidth: '100%',
+                  boxSizing: 'border-box',
+                  px: { xs: 2, sm: 3 },
                 }}
               >
                 <Box sx={{ flexShrink: 0 }}>
@@ -493,7 +508,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                       width: 280,
                       flexShrink: 0,
                       bgcolor: 'background.paper',
-                      borderRadius: 2,
+                      borderRadius: '6px',
                       p: 2,
                       border: '1px solid',
                       borderColor: 'divider',
@@ -571,7 +586,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
             sx={{
               p: 2,
               bgcolor: 'background.default',
-              borderRadius: 2,
+              borderRadius: '6px',
               border: '1px solid',
               borderColor: 'divider',
             }}
@@ -705,7 +720,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
               sx={{
                 p: 2,
                 bgcolor: 'background.default',
-                borderRadius: 2,
+                borderRadius: '6px',
                 border: '1px solid',
                 borderColor: 'divider',
               }}
@@ -921,6 +936,36 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                             variant={isOwner ? 'filled' : 'outlined'}
                             sx={{ mt: 0.5, height: 20, fontSize: 11 }}
                           />
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              gap: 0.5,
+                              mt: 0.5,
+                            }}
+                          >
+                            {workspaceTeams.data
+                              ?.filter((team) =>
+                                team.members.some(
+                                  (teamMember) =>
+                                    teamMember.userId === user.id,
+                                ),
+                              )
+                              .map((team) => (
+                                <Chip
+                                  key={team.id}
+                                  label={team.name}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{
+                                    height: 20,
+                                    fontSize: 10,
+                                    color: team.color,
+                                    borderColor: team.color,
+                                  }}
+                                />
+                              ))}
+                          </Box>
                         </Box>
                       </Stack>
 

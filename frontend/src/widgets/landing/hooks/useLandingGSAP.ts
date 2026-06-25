@@ -215,7 +215,7 @@ export const useLandingGSAP = () => {
         });
 
         gsap.to(card, {
-          boxShadow: '0 20px 40px rgba(99,102,241,0.3)',
+          boxShadow: '0 20px 40px var(--taskflow-primary-glow)',
           duration: 0.05,
           ease: 'power1.out',
           overwrite: 'auto',

@@ -18,6 +18,7 @@ import {
   CalendarTodayOutlined,
   CheckCircleOutlined,
   FlagOutlined,
+  GroupsOutlined,
   LabelOutlined,
   RadioButtonUnchecked,
 } from '@mui/icons-material';
@@ -342,6 +343,28 @@ const TaskCard = ({
                   />
                 ))}
               </Box>
+            )}
+
+            {task.team && (
+              <Tooltip title={t('teamTooltip', { team: task.team.name })}>
+                <Chip
+                  label={task.team.name}
+                  size="small"
+                  icon={<GroupsOutlined sx={{ fontSize: '12px !important' }} />}
+                  sx={{
+                    height: 20,
+                    mb: 1,
+                    bgcolor: alpha(task.team.color, 0.16),
+                    color: task.team.color,
+                    borderColor: alpha(task.team.color, 0.4),
+                    fontSize: 11,
+                    fontWeight: 600,
+                    '& .MuiChip-label': { px: 0.75 },
+                    '& .MuiChip-icon': { color: 'inherit' },
+                  }}
+                  variant="outlined"
+                />
+              </Tooltip>
             )}
 
             <Box

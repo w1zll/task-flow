@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 import { TaskPriority } from '../entities/task.entity';
 import { UserResponseDto } from '@/users/dto/user.dto';
+import { TeamSummaryResponseDto } from '@/teams/dto/team.dto';
 
 export class CreateTaskDto {
   @ApiProperty({ example: 'Task 1' })
@@ -59,6 +60,11 @@ export class CreateTaskDto {
   @IsString()
   assigneeName?: string;
 
+  @ApiProperty({ required: false, nullable: true, example: 'team-uuid' })
+  @IsOptional()
+  @IsUUID()
+  teamId?: string | null;
+
   @ApiProperty({ example: 'column-uuid' })
   @IsUUID()
   columnId: string;
@@ -101,6 +107,16 @@ export class TaskResponseDto {
 
   @ApiProperty({ type: () => UserResponseDto, required: false })
   assignee?: UserResponseDto;
+
+  @ApiProperty({ required: false, nullable: true, example: 'team-uuid' })
+  teamId?: string | null;
+
+  @ApiProperty({
+    type: () => TeamSummaryResponseDto,
+    required: false,
+    nullable: true,
+  })
+  team?: TeamSummaryResponseDto | null;
 
   @ApiProperty({ required: false })
   isCompleted: boolean;

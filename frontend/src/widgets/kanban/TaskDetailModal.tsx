@@ -49,6 +49,7 @@ import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import UserAvatar from '@/shared/ui/UserAvatar';
+import { useWorkspaceTeams } from '@/shared/queries/teams.queries';
 
 interface Props {
   board: Board;
@@ -93,6 +94,7 @@ const TaskDetailModal = ({ board }: Props) => {
   const [isDirty, setIsDirty] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const canEdit = board.capabilities.canEditBoardContent;
+  const teams = useWorkspaceTeams(board.workspaceId, !!boardUI.openTaskId);
 
   useEffect(() => {
     if (task) {
@@ -104,6 +106,7 @@ const TaskDetailModal = ({ board }: Props) => {
         dueDate: task.dueDate ? dayjs(task.dueDate).format('YYYY-MM-DD') : '',
         assigneeName: task.assigneeName ?? '',
         assigneeId: task.assigneeId ?? undefined,
+        teamId: task.teamId ?? null,
         isCompleted: task.isCompleted,
         completedAt: task.completedAt,
       });
@@ -265,7 +268,7 @@ const TaskDetailModal = ({ board }: Props) => {
       onClose={() => boardUI.closeTask()}
       maxWidth="sm"
       fullWidth
-      slotProps={{ paper: { sx: { borderRadius: 2 } } }}
+      slotProps={{ paper: { sx: { borderRadius: '6px' } } }}
     >
       <DialogTitle
         sx={{ pb: 1, display: 'flex', alignItems: 'flex-start', gap: 1 }}
@@ -426,6 +429,53 @@ const TaskDetailModal = ({ board }: Props) => {
                     />
                     <span>{member.user.name}</span>
                   </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: 180, flex: 1 }}>
+            <InputLabel>{t('team')}</InputLabel>
+            <Select
+              label={t('team')}
+              value={form.teamId ?? ''}
+              disabled={!canEdit || teams.isLoading}
+              onChange={(event) =>
+                patch(
+                  'teamId',
+                  (event.target.value || null) as Task['teamId'],
+                )
+              }
+              renderValue={(value) => {
+                const team = teams.data?.find((item) => item.id === value);
+                return team ? (
+                  <Chip
+                    size="small"
+                    label={team.name}
+                    sx={{
+                      bgcolor: team.color,
+                      color: '#fff',
+                      fontWeight: 600,
+                    }}
+                  />
+                ) : (
+                  t('noTeam')
+                );
+              }}
+            >
+              <MenuItem value="">{t('noTeam')}</MenuItem>
+              {teams.data?.map((team) => (
+                <MenuItem key={team.id} value={team.id}>
+                  <Box
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      bgcolor: team.color,
+                      mr: 1,
+                    }}
+                  />
+                  {team.name}
                 </MenuItem>
               ))}
             </Select>

@@ -135,7 +135,7 @@ const PendingBoardMutationsPrompt = () => {
       open={canApplyPendingChanges}
       maxWidth="xs"
       fullWidth
-      slotProps={{ paper: { sx: { borderRadius: 2 } } }}
+      slotProps={{ paper: { sx: { borderRadius: '6px' } } }}
     >
       <DialogTitle>{t('title')}</DialogTitle>
       <DialogContent>

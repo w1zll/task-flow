@@ -1,5 +1,6 @@
 import { Column } from '@/columns/entities/column.entity';
 import { User } from '@/users/entities/user.entity';
+import { Team } from '@/teams/entities/team.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -53,6 +54,16 @@ export class Task {
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'assigneeId' })
   assignee?: User;
+
+  @OrmColumn({ type: 'uuid', nullable: true })
+  teamId?: string | null;
+
+  @ManyToOne(() => Team, (team) => team.tasks, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'teamId' })
+  team?: Team | null;
 
   @OrmColumn({ default: false })
   isCompleted: boolean;

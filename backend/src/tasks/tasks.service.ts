@@ -21,6 +21,7 @@ import {
 } from './dto/task.dto';
 import { Task } from './entities/task.entity';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
+import { Team } from '@/teams/entities/team.entity';
 
 @Injectable()
 export class TasksService {
@@ -33,6 +34,8 @@ export class TasksService {
     private readonly boardRepo: Repository<Board>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(Team)
+    private readonly teamRepo: Repository<Team>,
     private readonly frontendCache: FrontendCacheService,
     private readonly boardPermissions: BoardPermissionsService,
     private readonly workspacesService: WorkspacesService,
@@ -58,7 +61,7 @@ export class TasksService {
   ): Promise<Task> {
     const task = await this.taskRepo.findOne({
       where: { id },
-      relations: ['column', 'column.board', 'assignee'],
+      relations: ['column', 'column.board', 'assignee', 'team'],
     });
     if (!task) throw new NotFoundException('Task not found');
 
@@ -103,13 +106,37 @@ export class TasksService {
     return user;
   }
 
+  private async validateTeam(
+    boardId: string,
+    teamId: string,
+  ): Promise<Team> {
+    const board = await this.boardRepo.findOne({
+      where: { id: boardId },
+      select: { id: true, workspaceId: true },
+    });
+    if (!board) throw new NotFoundException('Board not found');
+
+    const team = await this.teamRepo.findOne({ where: { id: teamId } });
+    if (!team) throw new NotFoundException('Team not found');
+    if (team.workspaceId !== board.workspaceId) {
+      throw new ForbiddenException(
+        'Task team must belong to the board workspace',
+      );
+    }
+    return team;
+  }
+
   async create(dto: CreateTaskDto, userId: string): Promise<Task> {
     const column = await this.verifyColumnWriteAccess(dto.columnId, userId);
     let assignee: User | undefined;
+    let team: Team | undefined;
 
     if (dto.assigneeId) {
       assignee = await this.validateAssignee(column.boardId, dto.assigneeId);
       dto.assigneeName = assignee.name;
+    }
+    if (dto.teamId) {
+      team = await this.validateTeam(column.boardId, dto.teamId);
     }
     if (dto.order === undefined) {
       dto.order = await this.taskRepo.count({
@@ -120,6 +147,7 @@ export class TasksService {
     const task = this.taskRepo.create({
       ...dto,
       assignee,
+      team,
       dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
       completedAt:
         dto.isCompleted && !dto.completedAt
@@ -141,7 +169,7 @@ export class TasksService {
   ): Promise<Task> {
     const task = await this.verifyTaskWriteAccess(id, userId);
     this.assertExpectedBoard(task.column.boardId, expectedBoardId);
-    const { completedAt, dueDate, ...taskChanges } = dto;
+    const { completedAt, dueDate, teamId, ...taskChanges } = dto;
     const wasCompleted = task.isCompleted;
     const sourceOrder = task.order;
 
@@ -152,6 +180,16 @@ export class TasksService {
       );
       task.assigneeName = assignee.name;
       task.assignee = assignee;
+    }
+    if (teamId !== undefined) {
+      if (teamId === null) {
+        task.teamId = null;
+        task.team = null;
+      } else {
+        const team = await this.validateTeam(task.column.boardId, teamId);
+        task.teamId = team.id;
+        task.team = team;
+      }
     }
 
     Object.assign(task, taskChanges);
@@ -283,7 +321,7 @@ export class TasksService {
     );
     const updated = await this.taskRepo.findOne({
       where: { id: task.id },
-      relations: ['column', 'column.board', 'assignee'],
+      relations: ['column', 'column.board', 'assignee', 'team'],
     });
     await this.frontendCache.revalidateBoard(updated.column.boardId);
     return this.withPublicAssignee(updated);

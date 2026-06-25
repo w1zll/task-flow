@@ -79,6 +79,7 @@ export class BoardsService {
         'columns',
         'columns.tasks',
         'columns.tasks.assignee',
+        'columns.tasks.team',
         'members',
         'members.user',
       ],

@@ -188,6 +188,7 @@ export const useCreateTask = () => {
       labels?: string[];
       dueDate?: string;
       assigneeId?: string;
+      teamId?: string | null;
     }) =>
       taskApi
         .create({
@@ -198,6 +199,7 @@ export const useCreateTask = () => {
           labels: data.labels,
           dueDate: data.dueDate,
           assigneeId: data.assigneeId,
+          teamId: data.teamId,
         })
         .then((r) => r.data),
     onSuccess: (_, { boardId }) => invalidateBoard(qc, boardId),
