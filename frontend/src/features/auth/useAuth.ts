@@ -1,25 +1,60 @@
 'use client';
 
-import { authApi, type RegisterPayload } from '@/shared/api/api';
+import {
+  authApi,
+  type RegisterPayload,
+  workspaceInvitesApi,
+} from '@/shared/api/api';
+import {
+  clearPendingWorkspaceInvite,
+  getPendingWorkspaceInvite,
+} from '@/shared/lib/pending-workspace-invite';
 import { useAuthStore } from '@/shared/store/root.store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
+import { useState } from 'react';
 
 export const useAuth = () => {
   const authStore = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
+  const [isCompletingInvite, setIsCompletingInvite] = useState(false);
+
+  const finishAuthentication = async (user: typeof authStore.user) => {
+    queryClient.clear();
+    authStore.setUser(user);
+    const inviteToken = getPendingWorkspaceInvite();
+
+    if (!inviteToken) {
+      router.push('/boards');
+      router.refresh();
+      return;
+    }
+
+    setIsCompletingInvite(true);
+    try {
+      const workspace = (
+        await workspaceInvitesApi.accept(inviteToken)
+      ).data;
+      authStore.setActiveWorkspace(workspace.id);
+      clearPendingWorkspaceInvite();
+      router.push('/boards');
+      router.refresh();
+    } catch {
+      router.push(`/invite/${encodeURIComponent(inviteToken)}`);
+      router.refresh();
+    } finally {
+      setIsCompletingInvite(false);
+    }
+  };
 
   const loginMutation = useMutation({
     mutationFn: (data: { email: string; password: string }) =>
       authApi.login(data).then((r) => r.data),
     onSuccess: ({ user }) => {
-      queryClient.clear();
-      authStore.setUser(user);
-      router.push('/boards');
-      router.refresh();
+      void finishAuthentication(user);
     },
     onError: (err: any) =>
       enqueueSnackbar(err.response?.data?.message || 'Login failed', {
@@ -31,10 +66,7 @@ export const useAuth = () => {
     mutationFn: (data: RegisterPayload) =>
       authApi.register(data).then((r) => r.data),
     onSuccess: ({ user }) => {
-      queryClient.clear();
-      authStore.setUser(user);
-      router.push('/boards');
-      router.refresh();
+      void finishAuthentication(user);
     },
     onError: (err: any) => {
       enqueueSnackbar(err.response?.data?.message || 'Registration failed', {
@@ -60,7 +92,7 @@ export const useAuth = () => {
     login: loginMutation.mutate,
     register: registerMutation.mutate,
     logout: logoutMutation.mutate,
-    isLoginLoading: loginMutation.isPending,
-    isRegisterLoading: registerMutation.isPending,
+    isLoginLoading: loginMutation.isPending || isCompletingInvite,
+    isRegisterLoading: registerMutation.isPending || isCompletingInvite,
   };
 };

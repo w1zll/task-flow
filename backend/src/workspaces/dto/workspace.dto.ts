@@ -1,6 +1,6 @@
 import { UserResponseDto } from '@/users/dto/user.dto';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MaxLength, MinLength } from 'class-validator';
+import { IsIn, IsString, MaxLength, MinLength } from 'class-validator';
 import { WorkspaceRole } from '../entities/workspace-role.enum';
 
 export class CreateWorkspaceDto {
@@ -55,4 +55,12 @@ export class WorkspaceMemberResponseDto {
 
   @ApiProperty({ example: '2026-06-25T12:00:00.000Z' })
   updatedAt: string;
+}
+
+export class UpdateWorkspaceMemberRoleDto {
+  @ApiProperty({
+    enum: [WorkspaceRole.ADMIN, WorkspaceRole.MEMBER],
+  })
+  @IsIn([WorkspaceRole.ADMIN, WorkspaceRole.MEMBER])
+  role: WorkspaceRole.ADMIN | WorkspaceRole.MEMBER;
 }

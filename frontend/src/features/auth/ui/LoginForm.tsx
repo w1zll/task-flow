@@ -1,17 +1,26 @@
 'use client'
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../useAuth";
 import { alpha, Box, Button, Card, CardContent, Divider, IconButton, InputAdornment, Link, TextField, Typography } from "@mui/material";
 import { ViewKanban, Visibility, VisibilityOff } from "@mui/icons-material";
 import { useTranslations } from 'next-intl';
 import NextLink from 'next/link';
+import {
+  capturePendingWorkspaceInviteFromLocation,
+  getInviteAuthHref,
+} from '@/shared/lib/pending-workspace-invite';
 
 const LoginForm = () => {
   const t = useTranslations('Auth.Login');
   const { login, isLoginLoading } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    setInviteToken(capturePendingWorkspaceInviteFromLocation());
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,7 +132,11 @@ const LoginForm = () => {
             sx={{ textAlign: 'center' }}
           >
             {t('noAccount')}{' '}
-            <Link component={NextLink} href="/auth/register" sx={{ fontWeight: 600 }}>
+            <Link
+              component={NextLink}
+              href={getInviteAuthHref('/auth/register', inviteToken)}
+              sx={{ fontWeight: 600 }}
+            >
               {t('register')}
             </Link>
           </Typography>

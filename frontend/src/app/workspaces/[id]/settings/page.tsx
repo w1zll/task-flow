@@ -1,6 +1,21 @@
 import WorkspaceSettingsPage from '@/widgets/workspaces/WorkspaceSettingsPage';
+import {
+  getWorkspaceInvitesForCurrentUser,
+  getWorkspaceMembersForCurrentUser,
+  getWorkspacesForCurrentUser,
+} from '@/shared/api/server/workspaces';
+import { queryKeys } from '@/shared/queries/board-query-keys';
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from '@tanstack/react-query';
 import { getTranslations } from 'next-intl/server';
 import { Metadata } from 'next';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -16,7 +31,34 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const WorkspaceSettingsRoute = async ({ params }: Props) => {
   const { id } = await params;
-  return <WorkspaceSettingsPage workspaceId={id} />;
+  const queryClient = new QueryClient();
+  const workspaces = await getWorkspacesForCurrentUser();
+  const workspace = workspaces.find((item) => item.id === id);
+
+  queryClient.setQueryData(queryKeys.workspaces, workspaces);
+
+  if (workspace) {
+    const canManageInvites =
+      workspace.currentUserRole === 'owner' ||
+      workspace.currentUserRole === 'admin';
+    const [members, invites] = await Promise.all([
+      getWorkspaceMembersForCurrentUser(id),
+      canManageInvites
+        ? getWorkspaceInvitesForCurrentUser(id)
+        : Promise.resolve(null),
+    ]);
+
+    queryClient.setQueryData(queryKeys.workspaceMembers(id), members);
+    if (invites) {
+      queryClient.setQueryData(queryKeys.workspaceInvites(id), invites);
+    }
+  }
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <WorkspaceSettingsPage workspaceId={id} />
+    </HydrationBoundary>
+  );
 };
 
 export default WorkspaceSettingsRoute;

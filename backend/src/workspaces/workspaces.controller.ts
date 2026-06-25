@@ -4,8 +4,12 @@ import { User } from '@/users/entities/user.entity';
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
   UseGuards,
@@ -13,12 +17,14 @@ import {
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
 import {
   CreateWorkspaceDto,
+  UpdateWorkspaceMemberRoleDto,
   WorkspaceMemberResponseDto,
   WorkspaceResponseDto,
 } from './dto/workspace.dto';
@@ -57,5 +63,34 @@ export class WorkspacesController {
   @ApiOkResponse({ type: WorkspaceMemberResponseDto, isArray: true })
   members(@Param('id') id: string, @CurrentUser() user: User) {
     return this.workspacesService.listMembers(id, user.id);
+  }
+
+  @Patch(':id/members/:memberId/role')
+  @ApiOperation({ summary: 'Change a workspace member role' })
+  @ApiOkResponse({ type: WorkspaceMemberResponseDto })
+  updateMemberRole(
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+    @Body() dto: UpdateWorkspaceMemberRoleDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.workspacesService.updateMemberRole(
+      id,
+      memberId,
+      dto.role,
+      user.id,
+    );
+  }
+
+  @Delete(':id/members/:memberId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove a workspace member' })
+  @ApiNoContentResponse()
+  removeMember(
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.workspacesService.removeMember(id, memberId, user.id);
   }
 }

@@ -39,6 +39,7 @@ export class WorkspaceMember {
   @Column({
     type: 'enum',
     enum: WorkspaceRole,
+    enumName: 'workspace_members_role_enum',
     default: WorkspaceRole.MEMBER,
   })
   role: WorkspaceRole;

@@ -1,6 +1,6 @@
 'use client';
 
-import { Board } from '@/shared/api/api';
+import { Board, Workspace } from '@/shared/api/api';
 import {
   useBoards,
   useCreateBoard,
@@ -38,7 +38,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type BoardTemplate = 'empty' | 'scrum';
 
@@ -53,7 +53,11 @@ const BOARD_COLORS = [
   '#f97316',
 ];
 
-const BoardsClientPage = () => {
+interface Props {
+  initialWorkspaces: Workspace[];
+}
+
+const BoardsClientPage = ({ initialWorkspaces }: Props) => {
   const t = useTranslations('Boards');
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
@@ -62,7 +66,12 @@ const BoardsClientPage = () => {
   const deleteBoard = useDeleteBoard();
   const workspaces = useWorkspaces();
   const switchWorkspace = useSwitchWorkspace();
-  const activeWorkspace = workspaces.data?.find(
+  const [hasSyncedInitialWorkspaces, setHasSyncedInitialWorkspaces] =
+    useState(false);
+  const workspaceData = hasSyncedInitialWorkspaces
+    ? (workspaces.data ?? initialWorkspaces)
+    : initialWorkspaces;
+  const activeWorkspace = workspaceData.find(
     (workspace) => workspace.isActive,
   );
 
@@ -80,6 +89,10 @@ const BoardsClientPage = () => {
   } | null>(null);
 
   useStableBodyScrollLock(createOpen);
+
+  useEffect(() => {
+    setHasSyncedInitialWorkspaces(true);
+  }, []);
 
   const handleCreate = () => {
     if (!form.title.trim()) return;
@@ -327,7 +340,7 @@ const BoardsClientPage = () => {
                 }))
               }
             >
-              {workspaces.data?.map((workspace) => (
+              {workspaceData.map((workspace) => (
                 <MenuItem key={workspace.id} value={workspace.id}>
                   {workspace.name}
                 </MenuItem>
