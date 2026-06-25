@@ -5,7 +5,7 @@ import { defaultTimeZone } from '@/i18n/config';
 import PendingBoardMutationsPrompt from '@/shared/ui/PendingBoardMutationsPrompt';
 import { useThemeStore } from '@/shared/store/root.store';
 import type { ThemeMode } from '@/shared/store/theme.store';
-import { darkTheme, lightTheme } from '@/shared/theme/theme';
+import { createAppTheme } from '@/shared/theme/theme';
 import AppHeader from '@/widgets/layout/AppHeader';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import { Box, CssBaseline, ThemeProvider } from '@mui/material';
@@ -13,7 +13,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Locale, NextIntlClientProvider } from 'next-intl';
 import { SnackbarProvider } from 'notistack';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,7 +35,10 @@ const ThemedApp = ({
   const hasHydrated = useThemeStore((state) => state.hasHydrated);
   const initialize = useThemeStore((state) => state.initialize);
   const resolvedMode = hasHydrated ? mode : initialThemeMode;
-  const theme = resolvedMode === 'dark' ? darkTheme : lightTheme;
+  const theme = useMemo(
+    () => createAppTheme(resolvedMode),
+    [resolvedMode],
+  );
 
   useEffect(() => {
     initialize(initialThemeMode);

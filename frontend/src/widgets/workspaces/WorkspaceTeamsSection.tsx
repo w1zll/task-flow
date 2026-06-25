@@ -53,7 +53,7 @@ interface Props {
 const initialForm = {
   name: '',
   description: '',
-  color: '#6366f1',
+  color: '#669266',
 };
 
 const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {

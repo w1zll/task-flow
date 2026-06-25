@@ -43,7 +43,7 @@ import { useEffect, useState } from 'react';
 type BoardTemplate = 'empty' | 'scrum';
 
 const BOARD_COLORS = [
-  '#6366f1',
+  '#669266',
   '#f59e0b',
   '#22c55e',
   '#ef4444',

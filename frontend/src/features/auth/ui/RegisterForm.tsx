@@ -87,9 +87,10 @@ const RegisterForm = () => {
         bgcolor: 'background.default',
         px: 2,
         background: (theme) =>
-          theme.palette.mode === 'dark'
-            ? `radial-gradient(ellipse at 70% 20%, ${alpha('#6366f1', 0.15)} 0%, transparent 60%)`
-            : undefined,
+          `radial-gradient(ellipse at 70% 20%, ${alpha(
+            theme.palette.primary.main,
+            theme.palette.mode === 'dark' ? 0.14 : 0.09,
+          )} 0%, transparent 60%), ${theme.palette.background.default}`,
       }}
     >
       <Card sx={{ width: '100%', maxWidth: 420, p: 1 }}>
@@ -106,7 +107,9 @@ const RegisterForm = () => {
                 justifyContent: 'center',
               }}
             >
-              <ViewKanban sx={{ color: 'white', fontSize: 22 }} />
+              <ViewKanban
+                sx={{ color: 'primary.contrastText', fontSize: 22 }}
+              />
             </Box>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
               TaskFlow
