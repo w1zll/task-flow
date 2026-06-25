@@ -99,7 +99,7 @@ const RegisterForm = () => {
               sx={{
                 width: 40,
                 height: 40,
-                borderRadius: 2,
+                borderRadius: '6px',
                 bgcolor: 'primary.main',
                 display: 'flex',
                 alignItems: 'center',
@@ -133,7 +133,7 @@ const RegisterForm = () => {
                 p: 1.5,
                 border: '1px solid',
                 borderColor: avatarError ? 'error.main' : 'divider',
-                borderRadius: 2,
+                borderRadius: '6px',
               }}
             >
               <UserAvatar

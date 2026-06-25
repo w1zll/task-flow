@@ -74,7 +74,7 @@ const Features = ({
                   sx={{
                     width: 44,
                     height: 44,
-                    borderRadius: 2,
+                    borderRadius: '6px',
                     bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
                     color: 'primary.main',
                     display: 'flex',

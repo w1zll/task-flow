@@ -101,7 +101,7 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
           sx={{
             width: 52,
             height: 52,
-            borderRadius: 2,
+            borderRadius: '6px',
             bgcolor: 'primary.main',
             color: 'primary.contrastText',
             display: 'grid',
@@ -126,7 +126,10 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
         </Box>
       </Stack>
 
-      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+      <Paper
+        variant="outlined"
+        sx={{ borderRadius: '6px', overflow: 'hidden' }}
+      >
         <Box sx={{ px: 3, py: 2.5 }}>
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             {t('membersTitle')}

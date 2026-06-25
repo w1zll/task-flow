@@ -498,7 +498,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                       width: 280,
                       flexShrink: 0,
                       bgcolor: 'background.paper',
-                      borderRadius: 2,
+                      borderRadius: '6px',
                       p: 2,
                       border: '1px solid',
                       borderColor: 'divider',
@@ -576,7 +576,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
             sx={{
               p: 2,
               bgcolor: 'background.default',
-              borderRadius: 2,
+              borderRadius: '6px',
               border: '1px solid',
               borderColor: 'divider',
             }}
@@ -710,7 +710,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
               sx={{
                 p: 2,
                 bgcolor: 'background.default',
-                borderRadius: 2,
+                borderRadius: '6px',
                 border: '1px solid',
                 borderColor: 'divider',
               }}

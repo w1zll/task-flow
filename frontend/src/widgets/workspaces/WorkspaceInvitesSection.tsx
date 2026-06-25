@@ -110,7 +110,7 @@ const WorkspaceInvitesSection = ({
 
   return (
     <>
-      <Paper variant="outlined" sx={{ borderRadius: 2, mt: 3 }}>
+      <Paper variant="outlined" sx={{ borderRadius: '6px', mt: 3 }}>
         <Box
           sx={{
             px: 3,

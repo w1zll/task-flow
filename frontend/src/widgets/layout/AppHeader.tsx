@@ -74,7 +74,7 @@ const AppHeader = ({
               sx={{
                 width: 32,
                 height: 32,
-                borderRadius: 1.5,
+                borderRadius: '6px',
                 bgcolor: 'primary.main',
                 display: 'flex',
                 alignItems: 'center',
