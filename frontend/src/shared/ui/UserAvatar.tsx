@@ -26,6 +26,7 @@ const UserAvatar = ({ name, src, size = 34 }: Props) => {
         width: size,
         height: size,
         bgcolor: 'primary.main',
+        color: 'primary.contrastText',
         fontSize: Math.max(9, Math.round(size * 0.38)),
         fontWeight: 700,
         flexShrink: 0,

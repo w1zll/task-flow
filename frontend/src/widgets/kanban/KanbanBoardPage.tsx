@@ -444,7 +444,14 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
 
       <Box sx={{ flex: 1, minWidth: 0, overflowX: 'hidden', py: 1 }}>
         {isLoading ? (
-          <Box sx={{ display: 'flex', gap: 2, height: '100%' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              height: '100%',
+              px: { xs: 2, sm: 3 },
+            }}
+          >
             {Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} variant="rounded" width={280} height={400} />
             ))}
@@ -486,7 +493,10 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: 2,
-                  minWidth: 'max-content',
+                  width: 'max-content',
+                  minWidth: '100%',
+                  boxSizing: 'border-box',
+                  px: { xs: 2, sm: 3 },
                 }}
               >
                 <Box sx={{ flexShrink: 0 }}>

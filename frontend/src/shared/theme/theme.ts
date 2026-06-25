@@ -1,25 +1,12 @@
 'use client';
 
+import type { ThemeMode } from '@/shared/store/theme.store';
 import { alpha, createTheme } from '@mui/material/styles';
-import type { Theme } from '@mui/material/styles';
+import type { Theme, ThemeOptions } from '@mui/material/styles';
 
-const palette = {
-  primary: {
-    main: '#6366f1', // indigo
-    light: '#818cf8',
-    dark: '#4f46e5',
-    contrastText: '#ffffff',
-  },
-  secondary: {
-    main: '#f59e0b', // amber
-    light: '#fbbf24',
-    dark: '#d97706',
-    contrastText: '#ffffff',
-  },
-  error: { main: '#ef4444' },
-  warning: { main: '#f97316' },
-  success: { main: '#22c55e' },
-  info: { main: '#3b82f6' },
+const primaryByMode: Record<ThemeMode, string> = {
+  light: '#669266',
+  dark: '#6aac6a',
 };
 
 const createGlobalScrollbarStyles = (theme: Theme) => {
@@ -56,28 +43,82 @@ const createGlobalScrollbarStyles = (theme: Theme) => {
   };
 };
 
-export const lightTheme = createTheme({
-  palette: {
-    mode: 'light',
-    ...palette,
-    background: {
-      default: '#f8fafc',
-      paper: '#ffffff',
+const createPalette = (mode: ThemeMode): ThemeOptions['palette'] => {
+  const isDark = mode === 'dark';
+  const primaryMain = primaryByMode[mode];
+
+  return {
+    mode,
+    primary: {
+      main: primaryMain,
+      contrastText: isDark ? '#202124' : '#ffffff',
     },
-  },
-  typography: {
-    fontFamily: '"DM Sans", "Inter", sans-serif',
-    h1: { fontWeight: 700, letterSpacing: '-0.02em' },
-    h2: { fontWeight: 700, letterSpacing: '-0.02em' },
-    h3: { fontWeight: 600 },
-    h4: { fontWeight: 600 },
-    h5: { fontWeight: 600 },
-    h6: { fontWeight: 600 },
-  },
-  shape: { borderRadius: 6 },
-  components: {
+    secondary: {
+      main: isDark ? '#9aa0a6' : '#64748b',
+      contrastText: isDark ? '#202124' : '#ffffff',
+    },
+    error: { main: isDark ? '#f87171' : '#dc2626' },
+    warning: { main: isDark ? '#fbbf24' : '#d97706' },
+    success: { main: isDark ? '#34d399' : '#059669' },
+    info: { main: isDark ? '#60a5fa' : '#2563eb' },
+    background: isDark
+      ? {
+          default: '#202124',
+          paper: '#292a2d',
+        }
+      : {
+          default: '#f8fafc',
+          paper: '#ffffff',
+        },
+    text: isDark
+      ? {
+          primary: '#f1f3f4',
+          secondary: '#bdc1c6',
+        }
+      : {
+          primary: '#172033',
+          secondary: '#64748b',
+        },
+    divider: isDark
+      ? 'rgba(255,255,255,0.10)'
+      : 'rgba(15,23,42,0.12)',
+    ...(isDark
+      ? {
+          action: {
+            active: '#bdc1c6',
+            hover: 'rgba(255,255,255,0.06)',
+            selected: 'rgba(255,255,255,0.10)',
+            disabled: 'rgba(255,255,255,0.30)',
+            disabledBackground: 'rgba(255,255,255,0.08)',
+            focus: 'rgba(255,255,255,0.12)',
+            hoverOpacity: 0.06,
+            selectedOpacity: 0.1,
+            disabledOpacity: 0.38,
+            focusOpacity: 0.12,
+            activatedOpacity: 0.12,
+          },
+        }
+      : {}),
+  };
+};
+
+const createComponents = (
+  mode: ThemeMode,
+  primaryMain: string,
+): ThemeOptions['components'] => {
+  const isDark = mode === 'dark';
+
+  return {
     MuiCssBaseline: {
-      styleOverrides: createGlobalScrollbarStyles,
+      styleOverrides: (theme) => ({
+        ...createGlobalScrollbarStyles(theme),
+        body: {
+          '--taskflow-primary-glow': alpha(
+            primaryMain,
+            isDark ? 0.26 : 0.18,
+          ),
+        },
+      }),
     },
     MuiModal: {
       defaultProps: {
@@ -91,9 +132,9 @@ export const lightTheme = createTheme({
           fontWeight: 600,
           borderRadius: 6,
           '&.MuiButton-containedPrimary': {
-            boxShadow: `0 4px 14px ${alpha('#6366f1', 0.4)}`,
+            boxShadow: 'none',
             '&:hover': {
-              boxShadow: `0 6px 20px ${alpha('#6366f1', 0.5)}`,
+              boxShadow: `0 2px 8px ${alpha(primaryMain, isDark ? 0.2 : 0.24)}`,
             },
           },
         },
@@ -103,10 +144,16 @@ export const lightTheme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 6,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04)',
+          border: isDark
+            ? '1px solid rgba(255,255,255,0.08)'
+            : '1px solid rgba(15,23,42,0.08)',
+          boxShadow: isDark
+            ? '0 1px 2px rgba(0,0,0,0.24)'
+            : '0 1px 3px rgba(15,23,42,0.08)',
           '&:hover': {
-            boxShadow:
-              '0 4px 12px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.06)',
+            boxShadow: isDark
+              ? '0 3px 10px rgba(0,0,0,0.28)'
+              : '0 4px 12px rgba(15,23,42,0.10)',
           },
           transition: 'box-shadow 0.2s ease',
         },
@@ -160,34 +207,27 @@ export const lightTheme = createTheme({
         root: { backgroundImage: 'none' },
       },
     },
-  },
-});
+  };
+};
 
-export const darkTheme = createTheme({
-  palette: {
-    mode: 'dark',
-    ...palette,
-    background: {
-      default: '#0f172a',
-      paper: '#1e293b',
+export const createAppTheme = (mode: ThemeMode) => {
+  const primaryMain = primaryByMode[mode];
+
+  return createTheme({
+    palette: createPalette(mode),
+    typography: {
+      fontFamily: '"DM Sans", "Inter", sans-serif',
+      h1: { fontWeight: 700, letterSpacing: '-0.02em' },
+      h2: { fontWeight: 700, letterSpacing: '-0.02em' },
+      h3: { fontWeight: 600 },
+      h4: { fontWeight: 600 },
+      h5: { fontWeight: 600 },
+      h6: { fontWeight: 600 },
     },
-  },
-  typography: lightTheme.typography,
-  shape: lightTheme.shape,
-  components: {
-    ...lightTheme.components,
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 6,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2)',
-          border: '1px solid rgba(255,255,255,0.06)',
-          '&:hover': {
-            boxShadow: '0 4px 12px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.3)',
-          },
-          transition: 'box-shadow 0.2s ease',
-        },
-      },
-    },
-  },
-});
+    shape: { borderRadius: 6 },
+    components: createComponents(mode, primaryMain),
+  });
+};
+
+export const lightTheme = createAppTheme('light');
+export const darkTheme = createAppTheme('dark');
