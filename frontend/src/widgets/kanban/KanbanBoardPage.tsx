@@ -63,6 +63,7 @@ import { useSnackbar } from 'notistack';
 import { isBoardPermissionError } from '@/shared/lib/boardSocketMutations';
 import { useWorkspaceMembers } from '@/shared/queries/workspaces.queries';
 import { getAvailableWorkspaceMembers } from '@/shared/lib/board-members';
+import { useWorkspaceTeams } from '@/shared/queries/teams.queries';
 
 interface Props {
   boardId: string;
@@ -141,6 +142,10 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const workspaceMembers = useWorkspaceMembers(
     board?.workspaceId ?? '',
     isMembersOpen && canManageBoardMembers,
+  );
+  const workspaceTeams = useWorkspaceTeams(
+    board?.workspaceId ?? '',
+    isMembersOpen,
   );
   const availableWorkspaceMembers = useMemo(
     () =>
@@ -921,6 +926,36 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                             variant={isOwner ? 'filled' : 'outlined'}
                             sx={{ mt: 0.5, height: 20, fontSize: 11 }}
                           />
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              gap: 0.5,
+                              mt: 0.5,
+                            }}
+                          >
+                            {workspaceTeams.data
+                              ?.filter((team) =>
+                                team.members.some(
+                                  (teamMember) =>
+                                    teamMember.userId === user.id,
+                                ),
+                              )
+                              .map((team) => (
+                                <Chip
+                                  key={team.id}
+                                  label={team.name}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{
+                                    height: 20,
+                                    fontSize: 10,
+                                    color: team.color,
+                                    borderColor: team.color,
+                                  }}
+                                />
+                              ))}
+                          </Box>
                         </Box>
                       </Stack>
 

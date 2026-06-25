@@ -468,6 +468,112 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspaces/{workspaceId}/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List workspace teams */
+        get: operations["TeamsController_list"];
+        put?: never;
+        /** Create a workspace team */
+        post: operations["TeamsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/teams/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List teams of the current user */
+        get: operations["TeamsController_listMine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/teams/{teamId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a workspace team */
+        get: operations["TeamsController_findOne"];
+        put?: never;
+        post?: never;
+        /** Delete a workspace team */
+        delete: operations["TeamsController_remove"];
+        options?: never;
+        head?: never;
+        /** Update a workspace team */
+        patch: operations["TeamsController_update"];
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/teams/{teamId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List team members */
+        get: operations["TeamsController_listMembers"];
+        put?: never;
+        /** Add a workspace member to a team */
+        post: operations["TeamsController_addMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/teams/{teamId}/members/{memberId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a member from a team */
+        delete: operations["TeamsController_removeMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/teams/{teamId}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List accessible tasks assigned to a team */
+        get: operations["TeamsController_listTasks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/columns": {
         parameters: {
             query?: never;
@@ -833,6 +939,16 @@ export interface components {
             canUseWhiteboard: boolean;
             canManageBoardSettings: boolean;
         };
+        TeamSummaryResponseDto: {
+            /** @example team-uuid */
+            id: string;
+            /** @example Design */
+            name: string;
+            /** @example #8b5cf6 */
+            color: string;
+            /** @example workspace-uuid */
+            workspaceId: string;
+        };
         TaskResponseDto: {
             /** @example task-uuid */
             id: string;
@@ -859,6 +975,9 @@ export interface components {
             assigneeId?: string;
             assigneeName?: string;
             assignee?: components["schemas"]["UserResponseDto"];
+            /** @example team-uuid */
+            teamId?: string | null;
+            team?: components["schemas"]["TeamSummaryResponseDto"] | null;
             isCompleted?: boolean;
             /** @example 2026-05-05T12:00:00.000Z */
             completedAt?: string;
@@ -960,6 +1079,55 @@ export interface components {
             /** @example #6366f1 */
             color?: string;
         };
+        TeamMemberResponseDto: {
+            /** @example team-membership-uuid */
+            id: string;
+            /** @example team-uuid */
+            teamId: string;
+            /** @example user-uuid */
+            userId: string;
+            user: components["schemas"]["UserResponseDto"];
+            /** @example 2026-06-25T12:00:00.000Z */
+            createdAt: string;
+        };
+        TeamResponseDto: {
+            /** @example team-uuid */
+            id: string;
+            /** @example Design */
+            name: string;
+            description?: string | null;
+            /** @example #8b5cf6 */
+            color: string;
+            /** @example workspace-uuid */
+            workspaceId: string;
+            /** @example user-uuid */
+            createdById: string | null;
+            members: components["schemas"]["TeamMemberResponseDto"][];
+            /** @example 2026-06-25T12:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-06-25T12:00:00.000Z */
+            updatedAt: string;
+        };
+        CreateTeamDto: {
+            /** @example Design */
+            name: string;
+            /** @example Product design team */
+            description?: string;
+            /** @example #8b5cf6 */
+            color?: string;
+        };
+        UpdateTeamDto: {
+            /** @example Design */
+            name?: string;
+            /** @example Product design team */
+            description?: string;
+            /** @example #8b5cf6 */
+            color?: string;
+        };
+        AddTeamMemberDto: {
+            /** @example user-uuid */
+            userId: string;
+        };
         CreateColumnDto: {
             /** @example To Do */
             title: string;
@@ -1003,6 +1171,8 @@ export interface components {
             /** @example 2026-05-05T12:00:00.000Z */
             completedAt?: string;
             assigneeName?: string;
+            /** @example team-uuid */
+            teamId?: string | null;
             /** @example column-uuid */
             columnId: string;
             order?: number;
@@ -1030,6 +1200,8 @@ export interface components {
             /** @example 2026-05-05T12:00:00.000Z */
             completedAt?: string;
             assigneeName?: string;
+            /** @example team-uuid */
+            teamId?: string | null;
             /** @example column-uuid */
             columnId?: string;
             order?: number;
@@ -1763,6 +1935,232 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    TeamsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamResponseDto"][];
+                };
+            };
+        };
+    };
+    TeamsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeamDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamResponseDto"];
+                };
+            };
+        };
+    };
+    TeamsController_listMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamResponseDto"][];
+                };
+            };
+        };
+    };
+    TeamsController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                teamId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamResponseDto"];
+                };
+            };
+        };
+    };
+    TeamsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                teamId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TeamsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                teamId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTeamDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamResponseDto"];
+                };
+            };
+        };
+    };
+    TeamsController_listMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                teamId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMemberResponseDto"][];
+                };
+            };
+        };
+    };
+    TeamsController_addMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                teamId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddTeamMemberDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMemberResponseDto"];
+                };
+            };
+        };
+    };
+    TeamsController_removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                teamId: string;
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TeamsController_listTasks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                teamId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"][];
+                };
             };
         };
     };

@@ -41,6 +41,7 @@ import Link from 'next/link';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import WorkspaceInvitesSection from './WorkspaceInvitesSection';
+import WorkspaceTeamsSection from './WorkspaceTeamsSection';
 
 interface Props {
   workspaceId: string;
@@ -243,6 +244,14 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
           </Stack>
         )}
       </Paper>
+
+      <WorkspaceTeamsSection
+        workspaceId={workspaceId}
+        canManage={
+          workspace.currentUserRole === 'owner' ||
+          workspace.currentUserRole === 'admin'
+        }
+      />
 
       {(workspace.currentUserRole === 'owner' ||
         workspace.currentUserRole === 'admin') && (
