@@ -22,6 +22,10 @@ import {
   AvatarValidationError,
   validateAvatarFile,
 } from '@/shared/lib/avatar';
+import {
+  capturePendingWorkspaceInviteFromLocation,
+  getInviteAuthHref,
+} from '@/shared/lib/pending-workspace-invite';
 
 const RegisterForm = () => {
   const t = useTranslations('Auth.Register');
@@ -31,6 +35,11 @@ const RegisterForm = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarError, setAvatarError] =
     useState<AvatarValidationError | null>(null);
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    setInviteToken(capturePendingWorkspaceInviteFromLocation());
+  }, []);
 
   useEffect(() => {
     if (!avatar) {
@@ -206,7 +215,11 @@ const RegisterForm = () => {
             sx={{ mt: 3, textAlign: 'center' }}
           >
             {t('haveAccount')}{' '}
-            <Link component={NextLink} href="/auth/login" sx={{ fontWeight: 600 }}>
+            <Link
+              component={NextLink}
+              href={getInviteAuthHref('/auth/login', inviteToken)}
+              sx={{ fontWeight: 600 }}
+            >
               {t('login')}
             </Link>
           </Typography>

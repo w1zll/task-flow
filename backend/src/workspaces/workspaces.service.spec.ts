@@ -1,5 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
+import { BoardMember } from '@/boards/entities/board-member.entity';
+import { Board } from '@/boards/entities/board.entity';
 import { User } from '@/users/entities/user.entity';
 import { WorkspaceMember } from './entities/workspace-member.entity';
 import { WorkspaceRole } from './entities/workspace-role.enum';
@@ -41,6 +43,7 @@ describe('WorkspacesService', () => {
       })),
       find: jest.fn(),
       findOne: jest.fn(),
+      remove: jest.fn(),
     };
     userRepo = {
       findOne: jest.fn(),
@@ -148,5 +151,165 @@ describe('WorkspacesService', () => {
     await expect(
       service.assertMember('missing-workspace', 'user-1'),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('allows the owner to change a member role', async () => {
+    workspaceRepo.findOne!.mockResolvedValue(workspace);
+    memberRepo.findOne!
+      .mockResolvedValueOnce({
+        workspaceId: workspace.id,
+        userId: workspace.ownerId,
+        role: WorkspaceRole.OWNER,
+      } as WorkspaceMember)
+      .mockResolvedValueOnce({
+        id: 'membership-2',
+        workspaceId: workspace.id,
+        userId: 'user-2',
+        role: WorkspaceRole.MEMBER,
+        user: {
+          id: 'user-2',
+          name: 'Member',
+          email: 'member@example.com',
+        },
+      } as WorkspaceMember);
+
+    const result = await service.updateMemberRole(
+      workspace.id,
+      'membership-2',
+      WorkspaceRole.ADMIN,
+      workspace.ownerId,
+    );
+
+    expect(memberRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ role: WorkspaceRole.ADMIN }),
+    );
+    expect(result.role).toBe(WorkspaceRole.ADMIN);
+  });
+
+  it('does not allow an admin to change workspace roles', async () => {
+    workspaceRepo.findOne!.mockResolvedValue(workspace);
+    memberRepo.findOne!.mockResolvedValue({
+      workspaceId: workspace.id,
+      userId: 'admin-1',
+      role: WorkspaceRole.ADMIN,
+    } as WorkspaceMember);
+
+    await expect(
+      service.updateMemberRole(
+        workspace.id,
+        'membership-2',
+        WorkspaceRole.ADMIN,
+        'admin-1',
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('removes a member and their board access inside the workspace', async () => {
+    workspaceRepo.findOne!.mockResolvedValue(workspace);
+    memberRepo.findOne!
+      .mockResolvedValueOnce({
+        workspaceId: workspace.id,
+        userId: workspace.ownerId,
+        role: WorkspaceRole.OWNER,
+      } as WorkspaceMember)
+      .mockResolvedValueOnce({
+        id: 'membership-2',
+        workspaceId: workspace.id,
+        userId: 'user-2',
+        role: WorkspaceRole.MEMBER,
+      } as WorkspaceMember);
+
+    const deleteQuery = {
+      delete: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      execute: jest.fn(),
+    };
+    const removeMembership = jest.fn();
+    const transferBoardOwnership = jest.fn();
+    Object.defineProperty(memberRepo, 'manager', {
+      value: {
+        transaction: jest.fn(async (callback) =>
+          callback({
+            getRepository: jest.fn((entity) => {
+              if (entity === WorkspaceMember) {
+                return { remove: removeMembership };
+              }
+              if (entity === Board) {
+                return { update: transferBoardOwnership };
+              }
+              if (entity === BoardMember) {
+                return { createQueryBuilder: () => deleteQuery };
+              }
+              throw new Error('Unexpected repository');
+            }),
+          }),
+        ),
+      },
+    });
+
+    await service.removeMember(
+      workspace.id,
+      'membership-2',
+      workspace.ownerId,
+    );
+
+    expect(transferBoardOwnership).toHaveBeenCalledWith(
+      {
+        workspaceId: workspace.id,
+        ownerId: 'user-2',
+      },
+      {
+        ownerId: workspace.ownerId,
+      },
+    );
+    expect(deleteQuery.execute).toHaveBeenCalled();
+    expect(removeMembership).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'membership-2' }),
+    );
+  });
+
+  it('allows an admin to remove only ordinary members', async () => {
+    workspaceRepo.findOne!.mockResolvedValue(workspace);
+    memberRepo.findOne!
+      .mockResolvedValueOnce({
+        workspaceId: workspace.id,
+        userId: 'admin-1',
+        role: WorkspaceRole.ADMIN,
+      } as WorkspaceMember)
+      .mockResolvedValueOnce({
+        id: 'membership-2',
+        workspaceId: workspace.id,
+        userId: 'admin-2',
+        role: WorkspaceRole.ADMIN,
+      } as WorkspaceMember);
+
+    await expect(
+      service.removeMember(workspace.id, 'membership-2', 'admin-1'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('never removes the workspace owner', async () => {
+    workspaceRepo.findOne!.mockResolvedValue(workspace);
+    memberRepo.findOne!
+      .mockResolvedValueOnce({
+        workspaceId: workspace.id,
+        userId: workspace.ownerId,
+        role: WorkspaceRole.OWNER,
+      } as WorkspaceMember)
+      .mockResolvedValueOnce({
+        id: 'owner-membership',
+        workspaceId: workspace.id,
+        userId: workspace.ownerId,
+        role: WorkspaceRole.OWNER,
+      } as WorkspaceMember);
+
+    await expect(
+      service.removeMember(
+        workspace.id,
+        'owner-membership',
+        workspace.ownerId,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

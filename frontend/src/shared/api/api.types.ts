@@ -174,6 +174,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/storage/avatars/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a locally stored avatar */
+        get: operations["StorageController_avatar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workspaces": {
         parameters: {
             query?: never;
@@ -226,6 +243,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspaces/{id}/members/{memberId}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change a workspace member role */
+        patch: operations["WorkspacesController_updateMemberRole"];
+        trace?: never;
+    };
+    "/api/workspaces/{id}/members/{memberId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a workspace member */
+        delete: operations["WorkspacesController_removeMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active workspace invite links */
+        get: operations["WorkspaceInvitesController_list"];
+        put?: never;
+        /** Create a public workspace invite link */
+        post: operations["WorkspaceInvitesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/invites/{inviteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a workspace invite link */
+        delete: operations["WorkspaceInvitesController_revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace-invites/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview a public workspace invite */
+        get: operations["WorkspaceInvitesController_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace-invites/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a public workspace invite */
+        post: operations["WorkspaceInvitesController_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/boards": {
         parameters: {
             query?: never;
@@ -238,6 +358,23 @@ export interface paths {
         put?: never;
         /** Создать доску */
         post: operations["BoardsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/boards/{id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Проверить доступ к доске */
+        get: operations["BoardsController_checkAccess"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -524,14 +661,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        RegisterDto: {
-            /** @example john@example.com */
-            email: string;
-            /** @example John Doe */
-            name: string;
-            /** @example password123 */
-            password: string;
-        };
         RegisterRequestDto: {
             /** @example john@example.com */
             email: string;
@@ -539,12 +668,11 @@ export interface components {
             name: string;
             /** @example password123 */
             password: string;
-            /** Format: binary */
+            /**
+             * Format: binary
+             * @description Optional PNG, JPEG, or WebP avatar up to 2 MB
+             */
             avatar?: string;
-        };
-        AvatarUploadDto: {
-            /** Format: binary */
-            avatar: string;
         };
         UserDto: {
             id: string;
@@ -566,6 +694,13 @@ export interface components {
             /** @example Успешный ответ */
             message: string;
         };
+        AvatarUploadDto: {
+            /**
+             * Format: binary
+             * @description PNG, JPEG, or WebP avatar up to 2 MB
+             */
+            avatar: string;
+        };
         WsTokenResponseDto: {
             /** @description Short-lived JWT used only for Socket.IO authentication */
             token: string;
@@ -577,10 +712,6 @@ export interface components {
             createdAt: string;
             /** @example 2026-05-12T12:00:00.000Z */
             expiresAt: string;
-        };
-        CreateWorkspaceDto: {
-            /** @example Product Team */
-            name: string;
         };
         WorkspaceResponseDto: {
             /** @example workspace-uuid */
@@ -598,6 +729,24 @@ export interface components {
             /** @example 2026-06-25T12:00:00.000Z */
             updatedAt: string;
         };
+        CreateWorkspaceDto: {
+            /** @example Product Team */
+            name: string;
+        };
+        UserResponseDto: {
+            /** @example user-uuid */
+            id: string;
+            /** @example john@example.com */
+            email: string;
+            /** @example John Doe */
+            name: string;
+            /** @example https://example.com/avatar.png */
+            avatar?: string;
+            /** @example 2026-05-05T12:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-05-05T12:00:00.000Z */
+            updatedAt: string;
+        };
         WorkspaceMemberResponseDto: {
             /** @example membership-uuid */
             id: string;
@@ -610,6 +759,79 @@ export interface components {
             createdAt: string;
             /** @example 2026-06-25T12:00:00.000Z */
             updatedAt: string;
+        };
+        UpdateWorkspaceMemberRoleDto: {
+            /** @enum {string} */
+            role: "admin" | "member";
+        };
+        CreateWorkspaceInviteDto: {
+            /**
+             * @default member
+             * @enum {string}
+             */
+            defaultRole: "member" | "admin";
+            /** @default 7 */
+            expiresInDays: number;
+            maxUses?: number | null;
+            allowedEmail?: string | null;
+            /** @example example.com */
+            allowedEmailDomain?: string | null;
+        };
+        CreatedWorkspaceInviteResponseDto: {
+            id: string;
+            workspaceId: string;
+            /** @enum {string} */
+            defaultRole: "owner" | "admin" | "member";
+            createdById: string;
+            createdByName: string;
+            /** Format: date-time */
+            expiresAt: string;
+            maxUses: number | null;
+            usesCount: number;
+            /** Format: date-time */
+            revokedAt: string | null;
+            allowedEmailDomain: string | null;
+            hasSpecificEmailRestriction: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** @description Raw token returned only once when the invite is created */
+            token: string;
+        };
+        WorkspaceInviteResponseDto: {
+            id: string;
+            workspaceId: string;
+            /** @enum {string} */
+            defaultRole: "owner" | "admin" | "member";
+            createdById: string;
+            createdByName: string;
+            /** Format: date-time */
+            expiresAt: string;
+            maxUses: number | null;
+            usesCount: number;
+            /** Format: date-time */
+            revokedAt: string | null;
+            allowedEmailDomain: string | null;
+            hasSpecificEmailRestriction: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        WorkspaceInvitePreviewDto: {
+            workspaceName: string;
+            inviterName: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** @enum {string} */
+            defaultRole: "owner" | "admin" | "member";
+            emailRestricted: boolean;
+        };
+        BoardCapabilitiesResponseDto: {
+            canReadBoard: boolean;
+            canEditBoardContent: boolean;
+            canManageBoardMembers: boolean;
+            canDeleteBoard: boolean;
+            canManageColumns: boolean;
+            canUseWhiteboard: boolean;
+            canManageBoardSettings: boolean;
         };
         TaskResponseDto: {
             /** @example task-uuid */
@@ -662,20 +884,6 @@ export interface components {
             /** @example 2026-05-05T12:00:00.000Z */
             updatedAt: string;
         };
-        UserResponseDto: {
-            /** @example user-uuid */
-            id: string;
-            /** @example john@example.com */
-            email: string;
-            /** @example John Doe */
-            name: string;
-            /** @example https://example.com/avatar.png */
-            avatar?: string;
-            /** @example 2026-05-05T12:00:00.000Z */
-            createdAt: string;
-            /** @example 2026-05-05T12:00:00.000Z */
-            updatedAt: string;
-        };
         BoardMemberResponseDto: {
             /** @example member-uuid */
             id: string | null;
@@ -690,15 +898,6 @@ export interface components {
             createdAt: string;
             /** @example 2026-05-05T12:00:00.000Z */
             updatedAt: string;
-        };
-        BoardCapabilitiesResponseDto: {
-            canReadBoard: boolean;
-            canEditBoardContent: boolean;
-            canManageBoardMembers: boolean;
-            canDeleteBoard: boolean;
-            canManageColumns: boolean;
-            canUseWhiteboard: boolean;
-            canManageBoardSettings: boolean;
         };
         BoardResponseDto: {
             /** @example board-uuid */
@@ -732,7 +931,7 @@ export interface components {
              * @default editor
              * @enum {string}
              */
-            role?: "editor" | "viewer";
+            role: "editor" | "viewer";
         };
         UpdateBoardMemberRoleDto: {
             /** @enum {string} */
@@ -1090,6 +1289,27 @@ export interface operations {
             };
         };
     };
+    StorageController_avatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
     WorkspacesController_findAll: {
         parameters: {
             query?: never;
@@ -1174,6 +1394,160 @@ export interface operations {
             };
         };
     };
+    WorkspacesController_updateMemberRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkspaceMemberRoleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceMemberResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspacesController_removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspaceInvitesController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceInviteResponseDto"][];
+                };
+            };
+        };
+    };
+    WorkspaceInvitesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWorkspaceInviteDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedWorkspaceInviteResponseDto"];
+                };
+            };
+        };
+    };
+    WorkspaceInvitesController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                inviteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WorkspaceInvitesController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceInvitePreviewDto"];
+                };
+            };
+        };
+    };
+    WorkspaceInvitesController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResponseDto"];
+                };
+            };
+        };
+    };
     BoardsController_findAll: {
         parameters: {
             query?: never;
@@ -1213,6 +1587,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BoardResponseDto"];
                 };
+            };
+        };
+    };
+    BoardsController_checkAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

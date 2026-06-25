@@ -35,7 +35,7 @@ const BoardsPage = async () => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <BoardsClientPage />
+      <BoardsClientPage initialWorkspaces={workspaces} />
     </HydrationBoundary>
   );
 };

@@ -11,6 +11,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { WorkspaceMember } from './workspace-member.entity';
+import { WorkspaceInvite } from './workspace-invite.entity';
 
 @Entity('workspaces')
 export class Workspace {
@@ -39,6 +40,9 @@ export class Workspace {
 
   @OneToMany(() => Board, (board) => board.workspace)
   boards: Board[];
+
+  @OneToMany(() => WorkspaceInvite, (invite) => invite.workspace)
+  invites: WorkspaceInvite[];
 
   @CreateDateColumn()
   createdAt: Date;

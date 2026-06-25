@@ -265,7 +265,7 @@ export const useShareBoard = () => {
         .share(params.boardId, {
           email: params.email,
           userId: params.userId,
-          role: params.role,
+          role: params.role ?? 'editor',
         })
         .then((r) => r.data),
     onSuccess: (_, { boardId }) => {
