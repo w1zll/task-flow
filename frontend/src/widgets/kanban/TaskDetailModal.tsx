@@ -268,7 +268,7 @@ const TaskDetailModal = ({ board }: Props) => {
       onClose={() => boardUI.closeTask()}
       maxWidth="sm"
       fullWidth
-      slotProps={{ paper: { sx: { borderRadius: 2 } } }}
+      slotProps={{ paper: { sx: { borderRadius: '6px' } } }}
     >
       <DialogTitle
         sx={{ pb: 1, display: 'flex', alignItems: 'flex-start', gap: 1 }}

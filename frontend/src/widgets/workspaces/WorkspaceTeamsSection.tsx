@@ -137,7 +137,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
     <>
       <Paper
         variant="outlined"
-        sx={{ borderRadius: 2, overflow: 'hidden', mt: 3 }}
+        sx={{ borderRadius: '6px', overflow: 'hidden', mt: 3 }}
       >
         <Box
           sx={{

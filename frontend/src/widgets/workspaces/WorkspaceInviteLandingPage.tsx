@@ -82,7 +82,7 @@ const WorkspaceInviteLandingPage = ({ token }: Props) => {
               sx={{
                 width: 64,
                 height: 64,
-                borderRadius: 3,
+                borderRadius: '6px',
                 bgcolor: 'primary.main',
                 color: 'primary.contrastText',
                 display: 'grid',

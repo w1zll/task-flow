@@ -52,7 +52,7 @@ const LoginForm = () => {
               sx={{
                 width: 40,
                 height: 40,
-                borderRadius: 2,
+                borderRadius: '6px',
                 bgcolor: 'primary.main',
                 display: 'flex',
                 alignItems: 'center',

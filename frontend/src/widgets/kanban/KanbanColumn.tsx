@@ -162,7 +162,7 @@ const KanbanColumn = ({
                 : alpha(theme.palette.grey[100], snapshot.isDragging ? 1 : 0.8),
             border: '1px solid',
             borderColor: snapshot.isDragging ? 'primary.main' : 'divider',
-            borderRadius: 2,
+            borderRadius: '6px',
             display: 'flex',
             flexDirection: 'column',
             transition: 'border-color 0.15s',
@@ -240,7 +240,7 @@ const KanbanColumn = ({
                     bgcolor: 'action.selected',
                     px: 0.8,
                     py: 0.2,
-                    borderRadius: 1,
+                    borderRadius: '4px',
                     fontWeight: 600,
                     flexShrink: 0,
                   }}
@@ -289,7 +289,7 @@ const KanbanColumn = ({
                     ? (theme) => alpha(theme.palette.primary.main, 0.04)
                     : 'transparent',
                   transition: 'background-color 0.15s',
-                  borderRadius: 1,
+                  borderRadius: '4px',
                 }}
               >
                 {(column.tasks ?? []).map((task, taskIndex) => (

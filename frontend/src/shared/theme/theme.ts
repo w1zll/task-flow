@@ -74,7 +74,7 @@ export const lightTheme = createTheme({
     h5: { fontWeight: 600 },
     h6: { fontWeight: 600 },
   },
-  shape: { borderRadius: 12 },
+  shape: { borderRadius: 6 },
   components: {
     MuiCssBaseline: {
       styleOverrides: createGlobalScrollbarStyles,
@@ -89,7 +89,7 @@ export const lightTheme = createTheme({
         root: {
           textTransform: 'none',
           fontWeight: 600,
-          borderRadius: 10,
+          borderRadius: 6,
           '&.MuiButton-containedPrimary': {
             boxShadow: `0 4px 14px ${alpha('#6366f1', 0.4)}`,
             '&:hover': {
@@ -102,6 +102,7 @@ export const lightTheme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
+          borderRadius: 6,
           boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04)',
           '&:hover': {
             boxShadow:
@@ -113,7 +114,42 @@ export const lightTheme = createTheme({
     },
     MuiChip: {
       styleOverrides: {
-        root: { borderRadius: 8, fontWeight: 500 },
+        root: { borderRadius: 4, fontWeight: 500 },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: { borderRadius: 6 },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: { borderRadius: 6 },
+      },
+    },
+    MuiPopover: {
+      styleOverrides: {
+        paper: { borderRadius: 6 },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: { borderRadius: 6 },
+      },
+    },
+    MuiAlert: {
+      styleOverrides: {
+        root: { borderRadius: 6 },
+      },
+    },
+    MuiTooltip: {
+      styleOverrides: {
+        tooltip: { borderRadius: 4 },
+      },
+    },
+    MuiSkeleton: {
+      styleOverrides: {
+        rounded: { borderRadius: 6 },
       },
     },
     MuiTextField: {
@@ -143,6 +179,7 @@ export const darkTheme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
+          borderRadius: 6,
           boxShadow: '0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2)',
           border: '1px solid rgba(255,255,255,0.06)',
           '&:hover': {
