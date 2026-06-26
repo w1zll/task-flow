@@ -554,7 +554,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
           <Button
             variant="contained"
             startIcon={<ArrowBack />}
-            onClick={() => router.push('/boards')}
+            onClick={() => router.push('/workspaces')}
           >
             {t('backToBoards')}
           </Button>
@@ -618,7 +618,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                 href={
                   board?.workspaceId
                     ? `/workspaces/${board.workspaceId}/boards`
-                    : '/boards'
+                    : '/workspaces'
                 }
                 color="inherit"
                 underline="hover"

@@ -23,7 +23,7 @@ export const useAuth = () => {
   const [isCompletingInvite, setIsCompletingInvite] = useState(false);
 
   const getPostAuthPath = (workspaceId?: string | null) =>
-    workspaceId ? `/workspaces/${workspaceId}` : '/boards';
+    workspaceId ? `/workspaces/${workspaceId}` : '/workspaces';
 
   const finishAuthentication = async (user: typeof authStore.user) => {
     queryClient.clear();

@@ -290,6 +290,39 @@ export class WorkspacesService {
     });
   }
 
+  async remove(workspaceId: string, userId: string): Promise<void> {
+    const access = await this.assertMember(workspaceId, userId);
+    if (
+      access.role !== WorkspaceRole.OWNER ||
+      access.workspace.ownerId !== userId
+    ) {
+      throw new ForbiddenException(
+        'Only the workspace owner can delete this workspace',
+      );
+    }
+
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      select: { id: true, activeWorkspaceId: true },
+    });
+    const fallbackMembership = (
+      await this.memberRepo.find({
+        where: { userId },
+        order: { createdAt: 'ASC' },
+      })
+    ).find((membership) => membership.workspaceId !== workspaceId);
+
+    await this.workspaceRepo.manager.transaction(async (manager) => {
+      await manager.getRepository(Workspace).delete(workspaceId);
+      await manager.getRepository(User).update(userId, {
+        activeWorkspaceId:
+          user?.activeWorkspaceId === workspaceId
+            ? (fallbackMembership?.workspaceId ?? null)
+            : (user?.activeWorkspaceId ?? null),
+      });
+    });
+  }
+
   private async createOwnedWorkspace(
     name: string,
     ownerId: string,

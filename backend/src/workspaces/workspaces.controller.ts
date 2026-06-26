@@ -93,4 +93,12 @@ export class WorkspacesController {
   ) {
     return this.workspacesService.removeMember(id, memberId, user.id);
   }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a workspace' })
+  @ApiNoContentResponse()
+  remove(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.workspacesService.remove(id, user.id);
+  }
 }
