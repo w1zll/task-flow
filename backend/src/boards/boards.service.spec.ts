@@ -56,7 +56,7 @@ describe('BoardsService', () => {
       id: 'board-1',
       title: 'Board',
       description: null,
-      color: '#6366f1',
+      color: '#669266',
       ownerId: 'user-1',
       workspaceId: 'workspace-1',
       columns: [],
@@ -186,20 +186,15 @@ describe('BoardsService', () => {
     expect(board.columns).toEqual([]);
   });
 
-  it('lists only boards from the active workspace', async () => {
+  it('lists all boards accessible to the user across workspaces', async () => {
     await service.findAll('user-1');
 
-    expect(workspacesService.getActiveWorkspace).toHaveBeenCalledWith(
-      'user-1',
-    );
+    expect(workspacesService.getActiveWorkspace).not.toHaveBeenCalled();
     expect(boardQueryBuilder.where).toHaveBeenCalledWith(
-      'board.workspaceId = :workspaceId',
-      { workspaceId: 'workspace-1' },
-    );
-    expect(boardQueryBuilder.andWhere).toHaveBeenCalledWith(
       '(board.ownerId = :userId OR member.userId = :userId)',
       { userId: 'user-1' },
     );
+    expect(boardQueryBuilder.andWhere).not.toHaveBeenCalled();
   });
 
   it('creates a board in an explicitly selected workspace', async () => {

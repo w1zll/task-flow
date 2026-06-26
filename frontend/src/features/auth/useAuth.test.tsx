@@ -103,6 +103,32 @@ describe('useAuth', () => {
       });
     });
 
+    it('should restore the active workspace after login', async () => {
+      const loginData = { email: 'test@example.com', password: 'password' };
+      const response = {
+        user: {
+          id: '1',
+          email: 'test@example.com',
+          name: 'Test',
+          activeWorkspaceId: 'workspace-1',
+        },
+      };
+
+      // @ts-expect-error Mocked response intentionally omits Axios metadata.
+      mockAuthApi.login.mockResolvedValue({ data: response });
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      result.current.login(loginData);
+
+      await waitFor(() => {
+        expect(mockAuthApi.login).toHaveBeenCalledWith(loginData);
+        expect(mockStore.setUser).toHaveBeenCalledWith(response.user);
+        expect(mockRouter.push).toHaveBeenCalledWith(
+          '/workspaces/workspace-1',
+        );
+      });
+    });
+
     it('should handle login error', async () => {
       const loginData = { email: 'test@example.com', password: 'password' };
       const error = { response: { data: { message: 'Invalid credentials' } } };
@@ -157,7 +183,9 @@ describe('useAuth', () => {
         expect(mockStore.setActiveWorkspace).toHaveBeenCalledWith(
           'workspace-2',
         );
-        expect(mockRouter.push).toHaveBeenCalledWith('/boards');
+        expect(mockRouter.push).toHaveBeenCalledWith(
+          '/workspaces/workspace-2',
+        );
         expect(
           sessionStorage.getItem('taskflow.pendingWorkspaceInvite'),
         ).toBeNull();

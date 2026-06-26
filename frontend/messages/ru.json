@@ -94,11 +94,17 @@
   "Boards": {
     "title": "Мои доски",
     "description": "Управление досками",
+    "globalDescription": "Все доступные вам доски, сгруппированные по workspace.",
+    "workspacePageTitle": "Доски workspace",
+    "workspaceBoardsTitle": "Доски: {name}",
+    "workspaceBoardsDescription": "Доски внутри текущего workspace.",
     "boardsCount": "{count} досок",
     "activeWorkspace": "Пространство: {name}",
     "newBoard": "Новая доска",
     "emptyTitle": "У вас нет досок",
+    "emptyWorkspaceTitle": "В этом workspace пока нет доступных досок",
     "emptyAction": "Создайте свою первую доску",
+    "personalWorkspace": "Личное пространство",
     "deleteSuccess": "Доска удалена",
     "dialogTitle": "Новая доска",
     "boardTitle": "Название доски",
@@ -111,7 +117,12 @@
     "cancel": "Отмена",
     "creating": "Создание...",
     "create": "Создать",
-    "delete": "Удалить"
+    "delete": "Удалить",
+    "role": {
+      "owner": "Владелец",
+      "admin": "Администратор",
+      "member": "Участник"
+    }
   },
   "BoardPage": {
     "title": "Доска {id}",
@@ -217,6 +228,66 @@
       "admin": "Администратор",
       "member": "Участник"
     }
+  },
+  "WorkspaceShell": {
+    "workspaceFallback": "Workspace",
+    "loading": "Загрузка...",
+    "personal": "Личное",
+    "boards": "Доски",
+    "createBoard": "Создать доску",
+    "emptyBoards": "Досок пока нет",
+    "boardsCount": "Досок: {count}",
+    "openNavigation": "Открыть навигацию workspace",
+    "nav": {
+      "overview": "Обзор",
+      "myTasks": "Мои задачи",
+      "teams": "Команды",
+      "boards": "Доски",
+      "settings": "Настройки"
+    },
+    "role": {
+      "owner": "Владелец",
+      "admin": "Администратор",
+      "member": "Участник"
+    },
+    "boardRole": {
+      "owner": "Владелец",
+      "editor": "Редактор",
+      "viewer": "Наблюдатель"
+    }
+  },
+  "WorkspaceOverview": {
+    "pageTitle": "Обзор workspace",
+    "pageDescription": "Единый обзор workspace в TaskFlow",
+    "loading": "Загрузка...",
+    "subtitle": "Общий контекст досок, команд и ваших задач.",
+    "openBoards": "Открыть доски",
+    "settings": "Настройки",
+    "boards": "Доски",
+    "myTeams": "Мои команды",
+    "openMyTasks": "Мои открытые задачи",
+    "recentBoards": "Недавние доски",
+    "recentBoardsDescription": "Быстрый переход к рабочим представлениям workspace.",
+    "allBoards": "Все доски",
+    "noDescription": "Без описания",
+    "emptyBoards": "В этом workspace пока нет доступных досок.",
+    "createFirstBoard": "Создать доску",
+    "myUpcomingTasks": "Мои ближайшие задачи",
+    "myUpcomingTasksDescription": "Открытые задачи, назначенные вам в этом workspace.",
+    "allTasks": "Все задачи",
+    "emptyTasks": "Назначенных открытых задач пока нет."
+  },
+  "WorkspaceMyTasks": {
+    "title": "Мои задачи",
+    "description": "Задачи, назначенные вам на доступных досках текущего workspace.",
+    "completed": "Выполнена",
+    "noDueDate": "Без срока",
+    "emptyTitle": "Назначенных задач нет",
+    "emptyDescription": "Когда вас назначат ответственным, задачи появятся здесь."
+  },
+  "WorkspaceTeamsPage": {
+    "title": "Команды",
+    "description": "Управляйте командами workspace и их участниками."
   },
   "WorkspaceSettings": {
     "title": "Настройки рабочего пространства",

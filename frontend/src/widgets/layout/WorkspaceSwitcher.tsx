@@ -60,7 +60,7 @@ const WorkspaceSwitcher = () => {
     switchWorkspace.mutate(workspaceId, {
       onSuccess: (workspace) => {
         setActiveWorkspace(workspace.id);
-        router.push('/boards');
+        router.push(`/workspaces/${workspace.id}`);
         router.refresh();
       },
       onError: () =>
@@ -78,7 +78,7 @@ const WorkspaceSwitcher = () => {
         setWorkspaceName('');
         setCreateOpen(false);
         setAnchorEl(null);
-        router.push('/boards');
+        router.push(`/workspaces/${workspace.id}`);
         router.refresh();
       },
       onError: () =>

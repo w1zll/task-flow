@@ -94,11 +94,17 @@
   "Boards": {
     "title": "My boards",
     "description": "Manage your boards",
+    "globalDescription": "All boards you can access, grouped by workspace.",
+    "workspacePageTitle": "Workspace boards",
+    "workspaceBoardsTitle": "{name} boards",
+    "workspaceBoardsDescription": "Boards inside the current workspace.",
     "boardsCount": "{count} boards",
     "activeWorkspace": "Workspace: {name}",
     "newBoard": "New board",
     "emptyTitle": "You have no boards",
+    "emptyWorkspaceTitle": "There are no accessible boards in this workspace yet",
     "emptyAction": "Create your first board",
+    "personalWorkspace": "Personal workspace",
     "deleteSuccess": "Board deleted",
     "dialogTitle": "New board",
     "boardTitle": "Board title",
@@ -111,7 +117,12 @@
     "cancel": "Cancel",
     "creating": "Creating...",
     "create": "Create",
-    "delete": "Delete"
+    "delete": "Delete",
+    "role": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    }
   },
   "BoardPage": {
     "title": "Board {id}",
@@ -217,6 +228,66 @@
       "admin": "Admin",
       "member": "Member"
     }
+  },
+  "WorkspaceShell": {
+    "workspaceFallback": "Workspace",
+    "loading": "Loading...",
+    "personal": "Personal",
+    "boards": "Boards",
+    "createBoard": "Create board",
+    "emptyBoards": "No boards yet",
+    "boardsCount": "{count} boards",
+    "openNavigation": "Open workspace navigation",
+    "nav": {
+      "overview": "Overview",
+      "myTasks": "My tasks",
+      "teams": "Teams",
+      "boards": "Boards",
+      "settings": "Settings"
+    },
+    "role": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    },
+    "boardRole": {
+      "owner": "Owner",
+      "editor": "Editor",
+      "viewer": "Viewer"
+    }
+  },
+  "WorkspaceOverview": {
+    "pageTitle": "Workspace overview",
+    "pageDescription": "Unified workspace overview in TaskFlow",
+    "loading": "Loading...",
+    "subtitle": "One context for boards, teams, and your tasks.",
+    "openBoards": "Open boards",
+    "settings": "Settings",
+    "boards": "Boards",
+    "myTeams": "My teams",
+    "openMyTasks": "My open tasks",
+    "recentBoards": "Recent boards",
+    "recentBoardsDescription": "Quick access to workspace views.",
+    "allBoards": "All boards",
+    "noDescription": "No description",
+    "emptyBoards": "There are no accessible boards in this workspace yet.",
+    "createFirstBoard": "Create board",
+    "myUpcomingTasks": "My upcoming tasks",
+    "myUpcomingTasksDescription": "Open tasks assigned to you in this workspace.",
+    "allTasks": "All tasks",
+    "emptyTasks": "No assigned open tasks yet."
+  },
+  "WorkspaceMyTasks": {
+    "title": "My tasks",
+    "description": "Tasks assigned to you on accessible boards in the current workspace.",
+    "completed": "Completed",
+    "noDueDate": "No due date",
+    "emptyTitle": "No assigned tasks",
+    "emptyDescription": "Tasks will appear here once someone assigns them to you."
+  },
+  "WorkspaceTeamsPage": {
+    "title": "Teams",
+    "description": "Manage workspace teams and their members."
   },
   "WorkspaceSettings": {
     "title": "Workspace settings",

@@ -56,7 +56,7 @@ const WorkspaceInviteLandingPage = ({ token }: Props) => {
       onSuccess: (workspace) => {
         setActiveWorkspace(workspace.id);
         clearPendingWorkspaceInvite();
-        router.push('/boards');
+        router.push(`/workspaces/${workspace.id}`);
         router.refresh();
       },
     });
