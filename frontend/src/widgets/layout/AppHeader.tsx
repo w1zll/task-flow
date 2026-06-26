@@ -28,7 +28,6 @@ import { useState } from 'react';
 import NextLink from 'next/link';
 import LocaleSwitcher from './LocaleSwitcher';
 import UserAvatar from '@/shared/ui/UserAvatar';
-import WorkspaceSwitcher from './WorkspaceSwitcher';
 
 const AppHeader = ({
   initialThemeMode,
@@ -50,8 +49,7 @@ const AppHeader = ({
       elevation={0}
       sx={{
         bgcolor: 'background.paper',
-        borderBottom: '1px solid',
-        borderColor: 'divider',
+        boxShadow: (theme) => `inset 0 -1px 0 ${theme.palette.divider}`,
         color: 'text.primary',
       }}
     >
@@ -115,7 +113,6 @@ const AppHeader = ({
           >
             {t('myBoards')}
           </Link>
-          {user && <WorkspaceSwitcher />}
         </Box>
 
         <Box sx={{ display: 'flex', marginLeft: 'auto', gap: 1 }}>

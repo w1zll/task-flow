@@ -9,7 +9,7 @@ export class AddWorkspaceTeams1782382000000 implements MigrationInterface {
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "name" character varying(120) NOT NULL,
         "description" text,
-        "color" character varying(7) NOT NULL DEFAULT '#6366f1',
+        "color" character varying(7) NOT NULL DEFAULT '#669266',
         "workspaceId" uuid NOT NULL,
         "createdById" uuid,
         "createdAt" TIMESTAMP NOT NULL DEFAULT now(),

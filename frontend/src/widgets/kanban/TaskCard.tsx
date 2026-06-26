@@ -45,6 +45,7 @@ interface Props {
   isPending?: boolean;
   isDragDisabled?: boolean;
   canEdit?: boolean;
+  isHighlighted?: boolean;
 }
 
 const PRIORITY_CONFIG = {
@@ -61,6 +62,7 @@ const TaskCard = ({
   isPending = false,
   isDragDisabled = false,
   canEdit = true,
+  isHighlighted = false,
 }: Props) => {
   const dayjsLocale = useDayjsLocale();
   const openTask = useBoardUIStore((state) => state.openTask);
@@ -149,6 +151,7 @@ const TaskCard = ({
       {(provided, snapshot) => (
         <Card
           ref={provided.innerRef}
+          id={`task-${task.id}`}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           elevation={snapshot.isDragging ? 8 : 0}
@@ -165,7 +168,9 @@ const TaskCard = ({
           sx={{
             mb: 1,
             border: '1px solid',
-            borderColor: snapshot.isDragging
+            borderColor: isHighlighted
+              ? 'primary.main'
+              : snapshot.isDragging
               ? 'primary.main'
               : task.isCompleted
                 ? 'success.light'
@@ -178,12 +183,22 @@ const TaskCard = ({
               cursor: isCardPending ? 'progress' : canEdit ? 'grabbing' : 'pointer',
             },
             transform: snapshot.isDragging ? 'rotate(2deg)' : 'none',
-            transition: 'transform 0.15s, box-shadow 0.15s, opacity 0.15s',
+            transition: 'transform 0.15s, box-shadow 0.15s, opacity 0.15s, border-color 0.15s',
             position: 'relative',
             overflow: isCardPending ? 'hidden' : 'visible',
             opacity: isCardPending ? 0.78 : 1,
+            scrollMargin: 96,
+            boxShadow: isHighlighted
+              ? (theme) =>
+                  `0 0 0 3px ${alpha(
+                    theme.palette.primary.main,
+                    0.28,
+                  )}, 0 14px 34px ${alpha(theme.palette.primary.main, 0.18)}`
+              : undefined,
             animation: isCardPending
               ? 'taskCardPendingPulse 1.15s ease-in-out infinite'
+              : isHighlighted
+                ? 'taskCardHighlightPulse 1s ease-in-out 3'
               : undefined,
             '&::before': {
               content: '""',
@@ -218,6 +233,17 @@ const TaskCard = ({
               '0%': { boxShadow: '0 0 0 0 rgba(34, 197, 94, 0.26)' },
               '70%': { boxShadow: '0 0 0 7px rgba(34, 197, 94, 0)' },
               '100%': { boxShadow: '0 0 0 0 rgba(34, 197, 94, 0)' },
+            },
+            '@keyframes taskCardHighlightPulse': {
+              '0%': {
+                transform: 'scale(1)',
+              },
+              '50%': {
+                transform: 'scale(1.025)',
+              },
+              '100%': {
+                transform: 'scale(1)',
+              },
             },
           }}
           >

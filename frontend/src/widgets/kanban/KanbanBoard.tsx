@@ -19,9 +19,10 @@ import {
 
 interface Props {
   board: Board;
+  highlightedTaskId?: string | null;
 }
 
-const KanbanBoard = ({ board }: Props) => {
+const KanbanBoard = ({ board, highlightedTaskId }: Props) => {
   const t = useTranslations('Notifications');
   const startDrag = useBoardUIStore((state) => state.startDrag);
   const endDrag = useBoardUIStore((state) => state.endDrag);
@@ -237,6 +238,7 @@ const KanbanBoard = ({ board }: Props) => {
                 pendingTaskId={pendingTaskId}
                 isColumnDragDisabled={!canManageColumns || !!pendingTaskId}
                 isTaskDragDisabled={!canEditBoardContent || !!pendingTaskId}
+                highlightedTaskId={highlightedTaskId}
               />
             ))}
             {provided.placeholder}

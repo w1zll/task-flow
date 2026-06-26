@@ -24,7 +24,7 @@ export class Board {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ default: '#6366f1' })
+  @Column({ default: '#669266' })
   color: string;
 
   @Column()

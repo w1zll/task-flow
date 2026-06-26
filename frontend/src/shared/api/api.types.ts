@@ -1025,7 +1025,7 @@ export interface components {
             title: string;
             /** @example Board 1 description */
             description?: string;
-            /** @example #6366f1 */
+            /** @example #669266 */
             color?: string;
             /** @example user-uuid */
             ownerId: string;
@@ -1061,7 +1061,7 @@ export interface components {
             title: string;
             /** @example Board 1 description */
             description?: string;
-            /** @example #6366f1 */
+            /** @example #669266 */
             color?: string;
             /**
              * @default empty
@@ -1076,7 +1076,7 @@ export interface components {
             title?: string;
             /** @example Board 1 description */
             description?: string;
-            /** @example #6366f1 */
+            /** @example #669266 */
             color?: string;
         };
         TeamMemberResponseDto: {

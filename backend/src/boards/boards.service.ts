@@ -47,15 +47,10 @@ export class BoardsService {
   ) {}
 
   async findAll(userId: string): Promise<Board[]> {
-    const { workspace } =
-      await this.workspacesService.getActiveWorkspace(userId);
     const boards = await this.boardRepo
       .createQueryBuilder('board')
       .leftJoin('board.members', 'member')
-      .where('board.workspaceId = :workspaceId', {
-        workspaceId: workspace.id,
-      })
-      .andWhere('(board.ownerId = :userId OR member.userId = :userId)', {
+      .where('(board.ownerId = :userId OR member.userId = :userId)', {
         userId,
       })
       .orderBy('board.createdAt', 'DESC')
@@ -163,7 +158,7 @@ export class BoardsService {
       this.boardRepo.create({
         title: boardText.title,
         description: boardText.description,
-        color: '#6366f1',
+        color: '#669266',
         ownerId: userId,
         workspaceId,
       }),
