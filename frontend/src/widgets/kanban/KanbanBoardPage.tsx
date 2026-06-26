@@ -40,7 +40,7 @@ import {
 import type { SxProps, Theme } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Add,
@@ -96,6 +96,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const dayjsLocale = useDayjsLocale();
   const t = useTranslations('BoardPage');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const [isInitialBoardSynced, setInitialBoardSynced] = useState(!initialBoard);
@@ -120,9 +121,15 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const [shareUserId, setShareUserId] = useState('');
   const [shareRole, setShareRole] = useState<'editor' | 'viewer'>('editor');
   const [boardScrollWidth, setBoardScrollWidth] = useState(0);
+  const [hasBoardHorizontalOverflow, setHasBoardHorizontalOverflow] =
+    useState(false);
+  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(
+    null,
+  );
   const boardScrollRef = useRef<HTMLDivElement | null>(null);
   const boardTopScrollRef = useRef<HTMLDivElement | null>(null);
   const boardContentRef = useRef<HTMLDivElement | null>(null);
+  const taskToHighlightId = searchParams.get('taskId');
 
   const boardMembers = useBoardMembers(boardId);
   const shareBoard = useShareBoard();
@@ -222,16 +229,52 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
 
   useEffect(() => {
     const content = boardContentRef.current;
+    const scrollContainer = boardScrollRef.current;
     if (!content) return;
 
-    const updateWidth = () => setBoardScrollWidth(content.scrollWidth);
+    const updateWidth = () => {
+      const nextScrollWidth = content.scrollWidth;
+      setBoardScrollWidth(nextScrollWidth);
+      setHasBoardHorizontalOverflow(
+        scrollContainer
+          ? nextScrollWidth > scrollContainer.clientWidth + 1
+          : false,
+      );
+    };
     updateWidth();
 
     const observer = new ResizeObserver(updateWidth);
     observer.observe(content);
+    if (scrollContainer) observer.observe(scrollContainer);
 
     return () => observer.disconnect();
   }, [board, isAddingColumn]);
+
+  useEffect(() => {
+    if (!taskToHighlightId || !board) return;
+
+    setHighlightedTaskId(taskToHighlightId);
+
+    const scrollTimer = window.setTimeout(() => {
+      document
+        .getElementById(`task-${taskToHighlightId}`)
+        ?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'center',
+        });
+    }, 100);
+    const highlightTimer = window.setTimeout(() => {
+      setHighlightedTaskId((current) =>
+        current === taskToHighlightId ? null : current,
+      );
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(highlightTimer);
+    };
+  }, [board, taskToHighlightId]);
 
   const subtleScrollbarSx: SxProps<Theme> = {
     scrollbarWidth: 'thin',
@@ -343,11 +386,15 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
         bgcolor: 'background.default',
         display: 'flex',
         flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
+        height: '100%',
+        overflow: 'hidden',
       }}
     >
       <Box
         sx={{
-          px: 3,
+          px: { xs: 2, sm: 3 },
           py: 2,
           borderBottom: '1px solid',
           borderColor: 'divider',
@@ -357,6 +404,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
           flexWrap: { xs: 'wrap', sm: 'nowrap' },
           gap: 2,
           bgcolor: 'background.paper',
+          flexShrink: 0,
         }}
       >
         <Box
@@ -384,7 +432,11 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
             <Breadcrumbs sx={{ fontSize: 12 }}>
               <Link
                 component={NextLink}
-                href="/boards"
+                href={
+                  board?.workspaceId
+                    ? `/workspaces/${board.workspaceId}/boards`
+                    : '/boards'
+                }
                 color="inherit"
                 underline="hover"
                 sx={{ fontSize: 12 }}
@@ -442,14 +494,25 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
         </Stack>
       </Box>
 
-      <Box sx={{ flex: 1, minWidth: 0, overflowX: 'hidden', py: 1 }}>
+      <Box
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          minHeight: 0,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
         {isLoading ? (
           <Box
             sx={{
               display: 'flex',
               gap: 2,
-              height: '100%',
+              flex: 1,
+              minHeight: 0,
               px: { xs: 2, sm: 3 },
+              pt: 2,
             }}
           >
             {Array.from({ length: 3 }).map((_, i) => (
@@ -460,7 +523,11 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
           <Box
             sx={{
               minWidth: 0,
-              minHeight: '100%',
+              minHeight: 0,
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
             }}
           >
             <Box
@@ -468,10 +535,11 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
               onScroll={syncTopScroll}
               sx={{
                 ...subtleScrollbarSx,
+                display: hasBoardHorizontalOverflow ? 'block' : 'none',
                 overflowX: 'auto',
                 overflowY: 'hidden',
-                height: 12,
-                mb: 1,
+                height: 14,
+                flexShrink: 0,
               }}
             >
               <Box sx={{ width: boardScrollWidth, height: 1 }} />
@@ -480,11 +548,12 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
               ref={boardScrollRef}
               onScroll={syncBoardScroll}
               sx={{
-                minWidth: 0,
-                overflowX: 'auto',
-                overflowY: 'visible',
-                pb: 1.5,
                 ...subtleScrollbarSx,
+                flex: 1,
+                minHeight: 0,
+                overflowX: 'auto',
+                overflowY: 'auto',
+                minWidth: 0,
               }}
             >
               <Box
@@ -497,10 +566,16 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                   minWidth: '100%',
                   boxSizing: 'border-box',
                   px: { xs: 2, sm: 3 },
+                  pt: 2,
+                  pb: 2,
                 }}
               >
                 <Box sx={{ flexShrink: 0 }}>
-                  <KanbanBoard key={boardId} board={board} />
+                  <KanbanBoard
+                    key={boardId}
+                    board={board}
+                    highlightedTaskId={highlightedTaskId}
+                  />
                 </Box>
                 {canManageColumns && isAddingColumn ? (
                   <Box

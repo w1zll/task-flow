@@ -25,7 +25,7 @@ export class CreateBoardDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ example: '#6366f1', required: false })
+  @ApiProperty({ example: '#669266', required: false })
   @IsOptional()
   @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'Неверный формат кода' })
   color?: string;
@@ -109,7 +109,7 @@ export class BoardResponseDto {
   @ApiProperty({ example: 'Board 1 description', required: false })
   description?: string;
 
-  @ApiProperty({ example: '#6366f1', required: false })
+  @ApiProperty({ example: '#669266', required: false })
   color?: string;
 
   @ApiProperty({ example: 'user-uuid' })

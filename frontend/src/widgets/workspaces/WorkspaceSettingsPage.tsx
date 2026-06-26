@@ -9,7 +9,6 @@ import {
 import { useAuthStore } from '@/shared/store/root.store';
 import UserAvatar from '@/shared/ui/UserAvatar';
 import {
-  ArrowBack,
   Business,
   DeleteOutlined,
   Person,
@@ -37,11 +36,9 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import WorkspaceInvitesSection from './WorkspaceInvitesSection';
-import WorkspaceTeamsSection from './WorkspaceTeamsSection';
 
 interface Props {
   workspaceId: string;
@@ -80,15 +77,6 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
 
   return (
     <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, sm: 3 }, py: 4 }}>
-      <Button
-        component={Link}
-        href="/boards"
-        startIcon={<ArrowBack />}
-        sx={{ mb: 2 }}
-      >
-        {t('back')}
-      </Button>
-
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={2}
@@ -247,14 +235,6 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
           </Stack>
         )}
       </Paper>
-
-      <WorkspaceTeamsSection
-        workspaceId={workspaceId}
-        canManage={
-          workspace.currentUserRole === 'owner' ||
-          workspace.currentUserRole === 'admin'
-        }
-      />
 
       {(workspace.currentUserRole === 'owner' ||
         workspace.currentUserRole === 'admin') && (

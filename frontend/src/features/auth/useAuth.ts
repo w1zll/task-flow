@@ -22,13 +22,16 @@ export const useAuth = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [isCompletingInvite, setIsCompletingInvite] = useState(false);
 
+  const getPostAuthPath = (workspaceId?: string | null) =>
+    workspaceId ? `/workspaces/${workspaceId}` : '/boards';
+
   const finishAuthentication = async (user: typeof authStore.user) => {
     queryClient.clear();
     authStore.setUser(user);
     const inviteToken = getPendingWorkspaceInvite();
 
     if (!inviteToken) {
-      router.push('/boards');
+      router.push(getPostAuthPath(user?.activeWorkspaceId));
       router.refresh();
       return;
     }
@@ -40,7 +43,7 @@ export const useAuth = () => {
       ).data;
       authStore.setActiveWorkspace(workspace.id);
       clearPendingWorkspaceInvite();
-      router.push('/boards');
+      router.push(getPostAuthPath(workspace.id));
       router.refresh();
     } catch {
       router.push(`/invite/${encodeURIComponent(inviteToken)}`);

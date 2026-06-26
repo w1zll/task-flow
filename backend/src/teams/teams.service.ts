@@ -79,7 +79,7 @@ export class TeamsService {
       this.teamRepo.create({
         name,
         description: dto.description?.trim() || null,
-        color: dto.color ?? '#6366f1',
+        color: dto.color ?? '#669266',
         workspaceId,
         createdById: userId,
       }),

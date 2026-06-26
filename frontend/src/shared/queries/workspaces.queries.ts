@@ -35,10 +35,6 @@ export const useSwitchWorkspace = () => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
       void queryClient.invalidateQueries({ queryKey: queryKeys.boards });
-      queryClient.removeQueries({
-        predicate: (query) =>
-          query.queryKey[0] === 'boards' && query.queryKey.length > 1,
-      });
     },
   });
 };

@@ -36,6 +36,7 @@ interface Props {
   pendingTaskId?: string | null;
   isColumnDragDisabled?: boolean;
   isTaskDragDisabled?: boolean;
+  highlightedTaskId?: string | null;
 }
 
 const KanbanColumn = ({
@@ -45,6 +46,7 @@ const KanbanColumn = ({
   pendingTaskId,
   isColumnDragDisabled = false,
   isTaskDragDisabled = false,
+  highlightedTaskId,
 }: Props) => {
   const t = useTranslations('KanbanColumn');
   const tNotifications = useTranslations('Notifications');
@@ -301,6 +303,7 @@ const KanbanColumn = ({
                     isPending={task.id === pendingTaskId}
                     isDragDisabled={isTaskDragDisabled}
                     canEdit={canEditBoardContent}
+                    isHighlighted={task.id === highlightedTaskId}
                   />
                 ))}
                 {provided.placeholder}

@@ -26,7 +26,7 @@ export class Team {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ length: 7, default: '#6366f1' })
+  @Column({ length: 7, default: '#669266' })
   color: string;
 
   @Column({ type: 'uuid' })
