@@ -24,6 +24,18 @@ export const useCreateWorkspace = () => {
   });
 };
 
+export const useDeleteWorkspace = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (workspaceId: string) => workspacesApi.remove(workspaceId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.boards });
+    },
+  });
+};
+
 export const useSwitchWorkspace = () => {
   const queryClient = useQueryClient();
 

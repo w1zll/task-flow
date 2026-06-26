@@ -312,4 +312,69 @@ describe('WorkspacesService', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
+
+  it('allows only the owner to delete a workspace and switches active workspace to a fallback', async () => {
+    workspaceRepo.findOne!.mockResolvedValue(workspace);
+    memberRepo.findOne!.mockResolvedValue({
+      workspaceId: workspace.id,
+      userId: workspace.ownerId,
+      role: WorkspaceRole.OWNER,
+    } as WorkspaceMember);
+    memberRepo.find!.mockResolvedValue([
+      {
+        workspaceId: workspace.id,
+        userId: workspace.ownerId,
+        role: WorkspaceRole.OWNER,
+      } as WorkspaceMember,
+      {
+        workspaceId: 'workspace-2',
+        userId: workspace.ownerId,
+        role: WorkspaceRole.OWNER,
+      } as WorkspaceMember,
+    ]);
+    userRepo.findOne!.mockResolvedValue({
+      id: workspace.ownerId,
+      activeWorkspaceId: workspace.id,
+    } as User);
+
+    const deleteWorkspace = jest.fn();
+    const updateUser = jest.fn();
+    Object.defineProperty(workspaceRepo, 'manager', {
+      value: {
+        transaction: jest.fn(async (callback) =>
+          callback({
+            getRepository: jest.fn((entity) => {
+              if (entity === Workspace) {
+                return { delete: deleteWorkspace };
+              }
+              if (entity === User) {
+                return { update: updateUser };
+              }
+              throw new Error('Unexpected repository');
+            }),
+          }),
+        ),
+      },
+    });
+
+    await service.remove(workspace.id, workspace.ownerId);
+
+    expect(deleteWorkspace).toHaveBeenCalledWith(workspace.id);
+    expect(updateUser).toHaveBeenCalledWith(workspace.ownerId, {
+      activeWorkspaceId: 'workspace-2',
+    });
+  });
+
+  it('does not allow a non-owner to delete a workspace', async () => {
+    workspaceRepo.findOne!.mockResolvedValue(workspace);
+    memberRepo.findOne!.mockResolvedValue({
+      workspaceId: workspace.id,
+      userId: 'admin-1',
+      role: WorkspaceRole.ADMIN,
+    } as WorkspaceMember);
+
+    await expect(
+      service.remove(workspace.id, 'admin-1'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
 });
