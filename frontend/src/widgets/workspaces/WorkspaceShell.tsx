@@ -415,7 +415,7 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
           <Box
             sx={{
               position: 'sticky',
-              top: { xs: 56, sm: 64 },
+              top: 0,
               zIndex: 9,
               display: { xs: 'flex', md: 'none' },
               alignItems: 'center',

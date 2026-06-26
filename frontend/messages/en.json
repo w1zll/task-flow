@@ -172,7 +172,71 @@
     "shareError": "Failed to give access to the board.",
     "shareSend": "Send",
     "add": "Add",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "filters": {
+      "title": "Filters",
+      "open": "Filters",
+      "apply": "Show results",
+      "search": "Search",
+      "assignee": "Assignee",
+      "team": "Team",
+      "priority": "Priority",
+      "statusLabel": "Status",
+      "sortLabel": "Sort",
+      "labels": "Labels, comma-separated",
+      "allAssignees": "All assignees",
+      "allTeams": "All teams",
+      "allPriorities": "All priorities",
+      "allStatuses": "All statuses",
+      "myTasks": "My tasks",
+      "myTeams": "My teams",
+      "unassigned": "Unassigned",
+      "unknownAssignee": "Unknown member",
+      "unknownTeam": "Unknown team",
+      "reset": "Reset",
+      "resultCount": "{filtered} of {total}",
+      "reorderDisabled": "Drag and drop is disabled in filtered view",
+      "status": {
+        "open": "Open",
+        "completed": "Completed",
+        "overdue": "Overdue",
+        "noDueDate": "No due date",
+        "dueToday": "Due today",
+        "dueWeek": "Due this week"
+      },
+      "sort": {
+        "manual": "Manual order",
+        "dueDate": "Due date",
+        "priority": "Priority",
+        "createdAt": "Created date",
+        "updatedAt": "Last updated",
+        "assignee": "Assignee"
+      },
+      "chip": {
+        "search": "Search: {value}",
+        "myTasks": "My tasks",
+        "unassigned": "Unassigned",
+        "assignee": "Assignee: {value}",
+        "myTeams": "My teams",
+        "team": "Team: {value}",
+        "priority": "Priority: {value}",
+        "labels": "Labels: {value}",
+        "sort": "Sort: {value}"
+      },
+      "views": {
+        "label": "View",
+        "none": "Custom view",
+        "save": "Save view",
+        "delete": "Delete",
+        "saveTitle": "Save current view",
+        "name": "View name",
+        "cancel": "Cancel",
+        "created": "View saved",
+        "deleted": "View deleted",
+        "createError": "Failed to save view",
+        "deleteError": "Failed to delete view"
+      }
+    }
   },
   "ProfilePage": {
     "profileTitle": "Profile",

@@ -22,9 +22,16 @@ import {
   BoardAccess,
   BoardPermissionsService,
 } from './board-permissions.service';
-import { CreateBoardDto, ShareBoardDto, UpdateBoardDto } from './dto/board.dto';
+import {
+  CreateBoardDto,
+  CreateBoardViewDto,
+  ShareBoardDto,
+  UpdateBoardDto,
+  UpdateBoardViewDto,
+} from './dto/board.dto';
 import { BoardMember } from './entities/board-member.entity';
 import { BoardRole } from './entities/board-role.enum';
+import { BoardView } from './entities/board-view.entity';
 import { Board } from './entities/board.entity';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
 
@@ -35,6 +42,8 @@ export class BoardsService {
     private readonly boardRepo: Repository<Board>,
     @InjectRepository(BoardMember)
     private readonly memberRepo: Repository<BoardMember>,
+    @InjectRepository(BoardView)
+    private readonly boardViewRepo: Repository<BoardView>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     @InjectRepository(Column)
@@ -339,6 +348,90 @@ export class BoardsService {
     saved.user = toPublicUser(saved.user);
     await this.frontendCache.revalidateBoard(boardId);
     return saved;
+  }
+
+  async listViews(boardId: string, userId: string): Promise<BoardView[]> {
+    await this.boardPermissions.assertCanRead(boardId, userId);
+
+    return this.boardViewRepo.find({
+      where: { boardId, ownerId: userId },
+      order: { isDefault: 'DESC', updatedAt: 'DESC' },
+    });
+  }
+
+  async createView(
+    boardId: string,
+    dto: CreateBoardViewDto,
+    userId: string,
+  ): Promise<BoardView> {
+    await this.boardPermissions.assertCanRead(boardId, userId);
+
+    if (dto.isDefault) {
+      await this.clearDefaultViews(boardId, userId);
+    }
+
+    return this.boardViewRepo.save(
+      this.boardViewRepo.create({
+        boardId,
+        ownerId: userId,
+        title: dto.title.trim(),
+        filters: dto.filters ?? {},
+        sort: dto.sort ?? {},
+        isDefault: dto.isDefault ?? false,
+      }),
+    );
+  }
+
+  async updateView(
+    boardId: string,
+    viewId: string,
+    dto: UpdateBoardViewDto,
+    userId: string,
+  ): Promise<BoardView> {
+    await this.boardPermissions.assertCanRead(boardId, userId);
+    const view = await this.findOwnView(boardId, viewId, userId);
+
+    if (dto.isDefault) {
+      await this.clearDefaultViews(boardId, userId);
+    }
+
+    if (dto.title !== undefined) view.title = dto.title.trim();
+    if (dto.filters !== undefined) view.filters = dto.filters;
+    if (dto.sort !== undefined) view.sort = dto.sort;
+    if (dto.isDefault !== undefined) view.isDefault = dto.isDefault;
+
+    return this.boardViewRepo.save(view);
+  }
+
+  async deleteView(
+    boardId: string,
+    viewId: string,
+    userId: string,
+  ): Promise<void> {
+    await this.boardPermissions.assertCanRead(boardId, userId);
+    const view = await this.findOwnView(boardId, viewId, userId);
+
+    await this.boardViewRepo.remove(view);
+  }
+
+  private async clearDefaultViews(
+    boardId: string,
+    ownerId: string,
+  ): Promise<void> {
+    await this.boardViewRepo.update({ boardId, ownerId }, { isDefault: false });
+  }
+
+  private async findOwnView(
+    boardId: string,
+    viewId: string,
+    ownerId: string,
+  ): Promise<BoardView> {
+    const view = await this.boardViewRepo.findOne({
+      where: { id: viewId, boardId, ownerId },
+    });
+    if (!view) throw new NotFoundException('Board view not found');
+
+    return view;
   }
 
   private attachRole(board: Board, role: BoardRole): Board {

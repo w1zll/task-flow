@@ -29,10 +29,13 @@ import { User } from '@/users/entities/user.entity';
 import {
   BoardMemberResponseDto,
   BoardResponseDto,
+  BoardViewResponseDto,
   CreateBoardDto,
+  CreateBoardViewDto,
   ShareBoardDto,
   UpdateBoardMemberRoleDto,
   UpdateBoardDto,
+  UpdateBoardViewDto,
 } from './dto/board.dto';
 import type { Request } from 'express';
 import { detectRequestLocale } from '@/common/locale/request-locale';
@@ -58,6 +61,48 @@ export class BoardsController {
   @ApiNoContentResponse()
   async checkAccess(@Param('id') id: string, @CurrentUser() user: User) {
     await this.boardsService.ensureAccess(id, user.id);
+  }
+
+  @Get(':id/views')
+  @ApiOperation({ summary: 'List saved board views' })
+  @ApiOkResponse({ type: BoardViewResponseDto, isArray: true })
+  views(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.boardsService.listViews(id, user.id);
+  }
+
+  @Post(':id/views')
+  @ApiOperation({ summary: 'Create a saved board view' })
+  @ApiCreatedResponse({ type: BoardViewResponseDto })
+  createView(
+    @Param('id') id: string,
+    @Body() dto: CreateBoardViewDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.boardsService.createView(id, dto, user.id);
+  }
+
+  @Patch(':id/views/:viewId')
+  @ApiOperation({ summary: 'Update a saved board view' })
+  @ApiOkResponse({ type: BoardViewResponseDto })
+  updateView(
+    @Param('id') id: string,
+    @Param('viewId') viewId: string,
+    @Body() dto: UpdateBoardViewDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.boardsService.updateView(id, viewId, dto, user.id);
+  }
+
+  @Delete(':id/views/:viewId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a saved board view' })
+  @ApiNoContentResponse()
+  deleteView(
+    @Param('id') id: string,
+    @Param('viewId') viewId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.boardsService.deleteView(id, viewId, user.id);
   }
 
   @Get(':id')
