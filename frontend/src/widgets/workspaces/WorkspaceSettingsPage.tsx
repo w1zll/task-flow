@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  useDeleteWorkspace,
   useRemoveWorkspaceMember,
   useUpdateWorkspaceMemberRole,
   useWorkspaceMembers,
@@ -36,6 +37,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import WorkspaceInvitesSection from './WorkspaceInvitesSection';
@@ -46,17 +48,46 @@ interface Props {
 
 const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
   const t = useTranslations('WorkspaceSettings');
+  const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
   const currentUser = useAuthStore((state) => state.user);
+  const setActiveWorkspace = useAuthStore(
+    (state) => state.setActiveWorkspace,
+  );
   const [memberToRemoveId, setMemberToRemoveId] = useState<string | null>(null);
+  const [isDeleteWorkspaceOpen, setDeleteWorkspaceOpen] = useState(false);
   const workspaces = useWorkspaces();
   const members = useWorkspaceMembers(workspaceId);
   const updateMemberRole = useUpdateWorkspaceMemberRole(workspaceId);
   const removeMember = useRemoveWorkspaceMember(workspaceId);
+  const deleteWorkspace = useDeleteWorkspace();
   const workspace = workspaces.data?.find((item) => item.id === workspaceId);
   const memberToRemove = members.data?.find(
     (member) => member.id === memberToRemoveId,
   );
+  const canDeleteWorkspace = workspace?.currentUserRole === 'owner';
+
+  const handleDeleteWorkspace = () => {
+    if (!workspace || !canDeleteWorkspace) return;
+
+    const nextActiveWorkspace =
+      workspace.isActive
+        ? (workspaces.data?.find((item) => item.id !== workspace.id)?.id ??
+          null)
+        : currentUser?.activeWorkspaceId ?? null;
+
+    deleteWorkspace.mutate(workspace.id, {
+      onSuccess: () => {
+        setActiveWorkspace(nextActiveWorkspace);
+        setDeleteWorkspaceOpen(false);
+        enqueueSnackbar(t('workspaceDeleted'), { variant: 'success' });
+        router.push('/workspaces');
+        router.refresh();
+      },
+      onError: () =>
+        enqueueSnackbar(t('workspaceDeleteError'), { variant: 'error' }),
+    });
+  };
 
   if (workspaces.isLoading) {
     return (
@@ -244,6 +275,40 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
         />
       )}
 
+      {canDeleteWorkspace && (
+        <Paper
+          variant="outlined"
+          sx={{
+            borderColor: 'error.main',
+            borderRadius: '6px',
+            mt: 3,
+            overflow: 'hidden',
+          }}
+        >
+          <Box sx={{ px: 3, py: 2.5 }}>
+            <Typography
+              variant="h6"
+              color="error"
+              sx={{ fontWeight: 600 }}
+            >
+              {t('dangerZoneTitle')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('deleteWorkspaceDescription')}
+            </Typography>
+            <Button
+              color="error"
+              variant="outlined"
+              startIcon={<DeleteOutlined />}
+              onClick={() => setDeleteWorkspaceOpen(true)}
+              sx={{ mt: 2 }}
+            >
+              {t('deleteWorkspace')}
+            </Button>
+          </Box>
+        </Paper>
+      )}
+
       <Dialog
         open={Boolean(memberToRemove)}
         onClose={() => {
@@ -287,6 +352,40 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
             }}
           >
             {removeMember.isPending ? t('removingMember') : t('removeMember')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={isDeleteWorkspaceOpen}
+        onClose={() => {
+          if (!deleteWorkspace.isPending) setDeleteWorkspaceOpen(false);
+        }}
+      >
+        <DialogTitle>{t('deleteWorkspaceTitle')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t('deleteWorkspaceConfirm', {
+              name: workspace.name,
+            })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            disabled={deleteWorkspace.isPending}
+            onClick={() => setDeleteWorkspaceOpen(false)}
+          >
+            {t('cancel')}
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={deleteWorkspace.isPending}
+            onClick={handleDeleteWorkspace}
+          >
+            {deleteWorkspace.isPending
+              ? t('deletingWorkspace')
+              : t('deleteWorkspace')}
           </Button>
         </DialogActions>
       </Dialog>

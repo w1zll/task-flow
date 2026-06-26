@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const BoardsPage = async () => {
+const WorkspacesPage = async () => {
   const queryClient = new QueryClient();
   const [boards, workspaces] = await Promise.all([
     getBoardsForCurrentUser(),
@@ -40,4 +40,4 @@ const BoardsPage = async () => {
   );
 };
 
-export default BoardsPage;
+export default WorkspacesPage;

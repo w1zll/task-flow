@@ -188,6 +188,8 @@ export const workspacesApi = {
       data,
     ),
 
+  remove: (id: string) => apiClient.delete<void>(`/api/workspaces/${id}`),
+
   switchActive: (id: string) =>
     apiClient.put<ApiResponse<'/api/workspaces/{id}/active', 'put'>>(
       `/api/workspaces/${id}/active`,

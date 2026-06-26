@@ -109,7 +109,7 @@ const AppHeader = ({
               ':hover': { textDecoration: 'underline' },
             }}
             component={NextLink}
-            href="/boards"
+            href="/workspaces"
           >
             {t('myBoards')}
           </Link>

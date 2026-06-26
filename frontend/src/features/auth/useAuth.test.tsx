@@ -99,7 +99,7 @@ describe('useAuth', () => {
       await waitFor(() => {
         expect(mockAuthApi.login).toHaveBeenCalledWith(loginData);
         expect(mockStore.setUser).toHaveBeenCalledWith(response.user);
-        expect(mockRouter.push).toHaveBeenCalledWith('/boards');
+        expect(mockRouter.push).toHaveBeenCalledWith('/workspaces');
       });
     });
 
@@ -222,7 +222,7 @@ describe('useAuth', () => {
       await waitFor(() => {
         expect(mockAuthApi.register).toHaveBeenCalledWith(registrationData);
         expect(mockStore.setUser).toHaveBeenCalledWith(response.user);
-        expect(mockRouter.push).toHaveBeenCalledWith('/boards');
+        expect(mockRouter.push).toHaveBeenCalledWith('/workspaces');
       });
     });
   });

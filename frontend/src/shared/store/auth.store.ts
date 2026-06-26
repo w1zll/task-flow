@@ -18,7 +18,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   hydrate: (user: AuthUser | null) => void;
   logout: () => void;
-  setActiveWorkspace: (workspaceId: string) => void;
+  setActiveWorkspace: (workspaceId: string | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
