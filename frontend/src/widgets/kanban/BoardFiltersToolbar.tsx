@@ -29,7 +29,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
+import { KeyboardEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   BoardFilters,
   BoardTaskPriority,
@@ -219,6 +219,7 @@ const BoardFiltersToolbar = ({
   const t = useTranslations('BoardPage.filters');
   const taskCardT = useTranslations('TaskCard');
   const [isMobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState(filters.search);
   const [labelsInput, setLabelsInput] = useState(filters.labels.join(', '));
   const [isSaveDialogOpen, setSaveDialogOpen] = useState(false);
   const [viewTitle, setViewTitle] = useState('');
@@ -255,9 +256,23 @@ const BoardFiltersToolbar = ({
     setLabelsInput(filters.labels.join(', '));
   }, [filters.labels]);
 
-  const patchFilters = (patch: Partial<BoardFilters>) => {
+  const patchFilters = useCallback((patch: Partial<BoardFilters>) => {
     onChange({ ...filters, ...patch });
-  };
+  }, [filters, onChange]);
+
+  useEffect(() => {
+    setSearchInput(filters.search);
+  }, [filters.search]);
+
+  useEffect(() => {
+    if (searchInput === filters.search) return;
+
+    const timer = window.setTimeout(() => {
+      patchFilters({ search: searchInput });
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [filters.search, patchFilters, searchInput]);
 
   const applyLabelsInput = () => {
     patchFilters({ labels: normalizeLabelsInput(labelsInput) });
@@ -278,12 +293,21 @@ const BoardFiltersToolbar = ({
     setSaveDialogOpen(false);
   };
 
+  const handleReset = () => {
+    setSearchInput('');
+    setLabelsInput('');
+    onReset();
+  };
+
   const activeChips = [
     filters.search.trim()
       ? {
           key: 'search',
           label: t('chip.search', { value: filters.search.trim() }),
-          onDelete: () => patchFilters({ search: '' }),
+          onDelete: () => {
+            setSearchInput('');
+            patchFilters({ search: '' });
+          },
         }
       : null,
     filters.assignee !== 'all'
@@ -389,8 +413,8 @@ const BoardFiltersToolbar = ({
         <TextField
           size="small"
           label={t('search')}
-          value={filters.search}
-          onChange={(event) => patchFilters({ search: event.target.value })}
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
           sx={{ minWidth: { md: 220 } }}
         />
 
@@ -537,7 +561,7 @@ const BoardFiltersToolbar = ({
           <Button
             size="small"
             startIcon={<RestartAltOutlined />}
-            onClick={onReset}
+            onClick={handleReset}
             sx={{ ml: { xs: 0, md: 'auto' } }}
           >
             {t('reset')}
@@ -609,7 +633,7 @@ const BoardFiltersToolbar = ({
             {isActive && (
               <IconButton
                 size="small"
-                onClick={onReset}
+                onClick={handleReset}
                 aria-label={t('reset')}
                 sx={{ display: { xs: 'inline-flex', md: 'none' } }}
               >
@@ -684,7 +708,7 @@ const BoardFiltersToolbar = ({
               {t('title')}
             </Typography>
             {isActive && (
-              <Button size="small" onClick={onReset}>
+              <Button size="small" onClick={handleReset}>
                 {t('reset')}
               </Button>
             )}
