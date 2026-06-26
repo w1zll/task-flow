@@ -15,10 +15,19 @@ import { AuthModule } from '@/auth/auth.module';
 import { BoardPermissionsModule } from './board-permissions.module';
 import { WorkspacesModule } from '@/workspaces/workspaces.module';
 import { Team } from '@/teams/entities/team.entity';
+import { BoardView } from './entities/board-view.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Board, BoardMember, User, Task, Column, Team]),
+    TypeOrmModule.forFeature([
+      Board,
+      BoardMember,
+      BoardView,
+      User,
+      Task,
+      Column,
+      Team,
+    ]),
     forwardRef(() => AuthModule),
     BoardPermissionsModule,
     WorkspacesModule,

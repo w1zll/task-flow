@@ -8,6 +8,22 @@ export type Board = ApiResponse<'/api/boards/{id}', 'get'>;
 export type BoardRole = Board['currentUserRole'];
 export type BoardMember =
   ApiResponse<'/api/boards/{id}/members', 'get'>[number];
+export interface BoardView {
+  id: string;
+  title: string;
+  boardId: string;
+  ownerId: string;
+  filters: Record<string, unknown>;
+  sort: Record<string, unknown>;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+export type BoardViewPayload = Pick<
+  BoardView,
+  'title' | 'filters' | 'sort'
+> &
+  Partial<Pick<BoardView, 'isDefault'>>;
 export type Workspace = ApiResponse<'/api/workspaces', 'get'>[number];
 export type WorkspaceMember =
   ApiResponse<'/api/workspaces/{id}/members', 'get'>[number];
@@ -131,6 +147,21 @@ export const boardsApi = {
     apiClient.get<ApiResponse<'/api/boards/{id}/members', 'get'>>(
       `/api/boards/${id}/members`,
     ),
+
+  getViews: (id: string) =>
+    apiClient.get<BoardView[]>(`/api/boards/${id}/views`),
+
+  createView: (id: string, data: BoardViewPayload) =>
+    apiClient.post<BoardView>(`/api/boards/${id}/views`, data),
+
+  updateView: (
+    boardId: string,
+    viewId: string,
+    data: Partial<BoardViewPayload>,
+  ) => apiClient.patch<BoardView>(`/api/boards/${boardId}/views/${viewId}`, data),
+
+  deleteView: (boardId: string, viewId: string) =>
+    apiClient.delete(`/api/boards/${boardId}/views/${viewId}`),
 
   revokeMember: (boardId: string, memberId: string) =>
     apiClient.delete<ApiResponse<'/api/boards/{id}/share/{memberId}', 'delete'>>(

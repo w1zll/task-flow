@@ -172,7 +172,71 @@
     "shareError": "Не удалось выдать доступ к доске.",
     "shareSend": "Отправить",
     "add": "Добавить",
-    "cancel": "Отмена"
+    "cancel": "Отмена",
+    "filters": {
+      "title": "Фильтры",
+      "open": "Фильтры",
+      "apply": "Показать",
+      "search": "Поиск",
+      "assignee": "Исполнитель",
+      "team": "Команда",
+      "priority": "Приоритет",
+      "statusLabel": "Статус",
+      "sortLabel": "Сортировка",
+      "labels": "Метки через запятую",
+      "allAssignees": "Все исполнители",
+      "allTeams": "Все команды",
+      "allPriorities": "Все приоритеты",
+      "allStatuses": "Все статусы",
+      "myTasks": "Мои задачи",
+      "myTeams": "Мои команды",
+      "unassigned": "Без ответственного",
+      "unknownAssignee": "Неизвестный участник",
+      "unknownTeam": "Неизвестная команда",
+      "reset": "Сбросить",
+      "resultCount": "{filtered} из {total}",
+      "reorderDisabled": "Перетаскивание выключено в отфильтрованном виде",
+      "status": {
+        "open": "Открытые",
+        "completed": "Выполненные",
+        "overdue": "Просроченные",
+        "noDueDate": "Без дедлайна",
+        "dueToday": "Дедлайн сегодня",
+        "dueWeek": "Дедлайн на неделе"
+      },
+      "sort": {
+        "manual": "Ручной порядок",
+        "dueDate": "По дедлайну",
+        "priority": "По приоритету",
+        "createdAt": "По дате создания",
+        "updatedAt": "По обновлению",
+        "assignee": "По исполнителю"
+      },
+      "chip": {
+        "search": "Поиск: {value}",
+        "myTasks": "Мои задачи",
+        "unassigned": "Без ответственного",
+        "assignee": "Исполнитель: {value}",
+        "myTeams": "Мои команды",
+        "team": "Команда: {value}",
+        "priority": "Приоритет: {value}",
+        "labels": "Метки: {value}",
+        "sort": "Сортировка: {value}"
+      },
+      "views": {
+        "label": "Вид",
+        "none": "Настроенный вид",
+        "save": "Сохранить вид",
+        "delete": "Удалить",
+        "saveTitle": "Сохранить текущий вид",
+        "name": "Название вида",
+        "cancel": "Отмена",
+        "created": "Вид сохранён",
+        "deleted": "Вид удалён",
+        "createError": "Не удалось сохранить вид",
+        "deleteError": "Не удалось удалить вид"
+      }
+    }
   },
   "ProfilePage": {
     "profileTitle": "Профиль",

@@ -5,8 +5,11 @@ import {
   useBoardDailyAnalytics,
   useBoardMembers,
   useBoardMonthlyAnalytics,
+  useBoardViews,
+  useCreateBoardView,
   useBoardWeeklyAnalytics,
   useCreateColumn,
+  useDeleteBoardView,
   useRevokeBoardMember,
   useShareBoard,
   useTaskCompletionSummary,
@@ -40,8 +43,8 @@ import {
 import type { SxProps, Theme } from '@mui/material/styles';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { useTranslations } from 'next-intl';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Add,
   ArrowBack,
@@ -63,7 +66,22 @@ import { useSnackbar } from 'notistack';
 import { isBoardPermissionError } from '@/shared/lib/boardSocketMutations';
 import { useWorkspaceMembers } from '@/shared/queries/workspaces.queries';
 import { getAvailableWorkspaceMembers } from '@/shared/lib/board-members';
-import { useWorkspaceTeams } from '@/shared/queries/teams.queries';
+import {
+  useMyWorkspaceTeams,
+  useWorkspaceTeams,
+} from '@/shared/queries/teams.queries';
+import BoardFiltersToolbar from './BoardFiltersToolbar';
+import {
+  DEFAULT_BOARD_FILTERS,
+  boardFiltersFromSavedView,
+  boardFiltersToSavedView,
+  countBoardTasks,
+  filterBoard,
+  isBoardReorderDisabledByView,
+  parseBoardFiltersFromSearchParams,
+  writeBoardFiltersToSearchParams,
+  type BoardFilters,
+} from './board-filters';
 
 interface Props {
   boardId: string;
@@ -96,7 +114,9 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const dayjsLocale = useDayjsLocale();
   const t = useTranslations('BoardPage');
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const searchParamsString = searchParams.toString();
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const [isInitialBoardSynced, setInitialBoardSynced] = useState(!initialBoard);
@@ -130,8 +150,18 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const boardTopScrollRef = useRef<HTMLDivElement | null>(null);
   const boardContentRef = useRef<HTMLDivElement | null>(null);
   const taskToHighlightId = searchParams.get('taskId');
+  const boardFilters = useMemo(
+    () =>
+      parseBoardFiltersFromSearchParams(
+        new URLSearchParams(searchParamsString),
+      ),
+    [searchParamsString],
+  );
 
   const boardMembers = useBoardMembers(boardId);
+  const boardViews = useBoardViews(boardId);
+  const createBoardView = useCreateBoardView();
+  const deleteBoardView = useDeleteBoardView();
   const shareBoard = useShareBoard();
   const revokeMember = useRevokeBoardMember();
   const updateMemberRole = useUpdateBoardMemberRole();
@@ -152,7 +182,11 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   );
   const workspaceTeams = useWorkspaceTeams(
     board?.workspaceId ?? '',
-    isMembersOpen,
+    Boolean(board?.workspaceId),
+  );
+  const myWorkspaceTeams = useMyWorkspaceTeams(
+    board?.workspaceId ?? '',
+    Boolean(board?.workspaceId),
   );
   const availableWorkspaceMembers = useMemo(
     () =>
@@ -166,6 +200,155 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     workspaceMembers.isLoading || boardMembers.isLoading;
   const isShareMembersError =
     workspaceMembers.isError || boardMembers.isError;
+  const myTeamIds = useMemo(
+    () => myWorkspaceTeams.data?.map((team) => team.id) ?? [],
+    [myWorkspaceTeams.data],
+  );
+  const filteredBoard = useMemo(
+    () =>
+      board
+        ? filterBoard(board, boardFilters, {
+            currentUserId: currentUser?.id,
+            myTeamIds,
+          })
+        : undefined,
+    [board, boardFilters, currentUser?.id, myTeamIds],
+  );
+  const totalTaskCount = useMemo(() => countBoardTasks(board), [board]);
+  const filteredTaskCount = useMemo(
+    () => countBoardTasks(filteredBoard),
+    [filteredBoard],
+  );
+  const isReorderDisabledByView =
+    isBoardReorderDisabledByView(boardFilters);
+  const selectedViewId = searchParams.get('view');
+
+  const updateBoardFilters = useCallback(
+    (filters: BoardFilters) => {
+      const nextSearchParams = writeBoardFiltersToSearchParams(
+        filters,
+        new URLSearchParams(searchParamsString),
+      );
+      nextSearchParams.delete('view');
+      const nextQuery = nextSearchParams.toString();
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+        scroll: false,
+      });
+    },
+    [pathname, router, searchParamsString],
+  );
+
+  const resetBoardFilters = useCallback(() => {
+    updateBoardFilters(DEFAULT_BOARD_FILTERS);
+  }, [updateBoardFilters]);
+
+  const applySavedView = useCallback(
+    (viewId: string | null) => {
+      if (!viewId) {
+        updateBoardFilters(DEFAULT_BOARD_FILTERS);
+        return;
+      }
+
+      const view = boardViews.data?.find((item) => item.id === viewId);
+      if (!view) return;
+
+      const filters = boardFiltersFromSavedView(view.filters, view.sort);
+      const nextSearchParams = writeBoardFiltersToSearchParams(
+        filters,
+        new URLSearchParams(searchParamsString),
+      );
+      nextSearchParams.set('view', viewId);
+      const nextQuery = nextSearchParams.toString();
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+        scroll: false,
+      });
+    },
+    [
+      boardViews.data,
+      pathname,
+      router,
+      searchParamsString,
+      updateBoardFilters,
+    ],
+  );
+
+  const saveCurrentView = useCallback(
+    (title: string) => {
+      const payload = boardFiltersToSavedView(boardFilters);
+      createBoardView.mutate(
+        {
+          boardId,
+          data: {
+            title,
+            filters: payload.filters,
+            sort: payload.sort,
+          },
+        },
+        {
+          onSuccess: (view) => {
+            enqueueSnackbar(t('filters.views.created'), {
+              variant: 'success',
+            });
+            const nextSearchParams = writeBoardFiltersToSearchParams(
+              boardFilters,
+              new URLSearchParams(searchParamsString),
+            );
+            nextSearchParams.set('view', view.id);
+            const nextQuery = nextSearchParams.toString();
+            router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+              scroll: false,
+            });
+          },
+          onError: () => {
+            enqueueSnackbar(t('filters.views.createError'), {
+              variant: 'error',
+            });
+          },
+        },
+      );
+    },
+    [
+      boardFilters,
+      boardId,
+      createBoardView,
+      enqueueSnackbar,
+      pathname,
+      router,
+      searchParamsString,
+      t,
+    ],
+  );
+
+  const removeSavedView = useCallback(
+    (viewId: string) => {
+      deleteBoardView.mutate(
+        { boardId, viewId },
+        {
+          onSuccess: () => {
+            enqueueSnackbar(t('filters.views.deleted'), {
+              variant: 'success',
+            });
+            if (selectedViewId === viewId) {
+              updateBoardFilters(DEFAULT_BOARD_FILTERS);
+            }
+          },
+          onError: () => {
+            enqueueSnackbar(t('filters.views.deleteError'), {
+              variant: 'error',
+            });
+          },
+        },
+      );
+    },
+    [
+      boardId,
+      deleteBoardView,
+      enqueueSnackbar,
+      selectedViewId,
+      t,
+      updateBoardFilters,
+    ],
+  );
 
   useStableBodyScrollLock(isMembersOpen || isStatsOpen);
 
@@ -248,7 +431,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     if (scrollContainer) observer.observe(scrollContainer);
 
     return () => observer.disconnect();
-  }, [board, isAddingColumn]);
+  }, [filteredBoard, isAddingColumn]);
 
   useEffect(() => {
     if (!taskToHighlightId || !board) return;
@@ -494,6 +677,26 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
         </Stack>
       </Box>
 
+      {board && (
+        <BoardFiltersToolbar
+          filters={boardFilters}
+          onChange={updateBoardFilters}
+          onReset={resetBoardFilters}
+          boardMembers={boardMembers.data}
+          teams={workspaceTeams.data}
+          filteredCount={filteredTaskCount}
+          totalCount={totalTaskCount}
+          isReorderDisabled={isReorderDisabledByView}
+          savedViews={boardViews.data}
+          selectedViewId={selectedViewId}
+          isSavingView={createBoardView.isPending}
+          isDeletingView={deleteBoardView.isPending}
+          onApplySavedView={applySavedView}
+          onSaveView={saveCurrentView}
+          onDeleteSavedView={removeSavedView}
+        />
+      )}
+
       <Box
         sx={{
           flex: 1,
@@ -519,7 +722,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
               <Skeleton key={i} variant="rounded" width={280} height={400} />
             ))}
           </Box>
-        ) : board ? (
+        ) : filteredBoard ? (
           <Box
             sx={{
               minWidth: 0,
@@ -573,8 +776,9 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
                 <Box sx={{ flexShrink: 0 }}>
                   <KanbanBoard
                     key={boardId}
-                    board={board}
+                    board={filteredBoard}
                     highlightedTaskId={highlightedTaskId}
+                    isReorderDisabled={isReorderDisabledByView}
                   />
                 </Box>
                 {canManageColumns && isAddingColumn ? (

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Board,
   BoardColumn,
+  BoardViewPayload,
   boardsApi,
   columnsApi,
   Task,
@@ -28,6 +29,10 @@ const invalidateBoardWithList = (qc: QueryClient, boardId: string) => {
 
 const invalidateBoardMembers = (qc: QueryClient, boardId: string) => {
   void qc.invalidateQueries({ queryKey: queryKeys.boardMembers(boardId) });
+};
+
+const invalidateBoardViews = (qc: QueryClient, boardId: string) => {
+  void qc.invalidateQueries({ queryKey: queryKeys.boardViews(boardId) });
 };
 
 const invalidateBoardAnalytics = (qc: QueryClient, boardId: string) => {
@@ -283,6 +288,59 @@ export const useBoardMembers = (boardId: string) => {
     queryFn: () => boardsApi.getMembers(boardId).then((r) => r.data),
     enabled: !!boardId,
     staleTime: 60_000,
+  });
+};
+
+export const useBoardViews = (boardId: string) => {
+  return useQuery({
+    queryKey: queryKeys.boardViews(boardId),
+    queryFn: () => boardsApi.getViews(boardId).then((r) => r.data),
+    enabled: !!boardId,
+    staleTime: 60_000,
+  });
+};
+
+export const useCreateBoardView = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      boardId,
+      data,
+    }: {
+      boardId: string;
+      data: BoardViewPayload;
+    }) => boardsApi.createView(boardId, data).then((r) => r.data),
+    onSuccess: (_, { boardId }) => invalidateBoardViews(qc, boardId),
+  });
+};
+
+export const useUpdateBoardView = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      boardId,
+      viewId,
+      data,
+    }: {
+      boardId: string;
+      viewId: string;
+      data: Partial<BoardViewPayload>;
+    }) => boardsApi.updateView(boardId, viewId, data).then((r) => r.data),
+    onSuccess: (_, { boardId }) => invalidateBoardViews(qc, boardId),
+  });
+};
+
+export const useDeleteBoardView = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      boardId,
+      viewId,
+    }: {
+      boardId: string;
+      viewId: string;
+    }) => boardsApi.deleteView(boardId, viewId),
+    onSuccess: (_, { boardId }) => invalidateBoardViews(qc, boardId),
   });
 };
 
