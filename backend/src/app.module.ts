@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/entities/user.entity';
 import { Board } from './boards/entities/board.entity';
 import { BoardMember } from './boards/entities/board-member.entity';
+import { BoardView } from './boards/entities/board-view.entity';
 import { Column } from './columns/entities/column.entity';
 import { Task } from './tasks/entities/task.entity';
 import { RefreshToken } from './auth/entities/refresh-token.entity';
@@ -56,6 +57,7 @@ import { TeamsModule } from './teams/teams.module';
             TeamMember,
             Board,
             BoardMember,
+            BoardView,
             Column,
             Task,
             RefreshToken,

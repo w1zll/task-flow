@@ -381,6 +381,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/boards/{id}/views": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List saved board views */
+        get: operations["BoardsController_views"];
+        put?: never;
+        /** Create a saved board view */
+        post: operations["BoardsController_createView"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/boards/{id}/views/{viewId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a saved board view */
+        delete: operations["BoardsController_deleteView"];
+        options?: never;
+        head?: never;
+        /** Update a saved board view */
+        patch: operations["BoardsController_updateView"];
+        trace?: never;
+    };
     "/api/boards/{id}": {
         parameters: {
             query?: never;
@@ -1040,6 +1076,72 @@ export interface components {
             createdAt: string;
             /** @example 2026-05-05T12:00:00.000Z */
             updatedAt: string;
+        };
+        BoardViewResponseDto: {
+            /** @example view-uuid */
+            id: string;
+            /** @example My urgent tasks */
+            title: string;
+            /** @example board-uuid */
+            boardId: string;
+            /** @example user-uuid */
+            ownerId: string;
+            /**
+             * @example {
+             *       "assignee": "me",
+             *       "priority": "urgent"
+             *     }
+             */
+            filters: Record<string, never>;
+            /**
+             * @example {
+             *       "sort": "priority"
+             *     }
+             */
+            sort: Record<string, never>;
+            isDefault: boolean;
+            /** @example 2026-05-05T12:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-05-05T12:00:00.000Z */
+            updatedAt: string;
+        };
+        CreateBoardViewDto: {
+            /** @example My urgent tasks */
+            title: string;
+            /**
+             * @example {
+             *       "assignee": "me",
+             *       "priority": "urgent"
+             *     }
+             */
+            filters?: Record<string, never>;
+            /**
+             * @example {
+             *       "sort": "priority"
+             *     }
+             */
+            sort?: Record<string, never>;
+            /** @default false */
+            isDefault: boolean;
+        };
+        UpdateBoardViewDto: {
+            /** @example My urgent tasks */
+            title?: string;
+            /**
+             * @example {
+             *       "assignee": "me",
+             *       "priority": "urgent"
+             *     }
+             */
+            filters?: Record<string, never>;
+            /**
+             * @example {
+             *       "sort": "priority"
+             *     }
+             */
+            sort?: Record<string, never>;
+            /** @default false */
+            isDefault: boolean;
         };
         ShareBoardDto: {
             /** @description ID пользователя для приглашения */
@@ -1778,6 +1880,98 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    BoardsController_views: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardViewResponseDto"][];
+                };
+            };
+        };
+    };
+    BoardsController_createView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBoardViewDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardViewResponseDto"];
+                };
+            };
+        };
+    };
+    BoardsController_deleteView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                viewId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BoardsController_updateView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                viewId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBoardViewDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardViewResponseDto"];
+                };
             };
         };
     };

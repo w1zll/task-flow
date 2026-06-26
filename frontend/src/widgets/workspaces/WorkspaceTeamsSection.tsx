@@ -84,6 +84,35 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
       ) ?? []
     );
   }, [managedTeam?.members, workspaceMembers.data]);
+  const renderAvailableMemberOption = (
+    member: (typeof availableMembers)[number],
+  ) => (
+    <Box
+      sx={{
+        alignItems: 'center',
+        display: 'flex',
+        gap: 1,
+        minWidth: 0,
+      }}
+    >
+      <UserAvatar
+        name={member.user.name}
+        src={member.user.avatar}
+        size={24}
+      />
+      <Typography
+        variant="body2"
+        sx={{
+          minWidth: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {member.user.name}
+      </Typography>
+    </Box>
+  );
 
   const openCreate = () => {
     setEditingTeam(null);
@@ -373,11 +402,17 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
                 <Select
                   label={t('addMember')}
                   value={selectedUserId}
+                  renderValue={(value) => {
+                    const selected = availableMembers.find(
+                      (member) => member.userId === value,
+                    );
+                    return selected ? renderAvailableMemberOption(selected) : '';
+                  }}
                   onChange={(event) => setSelectedUserId(event.target.value)}
                 >
                   {availableMembers.map((member) => (
                     <MenuItem key={member.id} value={member.userId}>
-                      {member.user.name}
+                      {renderAvailableMemberOption(member)}
                     </MenuItem>
                   ))}
                 </Select>

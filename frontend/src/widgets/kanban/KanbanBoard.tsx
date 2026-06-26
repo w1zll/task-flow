@@ -20,9 +20,14 @@ import {
 interface Props {
   board: Board;
   highlightedTaskId?: string | null;
+  isReorderDisabled?: boolean;
 }
 
-const KanbanBoard = ({ board, highlightedTaskId }: Props) => {
+const KanbanBoard = ({
+  board,
+  highlightedTaskId,
+  isReorderDisabled = false,
+}: Props) => {
   const t = useTranslations('Notifications');
   const startDrag = useBoardUIStore((state) => state.startDrag);
   const endDrag = useBoardUIStore((state) => state.endDrag);
@@ -45,6 +50,7 @@ const KanbanBoard = ({ board, highlightedTaskId }: Props) => {
 
   const handleDragStart = (start: any) => {
     if (pendingTaskId) return;
+    if (isReorderDisabled) return;
     if (start.type === 'COLUMN' && !canManageColumns) return;
     if (start.type === 'TASK' && !canEditBoardContent) return;
     if (start.type === 'TASK') {
@@ -59,6 +65,7 @@ const KanbanBoard = ({ board, highlightedTaskId }: Props) => {
     }
     endDrag();
 
+    if (isReorderDisabled) return;
     if (type === 'COLUMN' && !canManageColumns) return;
     if (type === 'TASK' && !canEditBoardContent) return;
     if (!destination) return;
@@ -236,8 +243,12 @@ const KanbanBoard = ({ board, highlightedTaskId }: Props) => {
                 board={localBoard}
                 index={index}
                 pendingTaskId={pendingTaskId}
-                isColumnDragDisabled={!canManageColumns || !!pendingTaskId}
-                isTaskDragDisabled={!canEditBoardContent || !!pendingTaskId}
+                isColumnDragDisabled={
+                  isReorderDisabled || !canManageColumns || !!pendingTaskId
+                }
+                isTaskDragDisabled={
+                  isReorderDisabled || !canEditBoardContent || !!pendingTaskId
+                }
                 highlightedTaskId={highlightedTaskId}
               />
             ))}

@@ -1,8 +1,10 @@
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsEmail,
   IsEnum,
   IsIn,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -74,6 +76,62 @@ export class UpdateBoardMemberRoleDto {
   @ApiProperty({ enum: [BoardRole.EDITOR, BoardRole.VIEWER] })
   @IsIn([BoardRole.EDITOR, BoardRole.VIEWER])
   role: BoardRole.EDITOR | BoardRole.VIEWER;
+}
+
+export class CreateBoardViewDto {
+  @ApiProperty({ example: 'My urgent tasks' })
+  @IsString()
+  @MaxLength(120)
+  title: string;
+
+  @ApiProperty({
+    example: { assignee: 'me', priority: 'urgent' },
+    required: false,
+  })
+  @IsOptional()
+  @IsObject()
+  filters?: Record<string, unknown>;
+
+  @ApiProperty({ example: { sort: 'priority' }, required: false })
+  @IsOptional()
+  @IsObject()
+  sort?: Record<string, unknown>;
+
+  @ApiProperty({ required: false, default: false })
+  @IsOptional()
+  @IsBoolean()
+  isDefault?: boolean;
+}
+
+export class UpdateBoardViewDto extends PartialType(CreateBoardViewDto) {}
+
+export class BoardViewResponseDto {
+  @ApiProperty({ example: 'view-uuid' })
+  id: string;
+
+  @ApiProperty({ example: 'My urgent tasks' })
+  title: string;
+
+  @ApiProperty({ example: 'board-uuid' })
+  boardId: string;
+
+  @ApiProperty({ example: 'user-uuid' })
+  ownerId: string;
+
+  @ApiProperty({ example: { assignee: 'me', priority: 'urgent' } })
+  filters: Record<string, unknown>;
+
+  @ApiProperty({ example: { sort: 'priority' } })
+  sort: Record<string, unknown>;
+
+  @ApiProperty()
+  isDefault: boolean;
+
+  @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
+  createdAt: string;
+
+  @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
+  updatedAt: string;
 }
 
 export class BoardCapabilitiesResponseDto {

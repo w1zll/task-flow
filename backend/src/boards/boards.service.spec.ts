@@ -19,11 +19,13 @@ import {
 } from './board-permissions.service';
 import { BoardRole } from './entities/board-role.enum';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
+import { BoardView } from './entities/board-view.entity';
 
 describe('BoardsService', () => {
   let service: BoardsService;
   let boardRepo: jest.Mocked<Partial<Repository<Board>>>;
   let memberRepo: jest.Mocked<Partial<Repository<BoardMember>>>;
+  let boardViewRepo: jest.Mocked<Partial<Repository<BoardView>>>;
   let userRepo: jest.Mocked<Partial<Repository<User>>>;
   let columnRepo: jest.Mocked<Partial<Repository<Column>>>;
   let taskRepo: jest.Mocked<Partial<Repository<Task>>>;
@@ -91,6 +93,19 @@ describe('BoardsService', () => {
       remove: jest.fn(),
       save: jest.fn(async (member: BoardMember) => member),
     };
+    boardViewRepo = {
+      create: jest.fn((data) => data as BoardView),
+      find: jest.fn(),
+      findOne: jest.fn(),
+      save: jest.fn(async (view: BoardView) => ({
+        ...view,
+        id: view.id ?? 'view-1',
+        createdAt: view.createdAt ?? new Date('2026-06-01T00:00:00.000Z'),
+        updatedAt: view.updatedAt ?? new Date('2026-06-01T00:00:00.000Z'),
+      })),
+      update: jest.fn(),
+      remove: jest.fn(),
+    };
     userRepo = {
       findOne: jest.fn(),
     };
@@ -139,6 +154,10 @@ describe('BoardsService', () => {
         {
           provide: getRepositoryToken(BoardMember),
           useValue: memberRepo,
+        },
+        {
+          provide: getRepositoryToken(BoardView),
+          useValue: boardViewRepo,
         },
         {
           provide: getRepositoryToken(User),
@@ -384,6 +403,52 @@ describe('BoardsService', () => {
     ).rejects.toThrow('The user must belong to the board workspace');
 
     expect(memberRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('creates a saved board view for the current user', async () => {
+    const result = await service.createView(
+      'board-1',
+      {
+        title: 'My urgent tasks',
+        filters: { assignee: 'me', priority: 'urgent' },
+        sort: { sort: 'priority' },
+        isDefault: true,
+      },
+      'user-1',
+    );
+
+    expect(boardPermissions.assertCanRead).toHaveBeenCalledWith(
+      'board-1',
+      'user-1',
+    );
+    expect(boardViewRepo.update).toHaveBeenCalledWith(
+      { boardId: 'board-1', ownerId: 'user-1' },
+      { isDefault: false },
+    );
+    expect(boardViewRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        boardId: 'board-1',
+        ownerId: 'user-1',
+        title: 'My urgent tasks',
+        filters: { assignee: 'me', priority: 'urgent' },
+        sort: { sort: 'priority' },
+        isDefault: true,
+      }),
+    );
+    expect(result.id).toBe('view-1');
+  });
+
+  it('does not delete another user saved board view', async () => {
+    boardViewRepo.findOne!.mockResolvedValue(null);
+
+    await expect(
+      service.deleteView('board-1', 'view-1', 'user-1'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(boardViewRepo.findOne).toHaveBeenCalledWith({
+      where: { id: 'view-1', boardId: 'board-1', ownerId: 'user-1' },
+    });
+    expect(boardViewRepo.remove).not.toHaveBeenCalled();
   });
 
   it('creates a welcome board with completed tasks relative to registration', async () => {
