@@ -627,6 +627,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/demo-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Open the showcase demo workspace */
+        post: operations["DemoController_demoLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demo/workspace/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset the current demo workspace */
+        post: operations["DemoController_resetWorkspace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demo/workspace-invites/{token}/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a temporary account for a demo invite */
+        post: operations["DemoController_registerFromDemoInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/columns": {
         parameters: {
             query?: never;
@@ -878,6 +929,12 @@ export interface components {
             /** @example Product Team */
             name: string;
             isPersonal: boolean;
+            isDemoTemplate: boolean;
+            isDemoInstance: boolean;
+            /** @example 2026-06-25T18:00:00.000Z */
+            demoExpiresAt?: string | null;
+            /** @example workspace-uuid */
+            demoSourceWorkspaceId?: string | null;
             /** @example user-uuid */
             ownerId: string;
             /** @enum {string} */
@@ -975,6 +1032,7 @@ export interface components {
             createdAt: string;
         };
         WorkspaceInvitePreviewDto: {
+            workspaceId: string;
             workspaceName: string;
             inviterName: string;
             /** Format: date-time */
@@ -982,6 +1040,7 @@ export interface components {
             /** @enum {string} */
             defaultRole: "owner" | "admin" | "member";
             emailRestricted: boolean;
+            isDemoInvite: boolean;
         };
         BoardCapabilitiesResponseDto: {
             canReadBoard: boolean;
@@ -1246,6 +1305,13 @@ export interface components {
         AddTeamMemberDto: {
             /** @example user-uuid */
             userId: string;
+        };
+        DemoWorkspaceSessionDto: {
+            user: components["schemas"]["UserDto"];
+            /** @example workspace-uuid */
+            workspaceId: string;
+            /** @example board-uuid */
+            boardId: string;
         };
         CreateColumnDto: {
             /** @example To Do */
@@ -2390,6 +2456,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskResponseDto"][];
+                };
+            };
+        };
+    };
+    DemoController_demoLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoWorkspaceSessionDto"];
+                };
+            };
+        };
+    };
+    DemoController_resetWorkspace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoWorkspaceSessionDto"];
+                };
+            };
+        };
+    };
+    DemoController_registerFromDemoInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoWorkspaceSessionDto"];
                 };
             };
         };

@@ -3,7 +3,7 @@ import { WsJwtGuard } from './ws-jwt.guard';
 import { ExecutionContext } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ACCESS_COOKIE } from '../auth.controller';
+import { ACCESS_COOKIE } from '../auth-cookies';
 import { WsException } from '@nestjs/websockets';
 
 describe('WsJwtGuard', () => {

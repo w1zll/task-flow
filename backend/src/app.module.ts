@@ -25,6 +25,7 @@ import { WorkspaceInviteAuditEvent } from './workspaces/entities/workspace-invit
 import { Team } from './teams/entities/team.entity';
 import { TeamMember } from './teams/entities/team-member.entity';
 import { TeamsModule } from './teams/teams.module';
+import { DemoModule } from './demo/demo.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { TeamsModule } from './teams/teams.module';
     UsersModule,
     WorkspacesModule,
     TeamsModule,
+    DemoModule,
     BoardsModule,
     ColumnsModule,
     TasksModule,

@@ -43,7 +43,14 @@ import {
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
-import { useMemo, useState } from 'react';
+import {
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 interface Props {
   workspaceId: string;
@@ -54,6 +61,110 @@ const initialForm = {
   name: '',
   description: '',
   color: '#669266',
+};
+
+const COLOR_PREVIEW_DEBOUNCE_MS = 120;
+
+interface SmoothColorFieldProps {
+  label: string;
+  value: string;
+  previewLabel: string;
+  onInputColor: (color: string) => void;
+  onCommitColor: (color: string) => void;
+}
+
+const SmoothColorField = ({
+  label,
+  value,
+  previewLabel,
+  onInputColor,
+  onCommitColor,
+}: SmoothColorFieldProps) => {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const debounceRef = useRef<number | null>(null);
+  const pendingColorRef = useRef(value);
+  const onInputColorRef = useRef(onInputColor);
+  const onCommitColorRef = useRef(onCommitColor);
+  const [previewColor, setPreviewColor] = useState(value);
+
+  useEffect(() => {
+    onInputColorRef.current = onInputColor;
+  }, [onInputColor]);
+
+  useEffect(() => {
+    onCommitColorRef.current = onCommitColor;
+  }, [onCommitColor]);
+
+  useEffect(() => {
+    pendingColorRef.current = value;
+    setPreviewColor(value);
+    if (inputRef.current && inputRef.current.value !== value) {
+      inputRef.current.value = value;
+    }
+  }, [value]);
+
+  useEffect(
+    () => () => {
+      if (debounceRef.current !== null) {
+        window.clearTimeout(debounceRef.current);
+      }
+    },
+    [],
+  );
+
+  const flushColorUpdate = useCallback(() => {
+    if (debounceRef.current !== null) {
+      window.clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+
+    const nextColor = pendingColorRef.current;
+    setPreviewColor(nextColor);
+    onCommitColorRef.current(nextColor);
+  }, []);
+
+  const schedulePreviewUpdate = useCallback((color: string) => {
+    pendingColorRef.current = color;
+    onInputColorRef.current(color);
+
+    if (debounceRef.current !== null) {
+      window.clearTimeout(debounceRef.current);
+    }
+
+    debounceRef.current = window.setTimeout(() => {
+      debounceRef.current = null;
+      setPreviewColor(pendingColorRef.current);
+    }, COLOR_PREVIEW_DEBOUNCE_MS);
+  }, []);
+
+  const handleColorInput = (event: FormEvent<HTMLInputElement>) => {
+    schedulePreviewUpdate(event.currentTarget.value);
+  };
+
+  return (
+    <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+      <TextField
+        label={label}
+        type="color"
+        defaultValue={value}
+        inputRef={inputRef}
+        sx={{ width: 100 }}
+        slotProps={{
+          inputLabel: { shrink: true },
+          htmlInput: {
+            'aria-label': label,
+            onChange: handleColorInput,
+            onBlur: flushColorUpdate,
+            onInput: handleColorInput,
+          },
+        }}
+      />
+      <Chip
+        label={previewLabel}
+        sx={{ bgcolor: previewColor, color: '#fff', fontWeight: 600 }}
+      />
+    </Stack>
+  );
 };
 
 const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
@@ -72,6 +183,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [form, setForm] = useState(initialForm);
+  const colorValueRef = useRef(initialForm.color);
 
   const managedTeam = teams.data?.find((team) => team.id === managedTeamId);
   const availableMembers = useMemo(() => {
@@ -116,12 +228,14 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
 
   const openCreate = () => {
     setEditingTeam(null);
+    colorValueRef.current = initialForm.color;
     setForm(initialForm);
     setEditorOpen(true);
   };
 
   const openEdit = (team: Team) => {
     setEditingTeam(team);
+    colorValueRef.current = team.color;
     setForm({
       name: team.name,
       description: team.description ?? '',
@@ -141,7 +255,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
     const data = {
       name,
       description: form.description.trim() || undefined,
-      color: form.color,
+      color: colorValueRef.current,
     };
     const options = {
       onSuccess: () => {
@@ -161,6 +275,19 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
       createTeam.mutate(data, options);
     }
   };
+  const handleColorInput = useCallback((color: string) => {
+    colorValueRef.current = color;
+  }, []);
+  const handleColorCommit = useCallback(
+    (color: string) => {
+      colorValueRef.current = color;
+      setForm((current) => ({
+        ...current,
+        color,
+      }));
+    },
+    [],
+  );
 
   return (
     <>
@@ -343,25 +470,13 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
             }
             slotProps={{ htmlInput: { maxLength: 1000 } }}
           />
-          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-            <TextField
-              label={t('color')}
-              type="color"
-              value={form.color}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  color: event.target.value,
-                }))
-              }
-              sx={{ width: 100 }}
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
-            <Chip
-              label={form.name.trim() || t('preview')}
-              sx={{ bgcolor: form.color, color: '#fff', fontWeight: 600 }}
-            />
-          </Stack>
+          <SmoothColorField
+            label={t('color')}
+            value={form.color}
+            previewLabel={form.name.trim() || t('preview')}
+            onInputColor={handleColorInput}
+            onCommitColor={handleColorCommit}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={closeEditor}>{t('cancel')}</Button>

@@ -106,6 +106,9 @@ export class CreatedWorkspaceInviteResponseDto extends WorkspaceInviteResponseDt
 
 export class WorkspaceInvitePreviewDto {
   @ApiProperty()
+  workspaceId: string;
+
+  @ApiProperty()
   workspaceName: string;
 
   @ApiProperty()
@@ -119,4 +122,7 @@ export class WorkspaceInvitePreviewDto {
 
   @ApiProperty()
   emailRestricted: boolean;
+
+  @ApiProperty()
+  isDemoInvite: boolean;
 }

@@ -69,6 +69,7 @@ async function bootstrap() {
     .addTag('columns')
     .addTag('tasks')
     .addTag('teams')
+    .addTag('demo')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

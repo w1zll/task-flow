@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createHash, randomBytes } from 'crypto';
 import { DataSource, Repository } from 'typeorm';
@@ -24,6 +25,8 @@ import { WorkspaceRole } from './entities/workspace-role.enum';
 import { Workspace } from './entities/workspace.entity';
 import { WorkspaceWithAccess, WorkspacesService } from './workspaces.service';
 
+const DEFAULT_DEMO_OWNER_EMAIL = 'demo-owner@taskflow.local';
+
 @Injectable()
 export class WorkspaceInvitesService {
   constructor(
@@ -35,6 +38,7 @@ export class WorkspaceInvitesService {
     private readonly userRepo: Repository<User>,
     private readonly dataSource: DataSource,
     private readonly workspacesService: WorkspacesService,
+    private readonly config: ConfigService,
   ) {}
 
   async create(
@@ -153,6 +157,7 @@ export class WorkspaceInvitesService {
     this.assertInviteIsUsable(invite);
 
     return {
+      workspaceId: invite.workspaceId,
       workspaceName: invite.workspace.name,
       inviterName: invite.createdBy.name,
       expiresAt: invite.expiresAt,
@@ -160,6 +165,7 @@ export class WorkspaceInvitesService {
       emailRestricted: Boolean(
         invite.allowedEmail || invite.allowedEmailDomain,
       ),
+      isDemoInvite: this.isDemoInvite(invite),
     };
   }
 
@@ -291,6 +297,21 @@ export class WorkspaceInvitesService {
       hasSpecificEmailRestriction: Boolean(invite.allowedEmail),
       createdAt: invite.createdAt,
     };
+  }
+
+  private isDemoInvite(invite: WorkspaceInvite): boolean {
+    return Boolean(
+      invite.workspace?.isDemoTemplate ||
+        invite.workspace?.isDemoInstance ||
+        invite.createdBy?.email === this.demoOwnerEmail,
+    );
+  }
+
+  private get demoOwnerEmail() {
+    return (
+      this.config.get<string>('DEMO_OWNER_EMAIL') ??
+      DEFAULT_DEMO_OWNER_EMAIL
+    );
   }
 
   private hashToken(token: string): string {

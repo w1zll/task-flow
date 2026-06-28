@@ -24,6 +24,7 @@ describe('WorkspaceInvitesService', () => {
   let userRepo: jest.Mocked<Partial<Repository<User>>>;
   let dataSource: jest.Mocked<Partial<DataSource>>;
   let workspacesService: jest.Mocked<Partial<WorkspacesService>>;
+  let config: { get: jest.Mock };
 
   const workspace = {
     id: 'workspace-1',
@@ -82,6 +83,9 @@ describe('WorkspaceInvitesService', () => {
         role: WorkspaceRole.OWNER,
       }),
     };
+    config = {
+      get: jest.fn().mockReturnValue(undefined),
+    };
 
     service = new WorkspaceInvitesService(
       inviteRepo as Repository<WorkspaceInvite>,
@@ -89,6 +93,7 @@ describe('WorkspaceInvitesService', () => {
       userRepo as Repository<User>,
       dataSource as DataSource,
       workspacesService as WorkspacesService,
+      config as any,
     );
   });
 
@@ -135,11 +140,13 @@ describe('WorkspaceInvitesService', () => {
     const result = await service.preview('raw-token');
 
     expect(result).toEqual({
+      workspaceId: workspace.id,
       workspaceName: 'Product Team',
       inviterName: 'Owner',
       expiresAt: expect.any(Date),
       defaultRole: WorkspaceRole.MEMBER,
       emailRestricted: true,
+      isDemoInvite: false,
     });
     expect(result).not.toHaveProperty('allowedEmail');
   });
