@@ -7,6 +7,9 @@
       "heading": "Соберите работу в единых ",
       "headingAccent": "пространствах",
       "subtitle": "TaskFlow объединяет рабочие пространства, доски, команды, права доступа и задачи, чтобы проект не распадался на разрозненные рабочие места.",
+      "ctaDemo": "Открыть демо",
+      "ctaDemoLoading": "Готовим демо...",
+      "demoError": "Не удалось открыть демо",
       "ctaStart": "Создать пространство",
       "ctaLogin": "Войти",
       "scroll": "Прокрутить вниз"
@@ -330,6 +333,20 @@
       "owner": "Владелец",
       "editor": "Редактор",
       "viewer": "Наблюдатель"
+    },
+    "demo": {
+      "chip": "Demo workspace",
+      "description": "Это демонстрационное пространство: данные можно менять и сбрасывать.",
+      "myTasks": "Мои задачи",
+      "overdue": "Просроченные",
+      "reset": "Сбросить",
+      "resetTitle": "Сбросить demo workspace?",
+      "resetDescription": "Все изменения в demo workspace будут удалены, а задачи, команды, доски и saved views вернутся к подготовленному состоянию.",
+      "resetConfirm": "Сбросить демо",
+      "resetting": "Сброс...",
+      "resetSuccess": "Demo workspace сброшен.",
+      "resetError": "Не удалось сбросить demo workspace.",
+      "cancel": "Отмена"
     }
   },
   "WorkspaceOverview": {
@@ -484,10 +501,14 @@
     "invitedBy": "Приглашение от {name}",
     "emailRestricted": "Есть ограничение по email",
     "signedInAs": "Вы вошли как {email}",
-    "accept": "Присоединиться",
-    "accepting": "Присоединение...",
-    "acceptError": "Не удалось присоединиться. Проверьте, что ваш email соответствует ограничениям приглашения.",
-    "login": "Войти",
+      "accept": "Присоединиться",
+      "accepting": "Присоединение...",
+      "alreadyMember": "Вы уже состоите в этом workspace.",
+      "openWorkspace": "Открыть workspace",
+      "instantRegister": "Мгновенно войти в демо",
+      "instantRegistering": "Готовим демо-вход...",
+      "acceptError": "Не удалось присоединиться. Проверьте, что ваш email соответствует ограничениям приглашения.",
+      "login": "Войти",
     "register": "Создать аккаунт",
     "role": {
       "owner": "Владелец",

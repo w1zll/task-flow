@@ -7,6 +7,9 @@
       "heading": "Keep work together in shared ",
       "headingAccent": "spaces",
       "subtitle": "TaskFlow brings workspaces, boards, teams, access roles, and tasks into one product, so projects do not live in disconnected work areas.",
+      "ctaDemo": "Open demo",
+      "ctaDemoLoading": "Preparing demo...",
+      "demoError": "Failed to open demo",
       "ctaStart": "Create workspace",
       "ctaLogin": "Sign in",
       "scroll": "Scroll down"
@@ -330,6 +333,20 @@
       "owner": "Owner",
       "editor": "Editor",
       "viewer": "Viewer"
+    },
+    "demo": {
+      "chip": "Demo workspace",
+      "description": "This is a showcase workspace: data can be changed and reset.",
+      "myTasks": "My tasks",
+      "overdue": "Overdue",
+      "reset": "Reset",
+      "resetTitle": "Reset demo workspace?",
+      "resetDescription": "All changes in the demo workspace will be removed, and tasks, teams, boards, and saved views will return to the prepared state.",
+      "resetConfirm": "Reset demo",
+      "resetting": "Resetting...",
+      "resetSuccess": "Demo workspace reset.",
+      "resetError": "Failed to reset demo workspace.",
+      "cancel": "Cancel"
     }
   },
   "WorkspaceOverview": {
@@ -484,10 +501,14 @@
     "invitedBy": "Invited by {name}",
     "emailRestricted": "Email restricted",
     "signedInAs": "Signed in as {email}",
-    "accept": "Join workspace",
-    "accepting": "Joining...",
-    "acceptError": "Could not join the workspace. Check that your email matches the invitation restrictions.",
-    "login": "Sign in",
+      "accept": "Join workspace",
+      "accepting": "Joining...",
+      "alreadyMember": "You are already a member of this workspace.",
+      "openWorkspace": "Open workspace",
+      "instantRegister": "Instant demo sign-up",
+      "instantRegistering": "Preparing demo access...",
+      "acceptError": "Could not join the workspace. Check that your email matches the invitation restrictions.",
+      "login": "Sign in",
     "register": "Create account",
     "role": {
       "owner": "Owner",

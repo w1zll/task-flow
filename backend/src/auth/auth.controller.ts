@@ -43,16 +43,11 @@ import { detectRequestLocale } from '@/common/locale/request-locale';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { avatarUploadOptions } from '@/storage/avatar-upload.constants';
 import type { AvatarUploadFile } from '@/storage/storage.types';
-
-const REFRESH_COOKIE = 'refresh_token';
-export const ACCESS_COOKIE = 'access_token';
-
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: true,
-  sameSite: 'none' as const,
-  path: '/',
-};
+import {
+  clearTokenCookies,
+  REFRESH_COOKIE,
+  setTokenCookies,
+} from './auth-cookies';
 
 @ApiTags('auth')
 @Controller('api/auth')
@@ -76,7 +71,7 @@ export class AuthController {
       detectRequestLocale(req),
       avatarFile,
     );
-    this.setTokenCookies(res, result.accessToken, result.refreshToken);
+    setTokenCookies(res, result.accessToken, result.refreshToken);
     return { user: result.user };
   }
 
@@ -89,7 +84,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.login(dto);
-    this.setTokenCookies(res, result.accessToken, result.refreshToken);
+    setTokenCookies(res, result.accessToken, result.refreshToken);
     return { user: result.user };
   }
 
@@ -103,7 +98,7 @@ export class AuthController {
   ) {
     const refreshToken = req.cookies?.[REFRESH_COOKIE];
     const result = await this.authService.refresh(refreshToken);
-    this.setTokenCookies(res, result.accessToken, result.refreshToken);
+    setTokenCookies(res, result.accessToken, result.refreshToken);
     return { user: result.user };
   }
 
@@ -116,8 +111,7 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.[REFRESH_COOKIE];
     await this.authService.logout(refreshToken);
-    res.clearCookie(ACCESS_COOKIE, COOKIE_OPTIONS);
-    res.clearCookie(REFRESH_COOKIE, COOKIE_OPTIONS);
+    clearTokenCookies(res);
     return { message: 'Выход выполнен' };
   }
 
@@ -190,21 +184,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Завершить активную сессию' })
   async revokeSession(@Param('id') id: string, @CurrentUser() user: User) {
     await this.authService.revokeSession(user.id, id);
-  }
-
-  private setTokenCookies(
-    res: Response,
-    accessToken: string,
-    refreshToken: string,
-  ) {
-    res.cookie(ACCESS_COOKIE, accessToken, {
-      ...COOKIE_OPTIONS,
-      maxAge: 15 * 60 * 1000,
-    }); // 15 min
-    res.cookie(REFRESH_COOKIE, refreshToken, {
-      ...COOKIE_OPTIONS,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 d
-    });
   }
 
   private toUserDto(user: User): UserDto {

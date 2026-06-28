@@ -3,15 +3,15 @@ import 'server-only';
 import { Board } from '@/shared/api/api';
 import { getBoardContentTag } from '@/shared/cache/board-cache-tags';
 import { unstable_cache } from 'next/cache';
-import { cookies } from 'next/headers';
+import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 
 const apiBaseUrl = process.env.API_URL || 'http://localhost:3001';
 const boardContentCacheVersion = 'v2';
 
 const getCookieHeader = async () => {
-  const cookieStore = await cookies();
-  return cookieStore.toString();
+  const headersList = await headers();
+  return headersList.get('cookie') ?? '';
 };
 
 const fetchBoardApi = async <T>(

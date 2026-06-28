@@ -8,10 +8,18 @@ import {
 } from '@/shared/lib/pending-workspace-invite';
 import {
   useAcceptWorkspaceInvite,
+  useRegisterFromDemoInvite,
   useWorkspaceInvitePreview,
+  useWorkspaces,
 } from '@/shared/queries/workspaces.queries';
 import { useAuthStore } from '@/shared/store/root.store';
-import { Business, Login, PersonAdd } from '@mui/icons-material';
+import {
+  AutoAwesome,
+  Business,
+  Login,
+  OpenInNew,
+  PersonAdd,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -36,11 +44,28 @@ const WorkspaceInviteLandingPage = ({ token }: Props) => {
   const t = useTranslations('WorkspaceInvite');
   const router = useRouter();
   const { user, isLoading: isAuthLoading } = useAuth();
+  const setUser = useAuthStore((state) => state.setUser);
   const setActiveWorkspace = useAuthStore(
     (state) => state.setActiveWorkspace,
   );
   const preview = useWorkspaceInvitePreview(token);
+  const workspaces = useWorkspaces(Boolean(user));
   const acceptInvite = useAcceptWorkspaceInvite();
+  const registerFromDemoInvite = useRegisterFromDemoInvite();
+  const isCheckingMembership =
+    Boolean(user) && (workspaces.isLoading || workspaces.isFetching);
+  const isAlreadyMember = Boolean(
+    user &&
+      preview.data?.workspaceId &&
+      workspaces.data?.some(
+        (workspace) => workspace.id === preview.data?.workspaceId,
+      ),
+  );
+  const canUseInstantDemoRegistration = Boolean(
+    !user &&
+      preview.data?.isDemoInvite &&
+      !preview.data.emailRestricted,
+  );
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -52,11 +77,31 @@ const WorkspaceInviteLandingPage = ({ token }: Props) => {
   }, [isAuthLoading, token, user]);
 
   const handleAccept = () => {
+    if (preview.data?.workspaceId && isAlreadyMember) {
+      setActiveWorkspace(preview.data.workspaceId);
+      clearPendingWorkspaceInvite();
+      router.push(`/workspaces/${preview.data.workspaceId}`);
+      router.refresh();
+      return;
+    }
+
     acceptInvite.mutate(token, {
       onSuccess: (workspace) => {
         setActiveWorkspace(workspace.id);
         clearPendingWorkspaceInvite();
         router.push(`/workspaces/${workspace.id}`);
+        router.refresh();
+      },
+    });
+  };
+
+  const handleDemoRegistration = () => {
+    registerFromDemoInvite.mutate(token, {
+      onSuccess: (session) => {
+        setUser(session.user);
+        setActiveWorkspace(session.workspaceId);
+        clearPendingWorkspaceInvite();
+        router.push(`/workspaces/${session.workspaceId}`);
         router.refresh();
       },
     });
@@ -92,7 +137,7 @@ const WorkspaceInviteLandingPage = ({ token }: Props) => {
               <Business fontSize="large" />
             </Box>
 
-            {preview.isLoading || isAuthLoading ? (
+            {preview.isLoading || isAuthLoading || isCheckingMembership ? (
               <>
                 <CircularProgress />
                 <Typography color="text.secondary">
@@ -132,7 +177,7 @@ const WorkspaceInviteLandingPage = ({ token }: Props) => {
                   )}
                 </Stack>
 
-                {acceptInvite.isError && (
+                {(acceptInvite.isError || registerFromDemoInvite.isError) && (
                   <Alert severity="error" sx={{ width: '100%' }}>
                     {t('acceptError')}
                   </Alert>
@@ -143,41 +188,70 @@ const WorkspaceInviteLandingPage = ({ token }: Props) => {
                     <Typography variant="body2" color="text.secondary">
                       {t('signedInAs', { email: user.email })}
                     </Typography>
+                    {isAlreadyMember && (
+                      <Alert severity="info" sx={{ width: '100%' }}>
+                        {t('alreadyMember')}
+                      </Alert>
+                    )}
                     <Button
                       variant="contained"
                       size="large"
                       onClick={handleAccept}
                       disabled={acceptInvite.isPending}
+                      startIcon={isAlreadyMember ? <OpenInNew /> : undefined}
                     >
-                      {acceptInvite.isPending
-                        ? t('accepting')
-                        : t('accept')}
+                      {isAlreadyMember
+                        ? t('openWorkspace')
+                        : acceptInvite.isPending
+                          ? t('accepting')
+                          : t('accept')}
                     </Button>
                   </Stack>
                 ) : (
-                  <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
-                    spacing={1.5}
-                    sx={{ width: '100%' }}
-                  >
-                    <Button
-                      component={Link}
-                      href={getInviteAuthHref('/auth/login', token)}
-                      variant="outlined"
-                      startIcon={<Login />}
-                      fullWidth
+                  <Stack spacing={1.5} sx={{ width: '100%' }}>
+                    {canUseInstantDemoRegistration && (
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        size="large"
+                        startIcon={<AutoAwesome />}
+                        onClick={handleDemoRegistration}
+                        disabled={registerFromDemoInvite.isPending}
+                        fullWidth
+                      >
+                        {registerFromDemoInvite.isPending
+                          ? t('instantRegistering')
+                          : t('instantRegister')}
+                      </Button>
+                    )}
+                    <Stack
+                      direction={{ xs: 'column', sm: 'row' }}
+                      spacing={1.5}
+                      sx={{ width: '100%' }}
                     >
-                      {t('login')}
-                    </Button>
-                    <Button
-                      component={Link}
-                      href={getInviteAuthHref('/auth/register', token)}
-                      variant="contained"
-                      startIcon={<PersonAdd />}
-                      fullWidth
-                    >
-                      {t('register')}
-                    </Button>
+                      <Button
+                        component={Link}
+                        href={getInviteAuthHref('/auth/login', token)}
+                        variant="outlined"
+                        startIcon={<Login />}
+                        fullWidth
+                      >
+                        {t('login')}
+                      </Button>
+                      <Button
+                        component={Link}
+                        href={getInviteAuthHref('/auth/register', token)}
+                        variant={
+                          canUseInstantDemoRegistration
+                            ? 'outlined'
+                            : 'contained'
+                        }
+                        startIcon={<PersonAdd />}
+                        fullWidth
+                      >
+                        {t('register')}
+                      </Button>
+                    </Stack>
                   </Stack>
                 )}
               </>

@@ -25,6 +25,18 @@ export class Workspace {
   @Column({ default: false })
   isPersonal: boolean;
 
+  @Column({ default: false })
+  isDemoTemplate: boolean;
+
+  @Column({ default: false })
+  isDemoInstance: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  demoExpiresAt: Date | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  demoSourceWorkspaceId: string | null;
+
   @Column({ type: 'uuid' })
   ownerId: string;
 

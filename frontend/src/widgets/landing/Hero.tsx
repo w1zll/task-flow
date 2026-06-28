@@ -1,4 +1,4 @@
-import { KeyboardArrowDown } from '@mui/icons-material';
+import { KeyboardArrowDown, PlayArrow } from '@mui/icons-material';
 import {
   alpha,
   Box,
@@ -8,8 +8,13 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { authApi } from '@/shared/api/api';
+import { useAuthStore } from '@/shared/store/root.store';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useSnackbar } from 'notistack';
 import { RefObject } from 'react';
 
 interface Props {
@@ -32,7 +37,26 @@ const Hero = ({
   featuresRef,
 }: Props) => {
   const t = useTranslations('HomePage.hero');
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const setUser = useAuthStore((state) => state.setUser);
+  const { enqueueSnackbar } = useSnackbar();
   const heading = t('heading');
+  const demoLogin = useMutation({
+    mutationFn: () => authApi.demoLogin().then((response) => response.data),
+    onSuccess: ({ user, workspaceId, boardId }) => {
+      queryClient.clear();
+      setUser(user);
+      router.push(`/workspaces/${workspaceId}/boards/${boardId}`);
+      router.refresh();
+    },
+    onError: (error: any) => {
+      enqueueSnackbar(
+        error.response?.data?.message ?? t('demoError'),
+        { variant: 'error' },
+      );
+    },
+  });
 
   return (
     <Box
@@ -119,17 +143,39 @@ const Hero = ({
         </Typography>
         <Stack
           ref={buttonsRef}
-          direction="row"
+          direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
-          sx={{ opacity: 0, justifyContent: 'center' }}
+          sx={{
+            alignItems: 'center',
+            opacity: 0,
+            justifyContent: 'center',
+          }}
         >
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<PlayArrow />}
+            onClick={() => demoLogin.mutate()}
+            disabled={demoLogin.isPending}
+            sx={{ px: 4, py: 1.5, minWidth: { xs: 220, sm: 0 } }}
+          >
+            {demoLogin.isPending ? t('ctaDemoLoading') : t('ctaDemo')}
+          </Button>
           <Link href="/auth/register">
-            <Button variant="contained" size="large" sx={{ px: 4, py: 1.5 }}>
+            <Button
+              variant="outlined"
+              size="large"
+              sx={{ px: 4, py: 1.5, minWidth: { xs: 220, sm: 0 } }}
+            >
               {t('ctaStart')}
             </Button>
           </Link>
           <Link href="/auth/login">
-            <Button variant="outlined" size="large" sx={{ px: 4, py: 1.5 }}>
+            <Button
+              variant="text"
+              size="large"
+              sx={{ px: 4, py: 1.5, minWidth: { xs: 220, sm: 0 } }}
+            >
               {t('ctaLogin')}
             </Button>
           </Link>
