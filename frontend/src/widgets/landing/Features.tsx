@@ -67,6 +67,7 @@ const Features = ({
                 height: '100%',
                 p: 0.5,
                 opacity: 0,
+                borderRadius: '8px',
               }}
             >
               <CardContent>

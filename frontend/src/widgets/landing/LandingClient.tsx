@@ -1,15 +1,14 @@
 'use client';
 
 import {
+  AccountTree,
   Analytics,
-  Cached,
   DashboardCustomize,
-  DragIndicator,
-  FactCheck,
+  FilterAlt,
+  Groups,
   PendingActions,
-  Palette,
   Security,
-  Speed,
+  SyncAlt,
   ViewKanban,
 } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
@@ -28,28 +27,10 @@ const LandingClient = () => {
 
   const FEATURES = [
     {
-      id: 'drag-drop',
-      icon: <DragIndicator />,
-      title: t('features.dragDrop.title'),
-      desc: t('features.dragDrop.desc'),
-    },
-    {
-      id: 'fast',
-      icon: <Speed />,
-      title: t('features.fast.title'),
-      desc: t('features.fast.desc'),
-    },
-    {
-      id: 'auth',
-      icon: <Security />,
-      title: t('features.auth.title'),
-      desc: t('features.auth.desc'),
-    },
-    {
-      id: 'themes',
-      icon: <Palette />,
-      title: t('features.themes.title'),
-      desc: t('features.themes.desc'),
+      id: 'workspaces',
+      icon: <AccountTree />,
+      title: t('features.workspaces.title'),
+      desc: t('features.workspaces.desc'),
     },
     {
       id: 'boards',
@@ -58,16 +39,34 @@ const LandingClient = () => {
       desc: t('features.boards.desc'),
     },
     {
+      id: 'teams',
+      icon: <Groups />,
+      title: t('features.teams.title'),
+      desc: t('features.teams.desc'),
+    },
+    {
+      id: 'permissions',
+      icon: <Security />,
+      title: t('features.permissions.title'),
+      desc: t('features.permissions.desc'),
+    },
+    {
       id: 'templates',
       icon: <DashboardCustomize />,
       title: t('features.templates.title'),
       desc: t('features.templates.desc'),
     },
     {
-      id: 'welcome-board',
-      icon: <FactCheck />,
-      title: t('features.welcomeBoard.title'),
-      desc: t('features.welcomeBoard.desc'),
+      id: 'views',
+      icon: <FilterAlt />,
+      title: t('features.views.title'),
+      desc: t('features.views.desc'),
+    },
+    {
+      id: 'realtime',
+      icon: <SyncAlt />,
+      title: t('features.realtime.title'),
+      desc: t('features.realtime.desc'),
     },
     {
       id: 'analytics',
@@ -82,10 +81,10 @@ const LandingClient = () => {
       desc: t('features.pendingChanges.desc'),
     },
     {
-      id: 'rendering-cache',
-      icon: <Cached />,
-      title: t('features.ssr.title'),
-      desc: t('features.ssr.desc'),
+      id: 'auth',
+      icon: <Security />,
+      title: t('features.auth.title'),
+      desc: t('features.auth.desc'),
     },
   ];
 
