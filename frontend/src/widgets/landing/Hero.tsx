@@ -63,7 +63,7 @@ const Hero = ({
           sx={{
             fontSize: { xs: '2.2rem', md: '3.5rem' },
             fontWeight: 800,
-            letterSpacing: '-0.03em',
+            letterSpacing: 0,
             lineHeight: 1,
             mb: 2.5,
             color: 'text.primary',
