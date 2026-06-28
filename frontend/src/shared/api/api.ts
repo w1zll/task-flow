@@ -4,6 +4,11 @@ import { ApiBody, ApiResponse } from './types';
 export type AuthResponse = ApiResponse<'/api/auth/register', 'post'>;
 export type AuthUser = ApiResponse<'/api/auth/me', 'get'>;
 export type WsTokenResponse = { token: string };
+export interface DemoWorkspaceSession {
+  user: AuthUser;
+  workspaceId: string;
+  boardId: string;
+}
 export type Board = ApiResponse<'/api/boards/{id}', 'get'>;
 export type BoardRole = Board['currentUserRole'];
 export type BoardMember =
@@ -24,7 +29,12 @@ export type BoardViewPayload = Pick<
   'title' | 'filters' | 'sort'
 > &
   Partial<Pick<BoardView, 'isDefault'>>;
-export type Workspace = ApiResponse<'/api/workspaces', 'get'>[number];
+export type Workspace = ApiResponse<'/api/workspaces', 'get'>[number] & {
+  isDemoTemplate?: boolean;
+  isDemoInstance?: boolean;
+  demoExpiresAt?: string | null;
+  demoSourceWorkspaceId?: string | null;
+};
 export type WorkspaceMember =
   ApiResponse<'/api/workspaces/{id}/members', 'get'>[number];
 export type WorkspaceInvite =
@@ -115,6 +125,9 @@ export const authApi = {
     apiClient.delete<ApiResponse<'/api/auth/avatar', 'delete'>>(
       '/api/auth/avatar',
     ),
+
+  demoLogin: () =>
+    apiClient.post<DemoWorkspaceSession>('/api/auth/demo-login'),
 };
 
 export const boardsApi = {
@@ -180,10 +193,10 @@ export const boardsApi = {
 
 export const workspacesApi = {
   getAll: () =>
-    apiClient.get<ApiResponse<'/api/workspaces', 'get'>>('/api/workspaces'),
+    apiClient.get<Workspace[]>('/api/workspaces'),
 
   create: (data: ApiBody<'/api/workspaces', 'post'>) =>
-    apiClient.post<ApiResponse<'/api/workspaces', 'post'>>(
+    apiClient.post<Workspace>(
       '/api/workspaces',
       data,
     ),
@@ -191,7 +204,7 @@ export const workspacesApi = {
   remove: (id: string) => apiClient.delete<void>(`/api/workspaces/${id}`),
 
   switchActive: (id: string) =>
-    apiClient.put<ApiResponse<'/api/workspaces/{id}/active', 'put'>>(
+    apiClient.put<Workspace>(
       `/api/workspaces/${id}/active`,
     ),
 
@@ -231,6 +244,16 @@ export const workspacesApi = {
   revokeInvite: (workspaceId: string, inviteId: string) =>
     apiClient.delete(
       `/api/workspaces/${workspaceId}/invites/${inviteId}`,
+    ),
+};
+
+export const demoApi = {
+  resetWorkspace: () =>
+    apiClient.post<DemoWorkspaceSession>('/api/demo/workspace/reset'),
+
+  registerFromInvite: (token: string) =>
+    apiClient.post<DemoWorkspaceSession>(
+      `/api/demo/workspace-invites/${encodeURIComponent(token)}/register`,
     ),
 };
 

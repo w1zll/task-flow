@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
-import { ACCESS_COOKIE } from '../auth.controller';
+import { ACCESS_COOKIE } from '../auth-cookies';
 
 @Injectable()
 export class WsJwtGuard implements CanActivate {

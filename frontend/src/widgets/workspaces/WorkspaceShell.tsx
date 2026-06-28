@@ -8,6 +8,7 @@ import {
 } from '@/shared/queries/workspaces.queries';
 import { useAuthStore } from '@/shared/store/root.store';
 import BoardCreateDialog from '@/widgets/boards/BoardCreateDialog';
+import DemoWorkspaceBanner from './DemoWorkspaceBanner';
 import {
   Add,
   AssignmentTurnedInOutlined,
@@ -123,6 +124,14 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
             new Date(a.updatedAt).getTime(),
         ),
     [boards, workspaceId],
+  );
+  const demoStartBoardId =
+    workspaceBoards.find((board) =>
+      ['Sprint Board', 'Спринт'].includes(board.title),
+    )?.id ??
+    workspaceBoards[0]?.id;
+  const isDemoWorkspace = Boolean(
+    workspace?.isDemoTemplate || workspace?.isDemoInstance,
   );
   const activeNavKey = getActiveNavKey(pathname, workspaceId);
   const activeBoardId = pathname.match(
@@ -444,6 +453,12 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
               </Typography>
             </Box>
           </Box>
+          {workspace && isDemoWorkspace && (
+            <DemoWorkspaceBanner
+              workspace={workspace}
+              startBoardId={demoStartBoardId}
+            />
+          )}
           {children}
         </Box>
       </Box>

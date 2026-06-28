@@ -15,14 +15,26 @@ import { Locale, NextIntlClientProvider } from 'next-intl';
 import { SnackbarProvider } from 'notistack';
 import { useEffect, useMemo } from 'react';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
+const createQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        refetchOnWindowFocus: false,
+      },
     },
-  },
-});
+  });
+
+let browserQueryClient: QueryClient | undefined;
+
+const getQueryClient = () => {
+  if (typeof window === 'undefined') {
+    return createQueryClient();
+  }
+
+  browserQueryClient ??= createQueryClient();
+  return browserQueryClient;
+};
 
 const ThemedApp = ({
   children,
@@ -70,6 +82,8 @@ const Providers = ({
   locale: Locale;
   initialThemeMode: ThemeMode;
 }) => {
+  const queryClient = getQueryClient();
+
   return (
     <AppRouterCacheProvider>
       <QueryClientProvider client={queryClient}>

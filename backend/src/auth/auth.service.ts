@@ -203,6 +203,10 @@ export class AuthService {
     );
   }
 
+  issueTokenPair(user: User) {
+    return this.generateTokenPair(user);
+  }
+
   private async generateTokenPair(user: User) {
     const payload = { sub: user.id, email: user.email };
 

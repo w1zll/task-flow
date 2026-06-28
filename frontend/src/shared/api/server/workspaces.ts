@@ -6,17 +6,22 @@ import {
   WorkspaceMember,
   Team,
 } from '@/shared/api/api';
-import { cookies } from 'next/headers';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 const apiBaseUrl = process.env.API_URL || 'http://localhost:3001';
 
+const getCookieHeader = async () => {
+  const headersList = await headers();
+  return headersList.get('cookie') ?? '';
+};
+
 export const getWorkspacesForCurrentUser = async (): Promise<Workspace[]> => {
-  const cookieStore = await cookies();
+  const cookieHeader = await getCookieHeader();
   const response = await fetch(`${apiBaseUrl}/api/workspaces`, {
     cache: 'no-store',
     headers: {
-      cookie: cookieStore.toString(),
+      cookie: cookieHeader,
     },
   });
 
@@ -32,11 +37,11 @@ export const getWorkspacesForCurrentUser = async (): Promise<Workspace[]> => {
 };
 
 const fetchWorkspaceApi = async <T>(path: string): Promise<T> => {
-  const cookieStore = await cookies();
+  const cookieHeader = await getCookieHeader();
   const response = await fetch(`${apiBaseUrl}${path}`, {
     cache: 'no-store',
     headers: {
-      cookie: cookieStore.toString(),
+      cookie: cookieHeader,
     },
   });
 

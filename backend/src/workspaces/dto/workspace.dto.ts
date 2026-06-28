@@ -21,6 +21,26 @@ export class WorkspaceResponseDto {
   @ApiProperty()
   isPersonal: boolean;
 
+  @ApiProperty()
+  isDemoTemplate: boolean;
+
+  @ApiProperty()
+  isDemoInstance: boolean;
+
+  @ApiProperty({
+    example: '2026-06-25T18:00:00.000Z',
+    nullable: true,
+    required: false,
+  })
+  demoExpiresAt: string | null;
+
+  @ApiProperty({
+    example: 'workspace-uuid',
+    nullable: true,
+    required: false,
+  })
+  demoSourceWorkspaceId: string | null;
+
   @ApiProperty({ example: 'user-uuid' })
   ownerId: string;
 

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { workspaceInvitesApi, workspacesApi } from '../api/api';
+import { demoApi, workspaceInvitesApi, workspacesApi } from '../api/api';
 import { ApiBody } from '../api/types';
 import { queryKeys } from './board-query-keys';
 
@@ -98,6 +98,7 @@ export const useRemoveWorkspaceMember = (workspaceId: string) => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.workspaceMembers(workspaceId),
       });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
       void queryClient.invalidateQueries({ queryKey: queryKeys.boards });
     },
   });
@@ -164,6 +165,18 @@ export const useAcceptWorkspaceInvite = () => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
       void queryClient.invalidateQueries({ queryKey: queryKeys.boards });
+    },
+  });
+};
+
+export const useRegisterFromDemoInvite = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (token: string) =>
+      demoApi.registerFromInvite(token).then((response) => response.data),
+    onSuccess: () => {
+      queryClient.clear();
     },
   });
 };
