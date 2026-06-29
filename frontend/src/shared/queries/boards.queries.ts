@@ -92,6 +92,48 @@ export const moveTaskToColumnEndInBoard = (
   };
 };
 
+export const moveTaskToColumnInBoard = (
+  board: Board | undefined,
+  taskId: string,
+  columnId: string,
+): Board | undefined => {
+  if (!board) return board;
+
+  const taskToMove = board.columns
+    ?.flatMap((column) => column.tasks ?? [])
+    .find((task) => task.id === taskId);
+
+  if (!taskToMove || taskToMove.columnId === columnId) return board;
+
+  return {
+    ...board,
+    columns: board.columns?.map((column) => {
+      const withoutMovedTask = (column.tasks ?? []).filter(
+        (task) => task.id !== taskId,
+      );
+
+      if (column.id !== columnId) {
+        return {
+          ...column,
+          tasks: withoutMovedTask.map((task, order) => ({ ...task, order })),
+        };
+      }
+
+      return {
+        ...column,
+        tasks: [
+          ...withoutMovedTask,
+          {
+            ...taskToMove,
+            columnId,
+            order: withoutMovedTask.length,
+          },
+        ],
+      };
+    }),
+  };
+};
+
 export const useBoards = () => {
   return useQuery({
     queryKey: queryKeys.boards,

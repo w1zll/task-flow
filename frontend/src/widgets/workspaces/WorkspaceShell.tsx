@@ -121,6 +121,7 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
           component="main"
           sx={{
             flex: 1,
+            width: '100%',
             minWidth: 0,
             minHeight: 0,
             display: 'flex',

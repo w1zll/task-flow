@@ -188,6 +188,19 @@
     "shareSend": "Send",
     "add": "Add",
     "cancel": "Cancel",
+    "closePanel": "Close panel",
+    "mobile": {
+      "viewModeLabel": "Board view mode",
+      "viewSingle": "By column",
+      "viewBoard": "Full board",
+      "columnsTabs": "Board columns",
+      "columnPosition": "Column {current} of {total}",
+      "taskCount": "{count, plural, one {# task} other {# tasks}}",
+      "emptyColumn": "There are no tasks in this column yet.",
+      "noColumns": "This board has no columns yet.",
+      "addTask": "New task",
+      "moveDisabledByFilters": "Moving tasks is unavailable while filters or sorting are active."
+    },
     "filters": {
       "title": "Filters",
       "open": "Filters",
@@ -536,6 +549,7 @@
     "completionToggle": "Toggle task completion",
     "markComplete": "Mark complete",
     "markIncomplete": "Mark incomplete",
+    "moveTask": "Move task",
     "teamTooltip": "Team: {team}",
     "priority": {
       "low": "Low",

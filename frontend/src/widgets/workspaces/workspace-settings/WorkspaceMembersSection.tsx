@@ -39,13 +39,17 @@ const WorkspaceMembersSection = ({
   return (
     <Paper
       variant="outlined"
-      sx={{ borderRadius: '6px', overflow: 'hidden' }}
+      sx={{ minWidth: 0, borderRadius: '6px', overflow: 'hidden' }}
     >
-      <Box sx={{ px: 3, py: 2.5 }}>
+      <Box sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.5 } }}>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           {t('membersTitle')}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ overflowWrap: 'anywhere' }}
+        >
           {t('membersDescription')}
         </Typography>
       </Box>

@@ -76,10 +76,11 @@ const BoardFiltersToolbar = ({
   const isActive = areBoardFiltersActive(filters);
   const members = useMemo(() => uniqueMembers(boardMembers), [boardMembers]);
   const sortedTeams = useMemo(() => uniqueTeams(teams), [teams]);
-  const selectedSavedViewId =
-    savedViews.some((view) => view.id === selectedViewId)
-      ? (selectedViewId ?? '')
-      : '';
+  const selectedSavedViewId = savedViews.some(
+    (view) => view.id === selectedViewId,
+  )
+    ? (selectedViewId ?? '')
+    : '';
   const getStatusLabel = (status: BoardTaskStatusFilter) =>
     status === 'all' ? t('allStatuses') : t(`status.${status}`);
 
@@ -169,8 +170,8 @@ const BoardFiltersToolbar = ({
               ? t('chip.myTeams')
               : t('chip.team', {
                   value:
-                    sortedTeams.find((team) => team.id === filters.team)?.name ??
-                    t('unknownTeam'),
+                    sortedTeams.find((team) => team.id === filters.team)
+                      ?.name ?? t('unknownTeam'),
                 }),
           onDelete: () => patchFilters({ team: 'all' }),
         }
@@ -245,7 +246,7 @@ const BoardFiltersToolbar = ({
         position: 'relative',
       }}
     >
-      <Stack spacing={1.25}>
+      <Stack spacing={{ md: 1.25 }}>
         <BoardFiltersHeader
           isActive={isActive}
           filteredCount={filteredCount}

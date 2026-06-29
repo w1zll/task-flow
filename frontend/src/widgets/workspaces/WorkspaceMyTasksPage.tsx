@@ -65,20 +65,46 @@ const WorkspaceMyTasksPage = ({ workspaceId }: Props) => {
     boardsLoading || boardDetailQueries.some((query) => query.isLoading);
 
   return (
-    <Box sx={{ maxWidth: 960, mx: 'auto', px: { xs: 2, sm: 3 }, py: 4 }}>
+    <Box
+      sx={{
+        width: '100%',
+        maxWidth: 960,
+        minWidth: 0,
+        boxSizing: 'border-box',
+        mx: 'auto',
+        px: { xs: 2, sm: 3 },
+        py: { xs: 2.5, sm: 4 },
+      }}
+    >
       <Stack spacing={0.75} sx={{ mb: 3 }}>
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ alignItems: 'flex-start', minWidth: 0 }}
+        >
           <AssignmentTurnedInOutlined color="primary" />
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontSize: { xs: '1.5rem', sm: '2.125rem' },
+              fontWeight: 800,
+              lineHeight: 1.2,
+              overflowWrap: 'anywhere',
+            }}
+          >
             {t('title')}
           </Typography>
         </Stack>
-        <Typography variant="body2" color="text.secondary">
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ overflowWrap: 'anywhere' }}
+        >
           {t('description')}
         </Typography>
       </Stack>
 
-      <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+      <Paper variant="outlined" sx={{ minWidth: 0, overflow: 'hidden' }}>
         {isLoading ? (
           <Stack spacing={1.25} sx={{ p: 2 }}>
             {Array.from({ length: 6 }).map((_, index) => (
@@ -104,18 +130,24 @@ const WorkspaceMyTasksPage = ({ workspaceId }: Props) => {
                       direction={{ xs: 'column', sm: 'row' }}
                       spacing={1.5}
                       sx={{
+                        minWidth: 0,
                         justifyContent: 'space-between',
                         alignItems: { xs: 'flex-start', sm: 'center' },
                       }}
                     >
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography sx={{ fontWeight: 700 }} noWrap>
+                      <Box sx={{ minWidth: 0, width: '100%' }}>
+                        <Typography
+                          sx={{
+                            fontWeight: 700,
+                            overflowWrap: 'anywhere',
+                          }}
+                        >
                           {task.title}
                         </Typography>
                         <Typography
                           variant="body2"
                           color="text.secondary"
-                          noWrap
+                          sx={{ overflowWrap: 'anywhere' }}
                         >
                           {task.boardTitle} · {task.columnTitle}
                         </Typography>
@@ -123,7 +155,14 @@ const WorkspaceMyTasksPage = ({ workspaceId }: Props) => {
                       <Stack
                         direction="row"
                         spacing={1}
-                        sx={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}
+                        sx={{
+                          maxWidth: '100%',
+                          flexWrap: 'wrap',
+                          justifyContent: {
+                            xs: 'flex-start',
+                            sm: 'flex-end',
+                          },
+                        }}
                       >
                         {task.isCompleted ? (
                           <Chip

@@ -4,6 +4,7 @@ import { useAuth } from '@/features/auth/useAuth';
 import { useThemeStore } from '@/shared/store/root.store';
 import type { ThemeMode } from '@/shared/store/theme.store';
 import {
+  DashboardOutlined,
   DarkMode,
   LightMode,
   Logout,
@@ -116,6 +117,18 @@ const AppHeader = ({
         </Box>
 
         <Box sx={{ display: 'flex', marginLeft: 'auto', gap: 1 }}>
+          {user && (
+            <Tooltip title={t('myBoards')}>
+              <IconButton
+                component={NextLink}
+                href="/workspaces"
+                aria-label={t('myBoards')}
+                sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
+              >
+                <DashboardOutlined />
+              </IconButton>
+            </Tooltip>
+          )}
           <LocaleSwitcher />
           <Tooltip title={isDark ? t('lightTheme') : t('darkTheme')}>
             <IconButton onClick={() => themeStore.toggle(themeMode)}>

@@ -35,7 +35,7 @@ const BoardsPageHeader = ({
       }}
     >
       <Box sx={{ minWidth: 0 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }} noWrap>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
           {isWorkspaceMode
             ? t('workspaceBoardsTitle', {
                 name: currentWorkspace?.name ?? '',

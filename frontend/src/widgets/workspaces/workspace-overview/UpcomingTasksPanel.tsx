@@ -3,6 +3,7 @@
 import type { WorkspaceTask } from '@/shared/queries/workspace-tasks.queries';
 import { OpenInNew } from '@mui/icons-material';
 import {
+  Box,
   Button,
   Card,
   CardActionArea,
@@ -28,20 +29,27 @@ const UpcomingTasksPanel = ({
   const t = useTranslations('WorkspaceOverview');
 
   return (
-    <Paper variant="outlined" sx={{ p: 2.5, height: '100%' }}>
+    <Paper
+      variant="outlined"
+      sx={{ p: { xs: 2, sm: 2.5 }, minWidth: 0, height: '100%' }}
+    >
       <Stack
-        direction="row"
+        direction={{ xs: 'column', sm: 'row' }}
         spacing={1}
-        sx={{ justifyContent: 'space-between', mb: 2 }}
+        sx={{ minWidth: 0, justifyContent: 'space-between', mb: 2 }}
       >
-        <div>
+        <Box sx={{ minWidth: 0 }}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
             {t('myUpcomingTasks')}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ overflowWrap: 'anywhere' }}
+          >
             {t('myUpcomingTasksDescription')}
           </Typography>
-        </div>
+        </Box>
         <Button
           component={Link}
           href={`/workspaces/${workspaceId}/my-tasks`}
@@ -67,13 +75,19 @@ const UpcomingTasksPanel = ({
                 href={`/workspaces/${workspaceId}/boards/${task.boardId}?taskId=${encodeURIComponent(task.id)}`}
                 sx={{ p: 1.5 }}
               >
-                <Typography sx={{ fontWeight: 700 }} noWrap>
+                <Typography
+                  sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}
+                >
                   {task.title}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {task.boardTitle} В· {task.columnTitle}
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ overflowWrap: 'anywhere' }}
+                >
+                  {task.boardTitle} · {task.columnTitle}
                   {task.dueDate
-                    ? ` В· ${new Date(task.dueDate).toLocaleDateString()}`
+                    ? ` · ${new Date(task.dueDate).toLocaleDateString()}`
                     : ''}
                 </Typography>
               </CardActionArea>

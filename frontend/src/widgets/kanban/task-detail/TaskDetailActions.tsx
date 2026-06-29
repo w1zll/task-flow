@@ -24,7 +24,16 @@ const TaskDetailActions = ({
   const t = useTranslations('TaskDetail');
 
   return (
-    <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
+    <DialogActions
+      sx={{
+        px: { xs: 2, sm: 3 },
+        py: 2,
+        justifyContent: 'space-between',
+        flexDirection: { xs: 'column-reverse', sm: 'row' },
+        alignItems: { xs: 'stretch', sm: 'center' },
+        gap: 1.5,
+      }}
+    >
       {canEdit ? (
         <Button
           color="error"
@@ -39,7 +48,14 @@ const TaskDetailActions = ({
           {t('readOnly')}
         </Typography>
       )}
-      <Box sx={{ display: 'flex', gap: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          justifyContent: { xs: 'stretch', sm: 'flex-end' },
+          '& > button': { minHeight: { xs: 44, sm: 32 }, flex: { xs: 1, sm: 0 } },
+        }}
+      >
         <Button onClick={onClose} size="small">
           {canEdit ? t('cancel') : t('close')}
         </Button>

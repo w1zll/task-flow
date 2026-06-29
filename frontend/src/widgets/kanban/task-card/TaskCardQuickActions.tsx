@@ -8,11 +8,13 @@ import {
 } from '@mui/icons-material';
 import { Box, Checkbox, Tooltip } from '@mui/material';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 
 interface TaskCardQuickActionsProps {
   task: Task;
   isDisabled: boolean;
   canEdit: boolean;
+  moveAction?: ReactNode;
   onToggleCompletion: () => void;
 }
 
@@ -20,6 +22,7 @@ const TaskCardQuickActions = ({
   task,
   isDisabled,
   canEdit,
+  moveAction,
   onToggleCompletion,
 }: TaskCardQuickActionsProps) => {
   const t = useTranslations('TaskCard');
@@ -28,8 +31,8 @@ const TaskCardQuickActions = ({
     <Box
       sx={{
         position: 'absolute',
-        top: 6,
-        right: 6,
+        top: { xs: 4, md: 6 },
+        right: { xs: 4, md: 6 },
         zIndex: 1,
         display: 'flex',
         flexDirection: 'column',
@@ -59,8 +62,8 @@ const TaskCardQuickActions = ({
             }}
             sx={{
               p: 0,
-              width: 20,
-              height: 20,
+              width: { xs: 44, md: 20 },
+              height: { xs: 44, md: 20 },
               color: 'text.disabled',
               '&.Mui-checked': {
                 color: 'success.main',
@@ -72,6 +75,7 @@ const TaskCardQuickActions = ({
           />
         </span>
       </Tooltip>
+      {moveAction}
       {task.assigneeName && (
         <Tooltip title={task.assigneeName}>
           <Box>
