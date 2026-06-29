@@ -106,6 +106,11 @@ const LoginForm = () => {
                       <IconButton
                         onClick={() => setShowPassword((s) => !s)}
                         edge="end"
+                        aria-label={
+                          showPassword
+                            ? t('hidePassword')
+                            : t('showPassword')
+                        }
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>

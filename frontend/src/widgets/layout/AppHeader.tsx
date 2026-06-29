@@ -131,7 +131,10 @@ const AppHeader = ({
           )}
           <LocaleSwitcher />
           <Tooltip title={isDark ? t('lightTheme') : t('darkTheme')}>
-            <IconButton onClick={() => themeStore.toggle(themeMode)}>
+            <IconButton
+              onClick={() => themeStore.toggle(themeMode)}
+              aria-label={isDark ? t('lightTheme') : t('darkTheme')}
+            >
               {isDark ? <LightMode /> : <DarkMode />}
             </IconButton>
           </Tooltip>
@@ -152,6 +155,10 @@ const AppHeader = ({
               <Tooltip title={user?.name ?? 'Account'}>
                 <IconButton
                   onClick={(e) => setAnchorEl(e.currentTarget)}
+                  aria-label={t('accountMenu')}
+                  aria-controls={anchorEl ? 'account-menu' : undefined}
+                  aria-haspopup="menu"
+                  aria-expanded={anchorEl ? 'true' : undefined}
                   sx={{ p: 0.5 }}
                 >
                   <UserAvatar
@@ -176,6 +183,7 @@ const AppHeader = ({
           )}
 
           <Menu
+            id="account-menu"
             anchorEl={anchorEl}
             open={!!anchorEl}
             onClose={() => setAnchorEl(null)}

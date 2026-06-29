@@ -109,6 +109,7 @@ const TaskMetaRow = ({
                 whiteSpace: 'nowrap',
               }}
             >
+              {isOverdue ? `${t('overdue')} · ` : ''}
               {dayjs(task.dueDate).locale(dayjsLocale).format('D MMM')}
             </Typography>
           </Box>

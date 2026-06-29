@@ -74,6 +74,8 @@ const BoardMembersDrawer = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'), {
     defaultMatches: false,
   });
+  const titleId = 'board-members-drawer-title';
+  const descriptionId = 'board-members-drawer-description';
 
   return (
     <Drawer
@@ -82,6 +84,10 @@ const BoardMembersDrawer = ({
       onClose={onClose}
       slotProps={{
         paper: {
+          role: 'dialog',
+          'aria-modal': true,
+          'aria-labelledby': titleId,
+          'aria-describedby': descriptionId,
           sx: {
             width: isMobile ? '100%' : 460,
             height: isMobile ? '100%' : 'auto',
@@ -104,10 +110,14 @@ const BoardMembersDrawer = ({
           }}
         >
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            <Typography id={titleId} variant="h6" sx={{ fontWeight: 700 }}>
               {t('members')}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography
+              id={descriptionId}
+              variant="body2"
+              color="text.secondary"
+            >
               {t('membersDescription')}
             </Typography>
           </Box>

@@ -22,6 +22,7 @@ const BoardFiltersMobileDrawer = ({
   onApply,
 }: BoardFiltersMobileDrawerProps) => {
   const t = useTranslations('BoardPage.filters');
+  const titleId = 'board-filters-mobile-drawer-title';
 
   return (
     <Drawer
@@ -30,6 +31,9 @@ const BoardFiltersMobileDrawer = ({
       onClose={onClose}
       slotProps={{
         paper: {
+          role: 'dialog',
+          'aria-modal': true,
+          'aria-labelledby': titleId,
           sx: {
             p: 2,
             borderTopLeftRadius: '8px',
@@ -45,7 +49,7 @@ const BoardFiltersMobileDrawer = ({
           spacing={1}
           sx={{ alignItems: 'center', justifyContent: 'space-between' }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          <Typography id={titleId} variant="h6" sx={{ fontWeight: 700 }}>
             {t('title')}
           </Typography>
           {isActive && (

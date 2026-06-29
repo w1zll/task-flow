@@ -44,6 +44,7 @@ interface Props {
 }
 
 const TaskDetailModal = ({ board }: Props) => {
+  const t = useTranslations('TaskDetail');
   const tNotifications = useTranslations('Notifications');
   const boardUI = useBoardUIStore();
   const deleteTask = useDeleteTask();
@@ -238,6 +239,19 @@ const TaskDetailModal = ({ board }: Props) => {
     <Dialog
       open={!!boardUI.openTaskId}
       onClose={() => boardUI.closeTask()}
+      onKeyDown={(event) => {
+        if (
+          (event.ctrlKey || event.metaKey) &&
+          event.key === 'Enter' &&
+          canEdit &&
+          isDirty &&
+          !isUpdating
+        ) {
+          event.preventDefault();
+          void handleSave();
+        }
+      }}
+      aria-label={t('dialogTitle')}
       maxWidth="sm"
       fullWidth
       fullScreen={isMobile}

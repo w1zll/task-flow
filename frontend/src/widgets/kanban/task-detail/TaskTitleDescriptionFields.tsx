@@ -25,6 +25,7 @@ const TaskTitleDescriptionFields = ({
   return (
     <>
       <TextField
+        autoFocus={canEdit}
         label={t('title')}
         fullWidth
         value={form.title ?? ''}

@@ -205,8 +205,21 @@ const TaskCard = ({
         {...(provided?.draggableProps ?? {})}
         {...(provided?.dragHandleProps ?? {})}
         elevation={isDragging ? 8 : 0}
+        role="button"
+        tabIndex={isCardPending ? -1 : 0}
+        aria-label={t('openTask', { title: task.title })}
         aria-busy={isCardPending}
         aria-disabled={isCardPending || isDragDisabled || !canEdit}
+        onKeyDown={(event) => {
+          if (
+            event.key === 'Enter' &&
+            event.currentTarget === event.target &&
+            !isCardPending
+          ) {
+            event.preventDefault();
+            openTask(task.id);
+          }
+        }}
         onClickCapture={(event) => {
           const { consumeSuppressedTaskClick } = useBoardUIStore.getState();
           const shouldSuppressClick = consumeSuppressedTaskClick(task.id);

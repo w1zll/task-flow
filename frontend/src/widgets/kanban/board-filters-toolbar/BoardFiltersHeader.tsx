@@ -54,6 +54,7 @@ const BoardFiltersHeader = ({
         <FilterListOutlined color="primary" fontSize="small" />
         <Typography
           variant="subtitle2"
+          aria-live="polite"
           sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}
         >
           {t('summary', {
