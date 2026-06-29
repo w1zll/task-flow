@@ -93,6 +93,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     boardViews,
     selectedViewId,
     taskToHighlightId,
+    isFiltering,
     createBoardView,
     deleteBoardView,
     updateBoardFilters,
@@ -325,6 +326,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
           teams={workspaceTeams.data}
           filteredCount={filteredTaskCount}
           totalCount={totalTaskCount}
+          isFiltering={isFiltering}
           isReorderDisabled={isReorderDisabledByView}
           savedViews={boardViews.data}
           selectedViewId={selectedViewId}
@@ -339,6 +341,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
       <BoardCanvasSection
         boardId={boardId}
         isLoading={isLoading}
+        isFiltering={isFiltering}
         filteredBoard={filteredBoard}
         highlightedTaskId={highlightedTaskId}
         isReorderDisabled={isReorderDisabledByView}

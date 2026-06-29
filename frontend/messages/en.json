@@ -209,7 +209,11 @@
       "unknownAssignee": "Unknown member",
       "unknownTeam": "Unknown team",
       "reset": "Reset",
+      "summary": "Filters {filtered} of {total}",
       "resultCount": "{filtered} of {total}",
+      "expand": "Expand filters",
+      "collapse": "Collapse filters",
+      "loadingResults": "Updating board...",
       "reorderDisabled": "Drag and drop is disabled in filtered view",
       "status": {
         "open": "Open",

@@ -209,7 +209,11 @@
       "unknownAssignee": "Неизвестный участник",
       "unknownTeam": "Неизвестная команда",
       "reset": "Сбросить",
+      "summary": "Фильтры {filtered} из {total}",
       "resultCount": "{filtered} из {total}",
+      "expand": "Развернуть фильтры",
+      "collapse": "Свернуть фильтры",
+      "loadingResults": "Обновляем доску...",
       "reorderDisabled": "Перетаскивание выключено в отфильтрованном виде",
       "status": {
         "open": "Открытые",
