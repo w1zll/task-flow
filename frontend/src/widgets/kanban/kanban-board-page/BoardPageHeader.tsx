@@ -12,9 +12,11 @@ import {
   Breadcrumbs,
   Button,
   Chip,
+  IconButton,
   Link,
   Skeleton,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import NextLink from 'next/link';
@@ -101,15 +103,35 @@ const BoardPageHeader = ({
           </Breadcrumbs>
         </Box>
         {canManageColumns ? (
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Add />}
-            onClick={onAddColumn}
-            sx={{ flexShrink: 0 }}
-          >
-            {t('addColumn')}
-          </Button>
+          <>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Add />}
+              onClick={onAddColumn}
+              sx={{
+                display: { xs: 'none', sm: 'inline-flex' },
+                flexShrink: 0,
+              }}
+            >
+              {t('addColumn')}
+            </Button>
+            <Tooltip title={t('addColumn')}>
+              <IconButton
+                size="small"
+                onClick={onAddColumn}
+                aria-label={t('addColumn')}
+                sx={{
+                  display: { xs: 'inline-flex', sm: 'none' },
+                  width: 44,
+                  height: 44,
+                  flexShrink: 0,
+                }}
+              >
+                <Add fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </>
         ) : board && !canEditBoardContent ? (
           <Chip
             size="small"
@@ -120,23 +142,55 @@ const BoardPageHeader = ({
         ) : null}
       </Box>
 
-      <Stack direction="row" spacing={1}>
+      <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
         <Button
           variant={isStatsOpen ? 'contained' : 'outlined'}
           size="small"
           startIcon={<QueryStats />}
           onClick={onToggleStats}
+          sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
         >
           {t('stats')}
         </Button>
+        <Tooltip title={t('stats')}>
+          <IconButton
+            size="small"
+            color={isStatsOpen ? 'primary' : 'default'}
+            onClick={onToggleStats}
+            aria-label={t('stats')}
+            sx={{
+              display: { xs: 'inline-flex', sm: 'none' },
+              width: 44,
+              height: 44,
+            }}
+          >
+            <QueryStats fontSize="small" />
+          </IconButton>
+        </Tooltip>
         <Button
           variant={isMembersOpen ? 'contained' : 'outlined'}
           size="small"
           startIcon={<GroupOutlined />}
           onClick={onToggleMembers}
+          sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
         >
           {t('members')}
         </Button>
+        <Tooltip title={t('members')}>
+          <IconButton
+            size="small"
+            color={isMembersOpen ? 'primary' : 'default'}
+            onClick={onToggleMembers}
+            aria-label={t('members')}
+            sx={{
+              display: { xs: 'inline-flex', sm: 'none' },
+              width: 44,
+              height: 44,
+            }}
+          >
+            <GroupOutlined fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Stack>
     </Box>
   );

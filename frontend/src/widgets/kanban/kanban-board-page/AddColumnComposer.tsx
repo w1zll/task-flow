@@ -23,7 +23,7 @@ const AddColumnComposer = ({
   return (
     <Box
       sx={{
-        width: 280,
+        width: { xs: '100%', sm: 280 },
         flexShrink: 0,
         bgcolor: 'background.paper',
         borderRadius: '6px',

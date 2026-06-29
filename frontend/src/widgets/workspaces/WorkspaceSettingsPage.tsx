@@ -114,7 +114,17 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
 
   if (workspaces.isLoading) {
     return (
-      <Box sx={{ maxWidth: 900, mx: 'auto', px: 3, py: 4 }}>
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: 900,
+          minWidth: 0,
+          boxSizing: 'border-box',
+          mx: 'auto',
+          px: { xs: 2, sm: 3 },
+          py: { xs: 2.5, sm: 4 },
+        }}
+      >
         <Skeleton width={280} height={48} />
         <Skeleton variant="rounded" height={220} sx={{ mt: 3 }} />
       </Box>
@@ -123,14 +133,34 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
 
   if (!workspace || workspaces.isError) {
     return (
-      <Box sx={{ maxWidth: 900, mx: 'auto', px: 3, py: 4 }}>
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: 900,
+          minWidth: 0,
+          boxSizing: 'border-box',
+          mx: 'auto',
+          px: { xs: 2, sm: 3 },
+          py: { xs: 2.5, sm: 4 },
+        }}
+      >
         <Alert severity="error">{t('notFound')}</Alert>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, sm: 3 }, py: 4 }}>
+    <Box
+      sx={{
+        width: '100%',
+        maxWidth: 900,
+        minWidth: 0,
+        boxSizing: 'border-box',
+        mx: 'auto',
+        px: { xs: 2, sm: 3 },
+        py: { xs: 2.5, sm: 4 },
+      }}
+    >
       <WorkspaceSettingsHeader workspace={workspace} />
 
       <WorkspaceMembersSection

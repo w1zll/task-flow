@@ -48,6 +48,7 @@ const WorkspaceMemberRow = ({
         py: 2,
         display: 'flex',
         alignItems: 'center',
+        flexWrap: { xs: 'wrap', sm: 'nowrap' },
         gap: 1.5,
       }}
     >
@@ -56,56 +57,81 @@ const WorkspaceMemberRow = ({
         src={member.user.avatar}
         size={38}
       />
-      <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+      <Box sx={{ minWidth: 0, flex: '1 1 160px' }}>
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 600, overflowWrap: 'anywhere' }}
+        >
           {member.user.name}
         </Typography>
-        <Typography variant="caption" color="text.secondary" noWrap>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ overflowWrap: 'anywhere' }}
+        >
           {member.user.email}
         </Typography>
       </Box>
 
-      {canChangeRole ? (
-        <FormControl size="small" sx={{ minWidth: 138 }}>
-          <InputLabel id={`member-role-${member.id}`}>
-            {t('memberRole')}
-          </InputLabel>
-          <Select
-            labelId={`member-role-${member.id}`}
-            label={t('memberRole')}
-            value={member.role}
-            disabled={isUpdatingRole}
-            onChange={(event) =>
-              onChangeRole(
-                member.id,
-                event.target.value as 'admin' | 'member',
-              )
-            }
+      <Box
+        sx={{
+          display: 'flex',
+          flex: { xs: '1 1 100%', sm: '0 0 auto' },
+          alignItems: 'center',
+          justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+          gap: 1,
+          ml: { xs: '54px', sm: 0 },
+          minWidth: 0,
+        }}
+      >
+        {canChangeRole ? (
+          <FormControl
+            size="small"
+            sx={{
+              minWidth: { xs: 0, sm: 138 },
+              width: { xs: 'min(100%, 220px)', sm: 138 },
+            }}
           >
-            <MenuItem value="admin">{t('role.admin')}</MenuItem>
-            <MenuItem value="member">{t('role.member')}</MenuItem>
-          </Select>
-        </FormControl>
-      ) : (
-        <Chip
-          icon={<Person />}
-          size="small"
-          variant="outlined"
-          label={t(`role.${member.role}`)}
-        />
-      )}
+            <InputLabel id={`member-role-${member.id}`}>
+              {t('memberRole')}
+            </InputLabel>
+            <Select
+              labelId={`member-role-${member.id}`}
+              label={t('memberRole')}
+              value={member.role}
+              disabled={isUpdatingRole}
+              onChange={(event) =>
+                onChangeRole(
+                  member.id,
+                  event.target.value as 'admin' | 'member',
+                )
+              }
+            >
+              <MenuItem value="admin">{t('role.admin')}</MenuItem>
+              <MenuItem value="member">{t('role.member')}</MenuItem>
+            </Select>
+          </FormControl>
+        ) : (
+          <Chip
+            icon={<Person />}
+            size="small"
+            variant="outlined"
+            label={t(`role.${member.role}`)}
+          />
+        )}
 
-      {canRemove && (
-        <Tooltip title={t('removeMember')}>
-          <IconButton
-            color="error"
-            aria-label={t('removeMember')}
-            onClick={() => onRemove(member.id)}
-          >
-            <DeleteOutlined />
-          </IconButton>
-        </Tooltip>
-      )}
+        {canRemove && (
+          <Tooltip title={t('removeMember')}>
+            <IconButton
+              color="error"
+              aria-label={t('removeMember')}
+              onClick={() => onRemove(member.id)}
+            >
+              <DeleteOutlined />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Box>
     </Box>
   );
 };

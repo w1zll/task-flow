@@ -19,6 +19,7 @@ const WorkspaceSettingsHeader = ({
       direction={{ xs: 'column', sm: 'row' }}
       spacing={2}
       sx={{
+        minWidth: 0,
         mb: 3,
         alignItems: { xs: 'flex-start', sm: 'center' },
       }}
@@ -32,15 +33,29 @@ const WorkspaceSettingsHeader = ({
           color: 'primary.contrastText',
           display: 'grid',
           placeItems: 'center',
+          flexShrink: 0,
         }}
       >
         <Business />
       </Box>
       <Box sx={{ minWidth: 0 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }} noWrap>
+        <Typography
+          variant="h4"
+          sx={{
+            fontSize: { xs: '1.5rem', sm: '2.125rem' },
+            fontWeight: 700,
+            lineHeight: 1.2,
+            overflowWrap: 'anywhere',
+          }}
+        >
           {workspace.name}
         </Typography>
-        <Stack direction="row" spacing={1} sx={{ mt: 0.75 }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          useFlexGap
+          sx={{ mt: 0.75, flexWrap: 'wrap' }}
+        >
           <Chip
             size="small"
             label={t(`role.${workspace.currentUserRole}`)}

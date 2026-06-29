@@ -193,23 +193,28 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
     <>
       <Paper
         variant="outlined"
-        sx={{ borderRadius: '6px', overflow: 'hidden', mt: 3 }}
+        sx={{ minWidth: 0, borderRadius: '6px', overflow: 'hidden', mt: 3 }}
       >
         <Box
           sx={{
-            px: 3,
-            py: 2.5,
+            px: { xs: 2, sm: 3 },
+            py: { xs: 2, sm: 2.5 },
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'stretch', sm: 'center' },
             justifyContent: 'space-between',
             gap: 2,
           }}
         >
-          <Box>
+          <Box sx={{ minWidth: 0 }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               {t('title')}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ overflowWrap: 'anywhere' }}
+            >
               {t('description')}
             </Typography>
           </Box>

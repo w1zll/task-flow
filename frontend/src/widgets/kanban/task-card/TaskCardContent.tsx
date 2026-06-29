@@ -53,7 +53,7 @@ const TaskCardContent = ({
       sx={{
         p: 1.5,
         pl: 2,
-        pr: 4.5,
+        pr: { xs: 6.5, md: 4.5 },
         pointerEvents: isCardPending ? 'none' : 'auto',
       }}
     >

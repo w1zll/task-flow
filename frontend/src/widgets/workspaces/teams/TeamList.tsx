@@ -62,13 +62,14 @@ const TeamList = ({
   return (
     <Box
       sx={{
+        minWidth: 0,
         display: 'grid',
         gridTemplateColumns: {
           xs: '1fr',
           md: 'repeat(2, minmax(0, 1fr))',
         },
         gap: 2,
-        p: 3,
+        p: { xs: 2, sm: 3 },
       }}
     >
       {teams.map((team) => (
