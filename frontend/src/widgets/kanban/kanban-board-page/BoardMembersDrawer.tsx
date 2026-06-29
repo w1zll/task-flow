@@ -90,7 +90,7 @@ const BoardMembersDrawer = ({
           'aria-describedby': descriptionId,
           sx: {
             width: isMobile ? '100%' : 460,
-            height: isMobile ? '100%' : 'auto',
+            height: '100%',
             bgcolor: 'background.paper',
             borderLeft: isMobile ? 'none' : '1px solid',
             borderTop: isMobile ? '1px solid' : 'none',

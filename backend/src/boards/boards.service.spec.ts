@@ -20,6 +20,7 @@ import {
 import { BoardRole } from './entities/board-role.enum';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
 import { BoardView } from './entities/board-view.entity';
+import { BoardActivityEventsService } from './board-activity-events.service';
 
 describe('BoardsService', () => {
   let service: BoardsService;
@@ -31,6 +32,7 @@ describe('BoardsService', () => {
   let taskRepo: jest.Mocked<Partial<Repository<Task>>>;
   let boardPermissions: jest.Mocked<Partial<BoardPermissionsService>>;
   let workspacesService: jest.Mocked<Partial<WorkspacesService>>;
+  let boardActivityEvents: jest.Mocked<Partial<BoardActivityEventsService>>;
   let boardQueryBuilder: {
     leftJoin: jest.Mock;
     where: jest.Mock;
@@ -143,6 +145,13 @@ describe('BoardsService', () => {
         role: 'owner',
       }),
     };
+    boardActivityEvents = {
+      logBoardCreated: jest.fn(),
+      logBoardUpdated: jest.fn(),
+      logBoardMemberInvited: jest.fn(),
+      logBoardMemberRemoved: jest.fn(),
+      logBoardMemberRoleChanged: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -182,6 +191,10 @@ describe('BoardsService', () => {
         {
           provide: WorkspacesService,
           useValue: workspacesService,
+        },
+        {
+          provide: BoardActivityEventsService,
+          useValue: boardActivityEvents,
         },
       ],
     }).compile();
@@ -315,6 +328,7 @@ describe('BoardsService', () => {
 
     expect(memberRepo.findOne).toHaveBeenCalledWith({
       where: { id: 'membership-1' },
+      relations: ['user'],
     });
     expect(memberRepo.remove).toHaveBeenCalledWith(member);
   });

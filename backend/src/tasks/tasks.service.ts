@@ -19,9 +19,38 @@ import {
   ReorderTasksDto,
   UpdateTaskDto,
 } from './dto/task.dto';
-import { Task } from './entities/task.entity';
+import { Task, TaskPriority } from './entities/task.entity';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
 import { Team } from '@/teams/entities/team.entity';
+import { BoardActivityEventsService } from '@/boards/board-activity-events.service';
+
+type ActivityChange = {
+  field: string;
+  from: unknown;
+  to: unknown;
+};
+
+type TaskActivitySnapshot = {
+  title: string;
+  description: string | null;
+  priority: TaskPriority;
+  labels: string[];
+  dueDate: string | null;
+  assigneeId: string | null;
+  assigneeName: string | null;
+  teamId: string | null;
+  teamName: string | null;
+  isCompleted: boolean;
+  completedAt: string | null;
+  columnId: string;
+  columnTitle: string | null;
+};
+
+const hasOwn = (value: object, key: string) =>
+  Object.prototype.hasOwnProperty.call(value, key);
+
+const toIsoStringOrNull = (value: Date | string | null | undefined) =>
+  value ? new Date(value).toISOString() : null;
 
 @Injectable()
 export class TasksService {
@@ -39,6 +68,7 @@ export class TasksService {
     private readonly frontendCache: FrontendCacheService,
     private readonly boardPermissions: BoardPermissionsService,
     private readonly workspacesService: WorkspacesService,
+    private readonly boardActivityEvents: BoardActivityEventsService,
   ) {}
 
   private async verifyColumnWriteAccess(
@@ -158,6 +188,16 @@ export class TasksService {
     });
     const saved = await this.taskRepo.save(task);
     await this.frontendCache.revalidateBoard(column.boardId);
+    await this.boardActivityEvents.logTaskCreated(column.boardId, userId, {
+      taskId: saved.id,
+      title: saved.title,
+      columnId: saved.columnId,
+      columnTitle: column.title,
+      assigneeId: saved.assignee?.id ?? saved.assigneeId ?? null,
+      assigneeName: saved.assignee?.name ?? saved.assigneeName ?? null,
+      teamId: saved.team?.id ?? saved.teamId ?? null,
+      teamName: saved.team?.name ?? null,
+    });
     return this.withPublicAssignee(saved);
   }
 
@@ -169,6 +209,7 @@ export class TasksService {
   ): Promise<Task> {
     const task = await this.verifyTaskWriteAccess(id, userId);
     this.assertExpectedBoard(task.column.boardId, expectedBoardId);
+    const beforeActivity = this.snapshotTaskActivity(task);
     const { completedAt, dueDate, teamId, ...taskChanges } = dto;
     const wasCompleted = task.isCompleted;
     const sourceOrder = task.order;
@@ -230,6 +271,35 @@ export class TasksService {
 
     const saved = await this.taskRepo.save(task);
     await this.frontendCache.revalidateBoard(task.column.boardId);
+    const changes = this.buildTaskActivityChanges(
+      beforeActivity,
+      this.snapshotTaskActivity(saved),
+      dto,
+    );
+
+    if (changes.length) {
+      const activityPayload = {
+        taskId: saved.id,
+        title: saved.title,
+        columnId: saved.columnId,
+        columnTitle: saved.column?.title ?? beforeActivity.columnTitle,
+        changes,
+      };
+
+      if (!beforeActivity.isCompleted && saved.isCompleted) {
+        await this.boardActivityEvents.logTaskCompleted(
+          task.column.boardId,
+          userId,
+          activityPayload,
+        );
+      } else {
+        await this.boardActivityEvents.logTaskUpdated(
+          task.column.boardId,
+          userId,
+          activityPayload,
+        );
+      }
+    }
     return this.withPublicAssignee(saved);
   }
 
@@ -238,6 +308,12 @@ export class TasksService {
     const boardId = task.column.boardId;
     await this.taskRepo.remove(task);
     await this.frontendCache.revalidateBoard(boardId);
+    await this.boardActivityEvents.logTaskDeleted(boardId, userId, {
+      taskId: task.id,
+      title: task.title,
+      columnId: task.columnId,
+      columnTitle: task.column?.title ?? null,
+    });
   }
 
   async move(
@@ -324,6 +400,15 @@ export class TasksService {
       relations: ['column', 'column.board', 'assignee', 'team'],
     });
     await this.frontendCache.revalidateBoard(updated.column.boardId);
+    await this.boardActivityEvents.logTaskMoved(updated.column.boardId, userId, {
+      taskId: updated.id,
+      title: updated.title,
+      fromColumnId: sourceColumnId,
+      fromColumnTitle: task.column?.title ?? null,
+      toColumnId: dto.columnId,
+      toColumnTitle: targetColumn.title,
+      order: dto.order,
+    });
     return this.withPublicAssignee(updated);
   }
 
@@ -340,7 +425,108 @@ export class TasksService {
     );
     await Promise.all(updates);
     await this.frontendCache.revalidateBoard(column.boardId);
+    await this.boardActivityEvents.logTaskReordered(column.boardId, userId, {
+      columnId: column.id,
+      columnTitle: column.title,
+      taskIds: dto.taskIds,
+    });
     return column.boardId;
+  }
+
+  private snapshotTaskActivity(task: Task): TaskActivitySnapshot {
+    return {
+      title: task.title,
+      description: task.description ?? null,
+      priority: task.priority,
+      labels: task.labels ?? [],
+      dueDate: toIsoStringOrNull(task.dueDate),
+      assigneeId: task.assignee?.id ?? task.assigneeId ?? null,
+      assigneeName: task.assignee?.name ?? task.assigneeName ?? null,
+      teamId: task.team?.id ?? task.teamId ?? null,
+      teamName: task.team?.name ?? null,
+      isCompleted: task.isCompleted,
+      completedAt: toIsoStringOrNull(task.completedAt),
+      columnId: task.columnId,
+      columnTitle: task.column?.title ?? null,
+    };
+  }
+
+  private buildTaskActivityChanges(
+    before: TaskActivitySnapshot,
+    after: TaskActivitySnapshot,
+    dto: UpdateTaskDto,
+  ): ActivityChange[] {
+    const changes: ActivityChange[] = [];
+
+    if (hasOwn(dto, 'title')) {
+      this.addActivityChange(changes, 'title', before.title, after.title);
+    }
+    if (hasOwn(dto, 'description')) {
+      this.addActivityChange(
+        changes,
+        'description',
+        before.description,
+        after.description,
+      );
+    }
+    if (hasOwn(dto, 'priority')) {
+      this.addActivityChange(
+        changes,
+        'priority',
+        before.priority,
+        after.priority,
+      );
+    }
+    if (hasOwn(dto, 'labels')) {
+      this.addActivityChange(changes, 'labels', before.labels, after.labels);
+    }
+    if (hasOwn(dto, 'dueDate')) {
+      this.addActivityChange(changes, 'dueDate', before.dueDate, after.dueDate);
+    }
+    if (hasOwn(dto, 'assigneeId')) {
+      this.addActivityChange(
+        changes,
+        'assignee',
+        { id: before.assigneeId, name: before.assigneeName },
+        { id: after.assigneeId, name: after.assigneeName },
+      );
+    }
+    if (hasOwn(dto, 'teamId')) {
+      this.addActivityChange(
+        changes,
+        'team',
+        { id: before.teamId, name: before.teamName },
+        { id: after.teamId, name: after.teamName },
+      );
+    }
+    if (hasOwn(dto, 'isCompleted')) {
+      this.addActivityChange(
+        changes,
+        'isCompleted',
+        before.isCompleted,
+        after.isCompleted,
+      );
+    }
+    if (hasOwn(dto, 'completedAt')) {
+      this.addActivityChange(
+        changes,
+        'completedAt',
+        before.completedAt,
+        after.completedAt,
+      );
+    }
+
+    return changes;
+  }
+
+  private addActivityChange(
+    changes: ActivityChange[],
+    field: string,
+    from: unknown,
+    to: unknown,
+  ) {
+    if (JSON.stringify(from) === JSON.stringify(to)) return;
+    changes.push({ field, from, to });
   }
 
   private buildCompletionAnalyticsQuery(

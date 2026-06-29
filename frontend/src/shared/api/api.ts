@@ -13,6 +13,13 @@ export type Board = ApiResponse<'/api/boards/{id}', 'get'>;
 export type BoardRole = Board['currentUserRole'];
 export type BoardMember =
   ApiResponse<'/api/boards/{id}/members', 'get'>[number];
+type GeneratedBoardActivity =
+  ApiResponse<'/api/boards/{id}/activities', 'get'>[number];
+export type BoardActivity = Omit<GeneratedBoardActivity, 'metadata'> & {
+  metadata?: Record<string, unknown> | null;
+};
+export type BoardActivityEventType = BoardActivity['event'];
+
 export interface BoardView {
   id: string;
   title: string;
@@ -159,6 +166,21 @@ export const boardsApi = {
   getMembers: (id: string) =>
     apiClient.get<ApiResponse<'/api/boards/{id}/members', 'get'>>(
       `/api/boards/${id}/members`,
+    ),
+
+  getActivities: (
+    id: string,
+    params?: {
+      limit?: number;
+      before?: string;
+      event?: BoardActivityEventType | BoardActivityEventType[];
+    },
+  ) =>
+    apiClient.get<ApiResponse<'/api/boards/{id}/activities', 'get'>>(
+      `/api/boards/${id}/activities`,
+      {
+        params,
+      },
     ),
 
   getViews: (id: string) =>

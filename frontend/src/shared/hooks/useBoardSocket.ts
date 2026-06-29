@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { ensureSocketConnected, getSocket } from '../lib/socket';
-import { Board, Task } from '../api/api';
+import { Board, BoardActivity, Task } from '../api/api';
 import {
   findTaskInBoard,
   moveTaskToColumnEndInBoard,
@@ -130,6 +130,15 @@ export const useBoardSocket = (boardId: string) => {
       });
     });
 
+    socket.on('board:activity', (payload: { boardId: string; activity: BoardActivity }) => {
+      if (payload.boardId !== boardId) return;
+      qc.setQueryData(
+        queryKeys.boardActivities(boardId),
+        (prev: BoardActivity[] | undefined) =>
+          prev ? [payload.activity, ...prev] : [payload.activity],
+      );
+    });
+
     socket.on(
       'task:reordered',
       ({
@@ -168,6 +177,7 @@ export const useBoardSocket = (boardId: string) => {
       socket.off('board:state');
       socket.off('task:update');
       socket.off('task:moved');
+      socket.off('board:activity');
       socket.off('task:reordered');
       window.removeEventListener('online', onOnline);
     };
