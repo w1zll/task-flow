@@ -238,7 +238,7 @@ const BoardFiltersToolbar = ({
     <Box
       sx={{
         px: { xs: 2, sm: 3 },
-        py: 1.5,
+        py: { xs: 1, sm: 1.5 },
         borderBottom: '1px solid',
         borderColor: 'divider',
         bgcolor: 'background.paper',
