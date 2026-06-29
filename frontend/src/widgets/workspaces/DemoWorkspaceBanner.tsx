@@ -1,13 +1,11 @@
 'use client';
 
-import { demoApi, Workspace } from '@/shared/api/api';
+import { demoApi } from '@/shared/api/api';
 import { queryKeys } from '@/shared/queries/board-query-keys';
 import { useAuthStore } from '@/shared/store/root.store';
 import {
   PlayArrowOutlined,
   RefreshOutlined,
-  TaskAltOutlined,
-  WarningAmberOutlined,
 } from '@mui/icons-material';
 import {
   alpha,
@@ -24,17 +22,11 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 
-interface Props {
-  workspace: Workspace;
-  startBoardId?: string;
-}
-
-const DemoWorkspaceBanner = ({ workspace, startBoardId }: Props) => {
+const DemoWorkspaceBanner = () => {
   const t = useTranslations('WorkspaceShell.demo');
   const theme = useTheme();
   const router = useRouter();
@@ -42,6 +34,8 @@ const DemoWorkspaceBanner = ({ workspace, startBoardId }: Props) => {
   const setUser = useAuthStore((state) => state.setUser);
   const { enqueueSnackbar } = useSnackbar();
   const [isConfirmOpen, setConfirmOpen] = useState(false);
+  const resetDialogTitleId = 'demo-reset-dialog-title';
+  const resetDialogDescriptionId = 'demo-reset-dialog-description';
   const resetDemo = useMutation({
     mutationFn: () => demoApi.resetWorkspace().then((response) => response.data),
     onSuccess: ({ user, workspaceId, boardId }) => {
@@ -59,10 +53,6 @@ const DemoWorkspaceBanner = ({ workspace, startBoardId }: Props) => {
       });
     },
   });
-
-  const boardHref = startBoardId
-    ? `/workspaces/${workspace.id}/boards/${startBoardId}`
-    : `/workspaces/${workspace.id}/boards`;
 
   return (
     <>
@@ -135,17 +125,23 @@ const DemoWorkspaceBanner = ({ workspace, startBoardId }: Props) => {
       <Dialog
         open={isConfirmOpen}
         onClose={() => setConfirmOpen(false)}
+        aria-labelledby={resetDialogTitleId}
+        aria-describedby={resetDialogDescriptionId}
         fullWidth
         maxWidth="xs"
       >
-        <DialogTitle>{t('resetTitle')}</DialogTitle>
+        <DialogTitle id={resetDialogTitleId}>{t('resetTitle')}</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary">
+          <Typography
+            id={resetDialogDescriptionId}
+            variant="body2"
+            color="text.secondary"
+          >
             {t('resetDescription')}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>
+          <Button autoFocus onClick={() => setConfirmOpen(false)}>
             {t('cancel')}
           </Button>
           <Button

@@ -40,6 +40,14 @@ const createGlobalScrollbarStyles = (theme: Theme) => {
     '*::-webkit-scrollbar-thumb:hover': {
       backgroundColor: thumbHover,
     },
+    '@media (prefers-reduced-motion: reduce)': {
+      '*, *::before, *::after': {
+        animationDuration: '0.01ms !important',
+        animationIterationCount: '1 !important',
+        scrollBehavior: 'auto !important',
+        transitionDuration: '0.01ms !important',
+      },
+    },
   };
 };
 
@@ -138,6 +146,16 @@ const createComponents = (
             },
           },
         },
+      },
+    },
+    MuiButtonBase: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          '&.Mui-focusVisible': {
+            outline: `3px solid ${alpha(theme.palette.primary.main, 0.42)}`,
+            outlineOffset: 2,
+          },
+        }),
       },
     },
     MuiCard: {

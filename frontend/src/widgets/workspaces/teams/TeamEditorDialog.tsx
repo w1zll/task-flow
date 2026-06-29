@@ -40,10 +40,17 @@ const TeamEditorDialog = ({
   onColorCommit,
 }: TeamEditorDialogProps) => {
   const t = useTranslations('WorkspaceTeams');
+  const titleId = 'team-editor-dialog-title';
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby={titleId}
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogTitle id={titleId}>
         {editingTeam ? t('editTitle') : t('createTitle')}
       </DialogTitle>
       <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>

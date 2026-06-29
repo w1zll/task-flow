@@ -52,10 +52,6 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
         ),
     [boards, workspaceId],
   );
-  const demoStartBoardId =
-    workspaceBoards.find((board) =>
-      ['Sprint Board', 'Спринт'].includes(board.title),
-    )?.id ?? workspaceBoards[0]?.id;
   const isDemoWorkspace = Boolean(
     workspace?.isDemoTemplate || workspace?.isDemoInstance,
   );
@@ -136,10 +132,7 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
             onOpenNavigation={() => setMobileOpen(true)}
           />
           {workspace && isDemoWorkspace && (
-            <DemoWorkspaceBanner
-              workspace={workspace}
-              startBoardId={demoStartBoardId}
-            />
+            <DemoWorkspaceBanner />
           )}
           {children}
         </Box>

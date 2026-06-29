@@ -47,6 +47,8 @@ const WorkspaceSwitcher = () => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [workspaceName, setWorkspaceName] = useState('');
+  const createDialogTitleId = 'workspace-switcher-create-dialog-title';
+  const switcherMenuId = 'workspace-switcher-menu';
   const activeWorkspace = workspaces.data?.find(
     (workspace) => workspace.isActive,
   );
@@ -106,6 +108,9 @@ const WorkspaceSwitcher = () => {
         startIcon={<Business />}
         endIcon={<ExpandMore />}
         onClick={(event) => setAnchorEl(event.currentTarget)}
+        aria-controls={anchorEl ? switcherMenuId : undefined}
+        aria-haspopup="menu"
+        aria-expanded={anchorEl ? 'true' : undefined}
         sx={{
           maxWidth: { xs: 112, sm: 170, md: 220 },
           minWidth: 0,
@@ -124,6 +129,7 @@ const WorkspaceSwitcher = () => {
       </Button>
 
       <Menu
+        id={switcherMenuId}
         anchorEl={anchorEl}
         open={!!anchorEl}
         onClose={() => setAnchorEl(null)}
@@ -183,10 +189,11 @@ const WorkspaceSwitcher = () => {
       <Dialog
         open={isCreateOpen}
         onClose={() => setCreateOpen(false)}
+        aria-labelledby={createDialogTitleId}
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>{t('createTitle')}</DialogTitle>
+        <DialogTitle id={createDialogTitleId}>{t('createTitle')}</DialogTitle>
         <DialogContent sx={{ pt: '12px !important' }}>
           <TextField
             autoFocus
