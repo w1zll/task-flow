@@ -1,6 +1,6 @@
 'use client';
 
-import { Team } from '@/shared/api/api';
+import type { Team } from '@/shared/api/api';
 import {
   useAddTeamMember,
   useCreateTeam,
@@ -10,161 +10,26 @@ import {
   useWorkspaceTeams,
 } from '@/shared/queries/teams.queries';
 import { useWorkspaceMembers } from '@/shared/queries/workspaces.queries';
-import UserAvatar from '@/shared/ui/UserAvatar';
-import {
-  Add,
-  DeleteOutlined,
-  EditOutlined,
-  GroupsOutlined,
-  PersonAddAltOutlined,
-} from '@mui/icons-material';
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Divider,
-  FormControl,
-  IconButton,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Skeleton,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Add } from '@mui/icons-material';
+import { Box, Button, Divider, Paper, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
-import {
-  type FormEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import DeleteTeamDialog from './teams/DeleteTeamDialog';
+import TeamEditorDialog from './teams/TeamEditorDialog';
+import TeamList from './teams/TeamList';
+import TeamMembersDialog from './teams/TeamMembersDialog';
+import type { TeamForm } from './teams/types';
 
 interface Props {
   workspaceId: string;
   canManage: boolean;
 }
 
-const initialForm = {
+const initialForm: TeamForm = {
   name: '',
   description: '',
   color: '#669266',
-};
-
-const COLOR_PREVIEW_DEBOUNCE_MS = 120;
-
-interface SmoothColorFieldProps {
-  label: string;
-  value: string;
-  previewLabel: string;
-  onInputColor: (color: string) => void;
-  onCommitColor: (color: string) => void;
-}
-
-const SmoothColorField = ({
-  label,
-  value,
-  previewLabel,
-  onInputColor,
-  onCommitColor,
-}: SmoothColorFieldProps) => {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const debounceRef = useRef<number | null>(null);
-  const pendingColorRef = useRef(value);
-  const onInputColorRef = useRef(onInputColor);
-  const onCommitColorRef = useRef(onCommitColor);
-  const [previewColor, setPreviewColor] = useState(value);
-
-  useEffect(() => {
-    onInputColorRef.current = onInputColor;
-  }, [onInputColor]);
-
-  useEffect(() => {
-    onCommitColorRef.current = onCommitColor;
-  }, [onCommitColor]);
-
-  useEffect(() => {
-    pendingColorRef.current = value;
-    setPreviewColor(value);
-    if (inputRef.current && inputRef.current.value !== value) {
-      inputRef.current.value = value;
-    }
-  }, [value]);
-
-  useEffect(
-    () => () => {
-      if (debounceRef.current !== null) {
-        window.clearTimeout(debounceRef.current);
-      }
-    },
-    [],
-  );
-
-  const flushColorUpdate = useCallback(() => {
-    if (debounceRef.current !== null) {
-      window.clearTimeout(debounceRef.current);
-      debounceRef.current = null;
-    }
-
-    const nextColor = pendingColorRef.current;
-    setPreviewColor(nextColor);
-    onCommitColorRef.current(nextColor);
-  }, []);
-
-  const schedulePreviewUpdate = useCallback((color: string) => {
-    pendingColorRef.current = color;
-    onInputColorRef.current(color);
-
-    if (debounceRef.current !== null) {
-      window.clearTimeout(debounceRef.current);
-    }
-
-    debounceRef.current = window.setTimeout(() => {
-      debounceRef.current = null;
-      setPreviewColor(pendingColorRef.current);
-    }, COLOR_PREVIEW_DEBOUNCE_MS);
-  }, []);
-
-  const handleColorInput = (event: FormEvent<HTMLInputElement>) => {
-    schedulePreviewUpdate(event.currentTarget.value);
-  };
-
-  return (
-    <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-      <TextField
-        label={label}
-        type="color"
-        defaultValue={value}
-        inputRef={inputRef}
-        sx={{ width: 100 }}
-        slotProps={{
-          inputLabel: { shrink: true },
-          htmlInput: {
-            'aria-label': label,
-            onChange: handleColorInput,
-            onBlur: flushColorUpdate,
-            onInput: handleColorInput,
-          },
-        }}
-      />
-      <Chip
-        label={previewLabel}
-        sx={{ bgcolor: previewColor, color: '#fff', fontWeight: 600 }}
-      />
-    </Stack>
-  );
 };
 
 const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
@@ -182,7 +47,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
   const [managedTeamId, setManagedTeamId] = useState<string | null>(null);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [selectedUserId, setSelectedUserId] = useState('');
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState<TeamForm>(initialForm);
   const colorValueRef = useRef(initialForm.color);
 
   const managedTeam = teams.data?.find((team) => team.id === managedTeamId);
@@ -196,35 +61,6 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
       ) ?? []
     );
   }, [managedTeam?.members, workspaceMembers.data]);
-  const renderAvailableMemberOption = (
-    member: (typeof availableMembers)[number],
-  ) => (
-    <Box
-      sx={{
-        alignItems: 'center',
-        display: 'flex',
-        gap: 1,
-        minWidth: 0,
-      }}
-    >
-      <UserAvatar
-        name={member.user.name}
-        src={member.user.avatar}
-        size={24}
-      />
-      <Typography
-        variant="body2"
-        sx={{
-          minWidth: 0,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {member.user.name}
-      </Typography>
-    </Box>
-  );
 
   const openCreate = () => {
     setEditingTeam(null);
@@ -249,9 +85,17 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
     setEditorOpen(false);
   };
 
+  const updateForm = <K extends keyof TeamForm,>(
+    key: K,
+    value: TeamForm[K],
+  ) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
   const saveTeam = () => {
     const name = form.name.trim();
     if (!name) return;
+
     const data = {
       name,
       description: form.description.trim() || undefined,
@@ -260,10 +104,9 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
     const options = {
       onSuccess: () => {
         setEditorOpen(false);
-        enqueueSnackbar(
-          t(editingTeam ? 'updated' : 'created'),
-          { variant: 'success' },
-        );
+        enqueueSnackbar(t(editingTeam ? 'updated' : 'created'), {
+          variant: 'success',
+        });
       },
       onError: () =>
         enqueueSnackbar(t('saveError'), { variant: 'error' }),
@@ -275,19 +118,76 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
       createTeam.mutate(data, options);
     }
   };
+
   const handleColorInput = useCallback((color: string) => {
     colorValueRef.current = color;
   }, []);
-  const handleColorCommit = useCallback(
-    (color: string) => {
-      colorValueRef.current = color;
-      setForm((current) => ({
-        ...current,
-        color,
-      }));
-    },
-    [],
-  );
+
+  const handleColorCommit = useCallback((color: string) => {
+    colorValueRef.current = color;
+    setForm((current) => ({
+      ...current,
+      color,
+    }));
+  }, []);
+
+  const openMembers = (teamId: string) => {
+    setManagedTeamId(teamId);
+    setSelectedUserId('');
+  };
+
+  const requestCloseMembers = () => {
+    if (!addMember.isPending && !removeMember.isPending) {
+      setManagedTeamId(null);
+    }
+  };
+
+  const addSelectedMember = () => {
+    if (!managedTeam || !selectedUserId) return;
+
+    addMember.mutate(
+      { teamId: managedTeam.id, userId: selectedUserId },
+      {
+        onSuccess: () => {
+          setSelectedUserId('');
+          enqueueSnackbar(t('memberAdded'), { variant: 'success' });
+        },
+        onError: () =>
+          enqueueSnackbar(t('memberError'), { variant: 'error' }),
+      },
+    );
+  };
+
+  const removeSelectedMember = (memberId: string) => {
+    if (!managedTeam) return;
+
+    removeMember.mutate(
+      { teamId: managedTeam.id, memberId },
+      {
+        onError: () =>
+          enqueueSnackbar(t('memberError'), { variant: 'error' }),
+      },
+    );
+  };
+
+  const requestCloseDelete = () => {
+    if (!deleteTeam.isPending) {
+      setTeamToDelete(null);
+    }
+  };
+
+  const confirmDeleteTeam = () => {
+    if (!teamToDelete) return;
+
+    deleteTeam.mutate(teamToDelete.id, {
+      onSuccess: () => {
+        setTeamToDelete(null);
+        enqueueSnackbar(t('deleted'), { variant: 'success' });
+      },
+      onError: () =>
+        enqueueSnackbar(t('deleteError'), { variant: 'error' }),
+    });
+  };
 
   return (
     <>
@@ -326,333 +226,50 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
         </Box>
         <Divider />
 
-        {teams.isLoading ? (
-          <Stack spacing={1.5} sx={{ p: 3 }}>
-            {Array.from({ length: 2 }).map((_, index) => (
-              <Skeleton key={index} variant="rounded" height={112} />
-            ))}
-          </Stack>
-        ) : teams.isError ? (
-          <Alert severity="error" sx={{ m: 2 }}>
-            {t('loadError')}
-          </Alert>
-        ) : teams.data?.length ? (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                md: 'repeat(2, minmax(0, 1fr))',
-              },
-              gap: 2,
-              p: 3,
-            }}
-          >
-            {teams.data.map((team) => (
-              <Paper
-                key={team.id}
-                variant="outlined"
-                sx={{
-                  p: 2,
-                  borderLeft: '4px solid',
-                  borderLeftColor: team.color,
-                }}
-              >
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: 'flex-start' }}
-                >
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                      {team.name}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ minHeight: 20 }}
-                    >
-                      {team.description || t('noDescription')}
-                    </Typography>
-                  </Box>
-                  {canManage && (
-                    <>
-                      <Tooltip title={t('edit')}>
-                        <IconButton size="small" onClick={() => openEdit(team)}>
-                          <EditOutlined fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t('delete')}>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => setTeamToDelete(team)}
-                        >
-                          <DeleteOutlined fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </>
-                  )}
-                </Stack>
-
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ mt: 2, alignItems: 'center' }}
-                >
-                  <GroupsOutlined color="action" fontSize="small" />
-                  <Typography variant="caption" color="text.secondary">
-                    {t('memberCount', { count: team.members.length })}
-                  </Typography>
-                  <Box sx={{ display: 'flex', flex: 1, minWidth: 0 }}>
-                    {team.members.slice(0, 4).map((member, index) => (
-                      <Tooltip key={member.id} title={member.user.name}>
-                        <Box sx={{ ml: index === 0 ? 0 : -0.6 }}>
-                          <UserAvatar
-                            name={member.user.name}
-                            src={member.user.avatar}
-                            size={26}
-                          />
-                        </Box>
-                      </Tooltip>
-                    ))}
-                  </Box>
-                  <Button
-                    size="small"
-                    onClick={() => {
-                      setManagedTeamId(team.id);
-                      setSelectedUserId('');
-                    }}
-                  >
-                    {canManage ? t('manageMembers') : t('viewMembers')}
-                  </Button>
-                </Stack>
-              </Paper>
-            ))}
-          </Box>
-        ) : (
-          <Box sx={{ p: 4, textAlign: 'center' }}>
-            <GroupsOutlined sx={{ fontSize: 38, color: 'text.disabled' }} />
-            <Typography sx={{ mt: 1, fontWeight: 600 }}>
-              {t('emptyTitle')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t('emptyDescription')}
-            </Typography>
-          </Box>
-        )}
+        <TeamList
+          teams={teams.data}
+          isLoading={teams.isLoading}
+          isError={teams.isError}
+          canManage={canManage}
+          onEdit={openEdit}
+          onDelete={setTeamToDelete}
+          onManageMembers={openMembers}
+        />
       </Paper>
 
-      <Dialog open={isEditorOpen} onClose={closeEditor} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingTeam ? t('editTitle') : t('createTitle')}
-        </DialogTitle>
-        <DialogContent sx={{ display: 'grid', gap: 2, pt: '8px !important' }}>
-          <TextField
-            autoFocus
-            label={t('name')}
-            value={form.name}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, name: event.target.value }))
-            }
-            slotProps={{ htmlInput: { maxLength: 120 } }}
-          />
-          <TextField
-            label={t('teamDescription')}
-            multiline
-            minRows={3}
-            value={form.description}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                description: event.target.value,
-              }))
-            }
-            slotProps={{ htmlInput: { maxLength: 1000 } }}
-          />
-          <SmoothColorField
-            label={t('color')}
-            value={form.color}
-            previewLabel={form.name.trim() || t('preview')}
-            onInputColor={handleColorInput}
-            onCommitColor={handleColorCommit}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeEditor}>{t('cancel')}</Button>
-          <Button
-            variant="contained"
-            onClick={saveTeam}
-            disabled={
-              !form.name.trim() ||
-              createTeam.isPending ||
-              updateTeam.isPending
-            }
-          >
-            {createTeam.isPending || updateTeam.isPending
-              ? t('saving')
-              : t('save')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <TeamEditorDialog
+        open={isEditorOpen}
+        editingTeam={editingTeam}
+        form={form}
+        isSaving={createTeam.isPending || updateTeam.isPending}
+        onClose={closeEditor}
+        onSave={saveTeam}
+        onFormChange={updateForm}
+        onColorInput={handleColorInput}
+        onColorCommit={handleColorCommit}
+      />
 
-      <Dialog
-        open={Boolean(managedTeam)}
-        onClose={() => {
-          if (!addMember.isPending && !removeMember.isPending) {
-            setManagedTeamId(null);
-          }
-        }}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {t('membersTitle', { team: managedTeam?.name ?? '' })}
-        </DialogTitle>
-        <DialogContent sx={{ pt: '8px !important' }}>
-          {canManage && (
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
-              <FormControl size="small" fullWidth>
-                <InputLabel>{t('addMember')}</InputLabel>
-                <Select
-                  label={t('addMember')}
-                  value={selectedUserId}
-                  renderValue={(value) => {
-                    const selected = availableMembers.find(
-                      (member) => member.userId === value,
-                    );
-                    return selected ? renderAvailableMemberOption(selected) : '';
-                  }}
-                  onChange={(event) => setSelectedUserId(event.target.value)}
-                >
-                  {availableMembers.map((member) => (
-                    <MenuItem key={member.id} value={member.userId}>
-                      {renderAvailableMemberOption(member)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <Button
-                variant="outlined"
-                startIcon={<PersonAddAltOutlined />}
-                disabled={!selectedUserId || addMember.isPending}
-                onClick={() => {
-                  if (!managedTeam || !selectedUserId) return;
-                  addMember.mutate(
-                    { teamId: managedTeam.id, userId: selectedUserId },
-                    {
-                      onSuccess: () => {
-                        setSelectedUserId('');
-                        enqueueSnackbar(t('memberAdded'), {
-                          variant: 'success',
-                        });
-                      },
-                      onError: () =>
-                        enqueueSnackbar(t('memberError'), {
-                          variant: 'error',
-                        }),
-                    },
-                  );
-                }}
-                sx={{ flexShrink: 0 }}
-              >
-                {t('add')}
-              </Button>
-            </Stack>
-          )}
+      <TeamMembersDialog
+        team={managedTeam}
+        canManage={canManage}
+        availableMembers={availableMembers}
+        selectedUserId={selectedUserId}
+        isAdding={addMember.isPending}
+        isRemoving={removeMember.isPending}
+        onRequestClose={requestCloseMembers}
+        onCloseAction={() => setManagedTeamId(null)}
+        onSelectedUserIdChange={setSelectedUserId}
+        onAddMember={addSelectedMember}
+        onRemoveMember={removeSelectedMember}
+      />
 
-          <Stack divider={<Divider flexItem />}>
-            {managedTeam?.members.length ? (
-              managedTeam.members.map((member) => (
-                <Stack
-                  key={member.id}
-                  direction="row"
-                  spacing={1.5}
-                  sx={{ alignItems: 'center', py: 1.25 }}
-                >
-                  <UserAvatar
-                    name={member.user.name}
-                    src={member.user.avatar}
-                    size={34}
-                  />
-                  <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                      {member.user.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" noWrap>
-                      {member.user.email}
-                    </Typography>
-                  </Box>
-                  {canManage && (
-                    <Tooltip title={t('removeMember')}>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        disabled={removeMember.isPending}
-                        onClick={() =>
-                          removeMember.mutate(
-                            { teamId: managedTeam.id, memberId: member.id },
-                            {
-                              onError: () =>
-                                enqueueSnackbar(t('memberError'), {
-                                  variant: 'error',
-                                }),
-                            },
-                          )
-                        }
-                      >
-                        <DeleteOutlined fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                </Stack>
-              ))
-            ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                {t('noMembers')}
-              </Typography>
-            )}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setManagedTeamId(null)}>{t('close')}</Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={Boolean(teamToDelete)}
-        onClose={() => {
-          if (!deleteTeam.isPending) setTeamToDelete(null);
-        }}
-      >
-        <DialogTitle>{t('deleteTitle')}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {t('deleteConfirm', { team: teamToDelete?.name ?? '' })}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setTeamToDelete(null)}>{t('cancel')}</Button>
-          <Button
-            color="error"
-            variant="contained"
-            disabled={!teamToDelete || deleteTeam.isPending}
-            onClick={() => {
-              if (!teamToDelete) return;
-              deleteTeam.mutate(teamToDelete.id, {
-                onSuccess: () => {
-                  setTeamToDelete(null);
-                  enqueueSnackbar(t('deleted'), { variant: 'success' });
-                },
-                onError: () =>
-                  enqueueSnackbar(t('deleteError'), { variant: 'error' }),
-              });
-            }}
-          >
-            {deleteTeam.isPending ? t('deleting') : t('delete')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteTeamDialog
+        team={teamToDelete}
+        isDeleting={deleteTeam.isPending}
+        onRequestClose={requestCloseDelete}
+        onCancel={() => setTeamToDelete(null)}
+        onConfirm={confirmDeleteTeam}
+      />
     </>
   );
 };

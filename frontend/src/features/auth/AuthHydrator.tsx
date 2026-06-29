@@ -10,7 +10,10 @@ const AuthHydrator = () => {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname.startsWith('/auth')) authStore.hydrate(null);
+    if (pathname.startsWith('/auth')) {
+      authStore.hydrate(null);
+      return;
+    }
     if (!authStore.isLoading) return;
 
     authApi
@@ -19,7 +22,7 @@ const AuthHydrator = () => {
         authStore.hydrate(res.data);
       })
       .catch(() => authStore.hydrate(null));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
 };
