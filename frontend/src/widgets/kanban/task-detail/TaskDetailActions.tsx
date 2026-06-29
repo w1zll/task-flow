@@ -51,9 +51,13 @@ const TaskDetailActions = ({
       <Box
         sx={{
           display: 'flex',
-          gap: 1,
+          gap: 1.25,
           justifyContent: { xs: 'stretch', sm: 'flex-end' },
-          '& > button': { minHeight: { xs: 44, sm: 32 }, flex: { xs: 1, sm: 0 } },
+          alignItems: 'center',
+          '& > button': {
+            minHeight: { xs: 44, sm: 32 },
+            flex: { xs: 1, sm: '0 0 auto' },
+          },
         }}
       >
         <Button onClick={onClose} size="small">
@@ -66,6 +70,10 @@ const TaskDetailActions = ({
             onClick={onSave}
             disabled={!isDirty || isUpdating}
             size="small"
+            sx={{
+              minWidth: { xs: 0, sm: 116 },
+              '& .MuiButton-startIcon': { mr: 0.75 },
+            }}
           >
             {isUpdating ? t('saving') : t('save')}
           </Button>

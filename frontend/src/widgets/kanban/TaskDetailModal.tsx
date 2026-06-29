@@ -29,7 +29,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import TaskAssignmentFields from './task-detail/TaskAssignmentFields';
 import TaskDetailActions from './task-detail/TaskDetailActions';
 import TaskDetailHeader from './task-detail/TaskDetailHeader';
@@ -42,6 +42,35 @@ import type { TaskDraft } from './task-detail/types';
 interface Props {
   board: Board;
 }
+
+const normalizeDateInput = (value?: string | Date | null) =>
+  value ? dayjs(value).format('YYYY-MM-DD') : '';
+
+const normalizeText = (value?: string | null) => value ?? '';
+
+const normalizeNullableId = (value?: string | null) => value ?? null;
+
+const normalizeLabels = (value?: string[] | null) => value ?? [];
+
+const areLabelsEqual = (left?: string[] | null, right?: string[] | null) =>
+  JSON.stringify(normalizeLabels(left)) === JSON.stringify(normalizeLabels(right));
+
+const isTaskDraftChanged = (task: Task | null, form: TaskDraft) => {
+  if (!task) return false;
+
+  return (
+    normalizeText(form.title) !== normalizeText(task.title) ||
+    normalizeText(form.description) !== normalizeText(task.description) ||
+    (form.priority ?? 'medium') !== (task.priority ?? 'medium') ||
+    !areLabelsEqual(form.labels, task.labels) ||
+    normalizeDateInput(form.dueDate) !== normalizeDateInput(task.dueDate) ||
+    normalizeNullableId(form.assigneeId) !==
+      normalizeNullableId(task.assigneeId) ||
+    normalizeText(form.assigneeName) !== normalizeText(task.assigneeName) ||
+    normalizeNullableId(form.teamId) !== normalizeNullableId(task.teamId) ||
+    Boolean(form.isCompleted) !== Boolean(task.isCompleted)
+  );
+};
 
 const TaskDetailModal = ({ board }: Props) => {
   const t = useTranslations('TaskDetail');
@@ -64,10 +93,10 @@ const TaskDetailModal = ({ board }: Props) => {
 
   const [form, setForm] = useState<TaskDraft>({});
   const [labelInput, setLabelInput] = useState('');
-  const [isDirty, setIsDirty] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const canEdit = board.capabilities.canEditBoardContent;
   const teams = useWorkspaceTeams(board.workspaceId, !!boardUI.openTaskId);
+  const isDirty = useMemo(() => isTaskDraftChanged(task, form), [form, task]);
 
   useEffect(() => {
     if (task) {
@@ -76,14 +105,13 @@ const TaskDetailModal = ({ board }: Props) => {
         description: task.description ?? '',
         priority: task.priority,
         labels: task.labels ?? [],
-        dueDate: task.dueDate ? dayjs(task.dueDate).format('YYYY-MM-DD') : '',
+        dueDate: normalizeDateInput(task.dueDate),
         assigneeName: task.assigneeName ?? '',
         assigneeId: task.assigneeId ?? undefined,
         teamId: task.teamId ?? null,
         isCompleted: task.isCompleted,
         completedAt: task.completedAt,
       });
-      setIsDirty(false);
     }
   }, [task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -112,7 +140,6 @@ const TaskDetailModal = ({ board }: Props) => {
   const patch = <K extends keyof Task,>(key: K, value: Task[K]) => {
     if (!canEdit) return;
     setForm((previous) => ({ ...previous, [key]: value }));
-    setIsDirty(true);
   };
 
   const handleSave = async () => {
@@ -150,7 +177,6 @@ const TaskDetailModal = ({ board }: Props) => {
         { boardId: board.id },
       );
 
-      setIsDirty(false);
       if (isCompletionChange) {
         qc.invalidateQueries({
           queryKey: queryKeys.boardAnalytics(board.id),

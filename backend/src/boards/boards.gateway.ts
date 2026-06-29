@@ -15,6 +15,7 @@ import { WsJwtGuard } from '@/auth/guards/ws-jwt.guard';
 import { TasksService } from '@/tasks/tasks.service';
 import { UpdateTaskDto } from '@/tasks/dto/task.dto';
 import { corsOrigin } from '@/common/cors/cors-origin';
+import { BoardActivityPublisher } from './board-activity.publisher';
 
 type SocketAck = (response: { ok: boolean; message?: string }) => void;
 
@@ -32,10 +33,11 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly boardService: BoardsService,
     private readonly tasksService: TasksService,
+    private readonly boardActivityPublisher: BoardActivityPublisher,
   ) {}
 
   handleConnection(client: Socket) {
-    // console.log(`Client connected: ${client.id}`);
+    this.boardActivityPublisher.setServer(this.server);
   }
 
   handleDisconnect(client: Socket) {

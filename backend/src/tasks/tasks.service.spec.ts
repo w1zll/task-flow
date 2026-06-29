@@ -12,6 +12,7 @@ import { BoardPermissionsService } from '@/boards/board-permissions.service';
 import { ForbiddenException } from '@nestjs/common';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
 import { Team } from '@/teams/entities/team.entity';
+import { BoardActivityEventsService } from '@/boards/board-activity-events.service';
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -22,6 +23,7 @@ describe('TasksService', () => {
   let teamRepo: jest.Mocked<Partial<Repository<Team>>>;
   let boardPermissions: jest.Mocked<Partial<BoardPermissionsService>>;
   let workspacesService: jest.Mocked<Partial<WorkspacesService>>;
+  let boardActivityEvents: jest.Mocked<Partial<BoardActivityEventsService>>;
   let mockQueryBuilder: {
     update: jest.Mock;
     set: jest.Mock;
@@ -125,6 +127,14 @@ describe('TasksService', () => {
         role: 'member',
       }),
     };
+    boardActivityEvents = {
+      logTaskCreated: jest.fn(),
+      logTaskUpdated: jest.fn(),
+      logTaskCompleted: jest.fn(),
+      logTaskMoved: jest.fn(),
+      logTaskReordered: jest.fn(),
+      logTaskDeleted: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -164,6 +174,10 @@ describe('TasksService', () => {
         {
           provide: WorkspacesService,
           useValue: workspacesService,
+        },
+        {
+          provide: BoardActivityEventsService,
+          useValue: boardActivityEvents,
         },
       ],
     }).compile();
@@ -370,6 +384,22 @@ describe('TasksService', () => {
         order: 0,
       }),
     );
+    expect(boardActivityEvents.logTaskCompleted).toHaveBeenCalledWith(
+      'board-1',
+      userId,
+      expect.objectContaining({
+        taskId: 'task-1',
+        title: 'Task',
+        changes: [
+          {
+            field: 'isCompleted',
+            from: false,
+            to: true,
+          },
+        ],
+      }),
+    );
+    expect(boardActivityEvents.logTaskUpdated).not.toHaveBeenCalled();
   });
 
   it('clears completedAt when un-completing a task', async () => {

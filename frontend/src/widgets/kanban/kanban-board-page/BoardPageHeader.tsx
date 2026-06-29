@@ -4,6 +4,7 @@ import type { Board } from '@/shared/api/api';
 import {
   Add,
   GroupOutlined,
+  HistoryOutlined,
   LockOutlined,
   QueryStats,
 } from '@mui/icons-material';
@@ -29,9 +30,11 @@ interface BoardPageHeaderProps {
   canEditBoardContent: boolean;
   isStatsOpen: boolean;
   isMembersOpen: boolean;
+  isActivityOpen: boolean;
   onAddColumn: () => void;
   onToggleStats: () => void;
   onToggleMembers: () => void;
+  onToggleActivity: () => void;
 }
 
 const BoardPageHeader = ({
@@ -41,9 +44,11 @@ const BoardPageHeader = ({
   canEditBoardContent,
   isStatsOpen,
   isMembersOpen,
+  isActivityOpen,
   onAddColumn,
   onToggleStats,
   onToggleMembers,
+  onToggleActivity,
 }: BoardPageHeaderProps) => {
   const t = useTranslations('BoardPage');
 
@@ -165,6 +170,30 @@ const BoardPageHeader = ({
             }}
           >
             <QueryStats fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Button
+          variant={isActivityOpen ? 'contained' : 'outlined'}
+          size="small"
+          startIcon={<HistoryOutlined />}
+          onClick={onToggleActivity}
+          sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+        >
+          {t('activity')}
+        </Button>
+        <Tooltip title={t('activity')}>
+          <IconButton
+            size="small"
+            color={isActivityOpen ? 'primary' : 'default'}
+            onClick={onToggleActivity}
+            aria-label={t('activity')}
+            sx={{
+              display: { xs: 'inline-flex', sm: 'none' },
+              width: 44,
+              height: 44,
+            }}
+          >
+            <HistoryOutlined fontSize="small" />
           </IconButton>
         </Tooltip>
         <Button

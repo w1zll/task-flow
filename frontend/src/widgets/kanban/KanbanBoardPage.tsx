@@ -9,6 +9,7 @@ import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { queryKeys } from '@/shared/queries/board-query-keys';
 import {
   useBoard,
+  useBoardActivities,
   useBoardMembers,
   useCreateColumn,
   useRevokeBoardMember,
@@ -24,9 +25,9 @@ import { useBoardUIStore } from '@/shared/store/root.store';
 import { Box } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSnackbar } from 'notistack';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BoardFiltersToolbar from './BoardFiltersToolbar';
 import {
   countBoardTasks,
@@ -41,6 +42,7 @@ import BoardStatsDrawer from './kanban-board-page/BoardStatsDrawer';
 import { useBoardAnalyticsController } from './kanban-board-page/useBoardAnalyticsController';
 import { useBoardFiltersController } from './kanban-board-page/useBoardFiltersController';
 import TaskDetailModal from './TaskDetailModal';
+import BoardActivityDrawer from './kanban-board-page/BoardActivityDrawer';
 
 interface Props {
   boardId: string;
@@ -51,6 +53,8 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const dayjsLocale = useDayjsLocale();
   const t = useTranslations('BoardPage');
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const [isInitialBoardSynced, setInitialBoardSynced] = useState(!initialBoard);
@@ -63,6 +67,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const createColumn = useCreateColumn();
   const isAddingColumn = useBoardUIStore((state) => state.isAddingColumn);
   const closeTask = useBoardUIStore((state) => state.closeTask);
+  const openTask = useBoardUIStore((state) => state.openTask);
   const setAddingColumn = useBoardUIStore((state) => state.setAddingColumn);
   const setAddingTaskInColumn = useBoardUIStore(
     (state) => state.setAddingTaskInColumn,
@@ -72,6 +77,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const [newColTitle, setNewColTitle] = useState('');
   const [isMembersOpen, setMembersOpen] = useState(false);
   const [isStatsOpen, setStatsOpen] = useState(false);
+  const [isActivityOpen, setActivityOpen] = useState(false);
   const [shareUserId, setShareUserId] = useState('');
   const [shareRole, setShareRole] = useState<'editor' | 'viewer'>('editor');
   const [boardScrollWidth, setBoardScrollWidth] = useState(0);
@@ -85,6 +91,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const boardContentRef = useRef<HTMLDivElement | null>(null);
 
   const boardMembers = useBoardMembers(boardId);
+  const boardActivities = useBoardActivities(boardId);
   const shareBoard = useShareBoard();
   const revokeMember = useRevokeBoardMember();
   const updateMemberRole = useUpdateBoardMemberRole();
@@ -151,10 +158,19 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     () => countBoardTasks(filteredBoard),
     [filteredBoard],
   );
+  const existingTaskIds = useMemo(
+    () =>
+      new Set(
+        board?.columns?.flatMap((column) =>
+          (column.tasks ?? []).map((task) => task.id),
+        ) ?? [],
+      ),
+    [board],
+  );
   const isReorderDisabledByView =
     isBoardReorderDisabledByView(boardFilters);
 
-  useStableBodyScrollLock(isMembersOpen || isStatsOpen);
+  useStableBodyScrollLock(isMembersOpen || isStatsOpen || isActivityOpen);
 
   useEffect(() => {
     if (!initialBoard) return;
@@ -205,6 +221,9 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   useEffect(() => {
     if (!taskToHighlightId || !board) return;
 
+    if (existingTaskIds.has(taskToHighlightId)) {
+      openTask(taskToHighlightId);
+    }
     setHighlightedTaskId(taskToHighlightId);
 
     const scrollTimer = window.setTimeout(() => {
@@ -226,7 +245,22 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
       window.clearTimeout(scrollTimer);
       window.clearTimeout(highlightTimer);
     };
-  }, [board, taskToHighlightId]);
+  }, [board, existingTaskIds, openTask, taskToHighlightId]);
+
+  const handleOpenActivityTask = useCallback(
+    (taskId: string) => {
+      openTask(taskId);
+      setActivityOpen(false);
+      setHighlightedTaskId(taskId);
+
+      const nextSearchParams = new URLSearchParams(searchParams.toString());
+      nextSearchParams.set('taskId', taskId);
+      router.replace(`${pathname}?${nextSearchParams.toString()}`, {
+        scroll: false,
+      });
+    },
+    [openTask, pathname, router, searchParams],
+  );
 
   const syncBoardScroll = () => {
     if (!boardScrollRef.current || !boardTopScrollRef.current) return;
@@ -306,14 +340,22 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
         canEditBoardContent={canEditBoardContent}
         isStatsOpen={isStatsOpen}
         isMembersOpen={isMembersOpen}
+        isActivityOpen={isActivityOpen}
         onAddColumn={() => setAddingColumn(true)}
         onToggleStats={() => {
           setMembersOpen(false);
+          setActivityOpen(false);
           setStatsOpen((open) => !open);
         }}
         onToggleMembers={() => {
           setStatsOpen(false);
+          setActivityOpen(false);
           setMembersOpen((open) => !open);
+        }}
+        onToggleActivity={() => {
+          setStatsOpen(false);
+          setMembersOpen(false);
+          setActivityOpen((open) => !open);
         }}
       />
 
@@ -373,6 +415,16 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
         todayCompletedCount={boardAnalytics.todayCompletedCount}
         onClose={() => setStatsOpen(false)}
         onAnalyticsPeriodChange={boardAnalytics.setAnalyticsPeriod}
+      />
+
+      <BoardActivityDrawer
+        open={isActivityOpen}
+        activities={boardActivities.data}
+        isLoading={boardActivities.isLoading}
+        isError={boardActivities.isError}
+        existingTaskIds={existingTaskIds}
+        onClose={() => setActivityOpen(false)}
+        onOpenTask={handleOpenActivityTask}
       />
 
       <BoardMembersDrawer

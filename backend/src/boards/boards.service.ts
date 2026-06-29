@@ -22,6 +22,7 @@ import {
   BoardAccess,
   BoardPermissionsService,
 } from './board-permissions.service';
+import { BoardActivityEventsService } from './board-activity-events.service';
 import {
   CreateBoardDto,
   CreateBoardViewDto,
@@ -34,6 +35,15 @@ import { BoardRole } from './entities/board-role.enum';
 import { BoardView } from './entities/board-view.entity';
 import { Board } from './entities/board.entity';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
+
+type ActivityChange = {
+  field: string;
+  from: unknown;
+  to: unknown;
+};
+
+const hasOwn = (value: object, key: string) =>
+  Object.prototype.hasOwnProperty.call(value, key);
 
 @Injectable()
 export class BoardsService {
@@ -53,6 +63,7 @@ export class BoardsService {
     private readonly frontendCache: FrontendCacheService,
     private readonly boardPermissions: BoardPermissionsService,
     private readonly workspacesService: WorkspacesService,
+    private readonly boardActivityEvents: BoardActivityEventsService,
   ) {}
 
   async findAll(userId: string): Promise<Board[]> {
@@ -153,6 +164,7 @@ export class BoardsService {
       board.columns = await this.createScrumColumnsForBoard(board.id, locale);
     }
 
+    await this.boardActivityEvents.logBoardCreated(board.id, userId);
     return this.attachRole(board, BoardRole.OWNER);
   }
 
@@ -209,10 +221,23 @@ export class BoardsService {
       await this.boardPermissions.assertCanManageBoardSettings(id, userId);
     const board = await this.boardRepo.findOne({ where: { id } });
     if (!board) throw new NotFoundException('Board not found');
+    const before = {
+      title: board.title,
+      description: board.description ?? null,
+      color: board.color ?? null,
+    };
 
     Object.assign(board, dto);
     const saved = await this.boardRepo.save(board);
     await this.frontendCache.revalidateBoard(id);
+    const changes = this.buildBoardActivityChanges(before, saved, dto);
+    if (changes.length) {
+      await this.boardActivityEvents.logBoardUpdated(id, userId, {
+        boardId: id,
+        title: saved.title,
+        changes,
+      });
+    }
     return this.attachAccess(saved, access);
   }
 
@@ -281,6 +306,12 @@ export class BoardsService {
     });
     boardMember.user = toPublicUser(boardMember.user);
     await this.frontendCache.revalidateBoard(boardId);
+    await this.boardActivityEvents.logBoardMemberInvited(boardId, userId, {
+      memberId: saved.id,
+      memberUserId: saved.userId,
+      memberName: boardMember.user?.name ?? null,
+      role: saved.role,
+    });
     return boardMember;
   }
 
@@ -319,13 +350,21 @@ export class BoardsService {
     userId: string,
   ): Promise<void> {
     await this.boardPermissions.assertCanManageBoardMembers(boardId, userId);
-    const member = await this.memberRepo.findOne({ where: { id: memberId } });
+    const member = await this.memberRepo.findOne({
+      where: { id: memberId },
+      relations: ['user'],
+    });
     if (!member || member.boardId !== boardId) {
       throw new NotFoundException('Board member not found');
     }
 
     await this.memberRepo.remove(member);
     await this.frontendCache.revalidateBoard(boardId);
+    await this.boardActivityEvents.logBoardMemberRemoved(boardId, userId, {
+      memberId: member.id,
+      memberUserId: member.userId,
+      memberName: member.user?.name ?? null,
+    });
   }
 
   async updateMemberRole(
@@ -343,10 +382,18 @@ export class BoardsService {
       throw new NotFoundException('Board member not found');
     }
 
+    const previousRole = member.role;
     member.role = role;
     const saved = await this.memberRepo.save(member);
     saved.user = toPublicUser(saved.user);
     await this.frontendCache.revalidateBoard(boardId);
+    await this.boardActivityEvents.logBoardMemberRoleChanged(boardId, userId, {
+      memberId: saved.id,
+      memberUserId: saved.userId,
+      memberName: saved.user?.name ?? null,
+      previousRole,
+      role: saved.role,
+    });
     return saved;
   }
 
@@ -446,5 +493,45 @@ export class BoardsService {
       currentUserRole: access.role,
       capabilities: access.capabilities,
     });
+  }
+
+  private buildBoardActivityChanges(
+    before: Pick<Board, 'title' | 'description' | 'color'>,
+    after: Board,
+    dto: UpdateBoardDto,
+  ): ActivityChange[] {
+    const changes: ActivityChange[] = [];
+
+    if (hasOwn(dto, 'title')) {
+      this.addActivityChange(changes, 'title', before.title, after.title);
+    }
+    if (hasOwn(dto, 'description')) {
+      this.addActivityChange(
+        changes,
+        'description',
+        before.description ?? null,
+        after.description ?? null,
+      );
+    }
+    if (hasOwn(dto, 'color')) {
+      this.addActivityChange(
+        changes,
+        'color',
+        before.color ?? null,
+        after.color ?? null,
+      );
+    }
+
+    return changes;
+  }
+
+  private addActivityChange(
+    changes: ActivityChange[],
+    field: string,
+    from: unknown,
+    to: unknown,
+  ) {
+    if (JSON.stringify(from) === JSON.stringify(to)) return;
+    changes.push({ field, from, to });
   }
 }
