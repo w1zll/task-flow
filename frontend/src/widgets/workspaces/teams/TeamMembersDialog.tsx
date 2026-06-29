@@ -4,6 +4,7 @@ import type { Team, WorkspaceMember } from '@/shared/api/api';
 import UserAvatar from '@/shared/ui/UserAvatar';
 import { DeleteOutlined, PersonAddAltOutlined } from '@mui/icons-material';
 import {
+  Alert,
   Box,
   Button,
   Dialog,
@@ -50,6 +51,7 @@ const TeamMembersDialog = ({
   onRemoveMember,
 }: TeamMembersDialogProps) => {
   const t = useTranslations('WorkspaceTeams');
+  const titleId = 'team-members-dialog-title';
 
   const renderAvailableMemberOption = (member: WorkspaceMember) => (
     <Box
@@ -83,14 +85,15 @@ const TeamMembersDialog = ({
     <Dialog
       open={Boolean(team)}
       onClose={onRequestClose}
+      aria-labelledby={titleId}
       maxWidth="sm"
       fullWidth
     >
-      <DialogTitle>
+      <DialogTitle id={titleId}>
         {t('membersTitle', { team: team?.name ?? '' })}
       </DialogTitle>
       <DialogContent sx={{ pt: '8px !important' }}>
-        {canManage && (
+        {canManage && availableMembers.length > 0 && (
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1}
@@ -129,6 +132,11 @@ const TeamMembersDialog = ({
             </Button>
           </Stack>
         )}
+        {canManage && availableMembers.length === 0 && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            {t('noAvailableMembers')}
+          </Alert>
+        )}
 
         <Stack divider={<Divider flexItem />}>
           {team?.members.length ? (
@@ -158,6 +166,7 @@ const TeamMembersDialog = ({
                       size="small"
                       color="error"
                       disabled={isRemoving}
+                      aria-label={`${t('removeMember')}: ${member.user.name}`}
                       onClick={() => onRemoveMember(member.id)}
                     >
                       <DeleteOutlined fontSize="small" />

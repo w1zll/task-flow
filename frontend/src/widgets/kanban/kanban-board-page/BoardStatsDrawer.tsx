@@ -53,6 +53,7 @@ const BoardStatsDrawer = ({
     weekly: t('analyticsWeeks'),
     monthly: t('analyticsMonths'),
   };
+  const titleId = 'board-stats-drawer-title';
 
   return (
     <Drawer
@@ -61,6 +62,9 @@ const BoardStatsDrawer = ({
       onClose={onClose}
       slotProps={{
         paper: {
+          role: 'dialog',
+          'aria-modal': true,
+          'aria-labelledby': titleId,
           sx: {
             width: isMobile ? '100%' : 360,
             height: isMobile ? '100%' : 'auto',
@@ -82,7 +86,7 @@ const BoardStatsDrawer = ({
             gap: 2,
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          <Typography id={titleId} variant="h6" sx={{ fontWeight: 700 }}>
             {t('stats')}
           </Typography>
           <IconButton

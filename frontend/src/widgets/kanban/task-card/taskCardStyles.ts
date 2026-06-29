@@ -34,6 +34,11 @@ export const getTaskCardSx = ({
   '&:active': {
     cursor: isCardPending ? 'progress' : canEdit ? 'grabbing' : 'pointer',
   },
+  '&:focus-visible': {
+    outline: (theme) =>
+      `3px solid ${alpha(theme.palette.primary.main, 0.42)}`,
+    outlineOffset: 2,
+  },
   transform: isDragging ? 'rotate(2deg)' : 'none',
   transition:
     'transform 0.15s, box-shadow 0.15s, opacity 0.15s, border-color 0.15s',

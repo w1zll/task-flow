@@ -28,19 +28,26 @@ const DeleteWorkspaceDialog = ({
   onConfirm,
 }: DeleteWorkspaceDialogProps) => {
   const t = useTranslations('WorkspaceSettings');
+  const titleId = 'delete-workspace-dialog-title';
+  const descriptionId = 'delete-workspace-dialog-description';
 
   return (
-    <Dialog open={open} onClose={onRequestClose}>
-      <DialogTitle>{t('deleteWorkspaceTitle')}</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onRequestClose}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+    >
+      <DialogTitle id={titleId}>{t('deleteWorkspaceTitle')}</DialogTitle>
       <DialogContent>
-        <DialogContentText>
+        <DialogContentText id={descriptionId}>
           {t('deleteWorkspaceConfirm', {
             name: workspaceName,
           })}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button disabled={isDeleting} onClick={onCancel}>
+        <Button autoFocus disabled={isDeleting} onClick={onCancel}>
           {t('cancel')}
         </Button>
         <Button

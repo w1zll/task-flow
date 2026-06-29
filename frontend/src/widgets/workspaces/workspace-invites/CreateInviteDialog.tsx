@@ -41,10 +41,17 @@ const CreateInviteDialog = ({
   onCopyLink,
 }: CreateInviteDialogProps) => {
   const t = useTranslations('WorkspaceInvites');
+  const titleId = 'create-invite-dialog-title';
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{t('dialogTitle')}</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby={titleId}
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogTitle id={titleId}>{t('dialogTitle')}</DialogTitle>
       <DialogContent
         sx={{
           pt: '12px !important',

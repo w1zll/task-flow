@@ -92,18 +92,26 @@ const KanbanColumnHeader = ({
         <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
           {canEditBoardContent && (
             <Tooltip title={t('addTask')}>
-              <IconButton size="small" onClick={onStartAddingTask}>
+              <IconButton
+                size="small"
+                onClick={onStartAddingTask}
+                aria-label={t('addTask')}
+              >
                 <Add fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
           {canManageColumns && (
-            <IconButton
-              size="small"
-              onClick={(event) => onOpenMenu(event.currentTarget)}
-            >
-              <MoreHoriz fontSize="small" />
-            </IconButton>
+            <Tooltip title={t('columnActions')}>
+              <IconButton
+                size="small"
+                onClick={(event) => onOpenMenu(event.currentTarget)}
+                aria-label={t('columnActions')}
+                aria-haspopup="menu"
+              >
+                <MoreHoriz fontSize="small" />
+              </IconButton>
+            </Tooltip>
           )}
         </Box>
       )}

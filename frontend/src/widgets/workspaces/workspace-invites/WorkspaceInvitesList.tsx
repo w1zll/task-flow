@@ -120,6 +120,7 @@ const WorkspaceInvitesList = ({
               color="error"
               onClick={() => onRevoke(invite.id)}
               disabled={isRevoking}
+              aria-label={t('revoke')}
             >
               <LinkOff />
             </IconButton>

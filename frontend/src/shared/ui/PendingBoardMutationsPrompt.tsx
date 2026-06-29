@@ -129,17 +129,21 @@ const PendingBoardMutationsPrompt = () => {
     invalidateBoards(boardIds);
     enqueueSnackbar(t('discarded'), { variant: 'info' });
   };
+  const titleId = 'pending-board-mutations-dialog-title';
+  const descriptionId = 'pending-board-mutations-dialog-description';
 
   return (
     <Dialog
       open={canApplyPendingChanges}
       maxWidth="xs"
       fullWidth
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       slotProps={{ paper: { sx: { borderRadius: '6px' } } }}
     >
-      <DialogTitle>{t('title')}</DialogTitle>
+      <DialogTitle id={titleId}>{t('title')}</DialogTitle>
       <DialogContent>
-        <Typography variant="body2" color="text.secondary">
+        <Typography id={descriptionId} variant="body2" color="text.secondary">
           {t(
             allMutationsAreReadOnly ? 'readOnlyDescription' : 'description',
             { count: mutations.length },
@@ -147,7 +151,7 @@ const PendingBoardMutationsPrompt = () => {
         </Typography>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={handleDiscard} disabled={isApplying}>
+        <Button autoFocus onClick={handleDiscard} disabled={isApplying}>
           {t('discard')}
         </Button>
         {!allMutationsAreReadOnly && (

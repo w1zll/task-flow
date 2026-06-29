@@ -28,10 +28,17 @@ const SaveViewDialog = ({
   onSave,
 }: SaveViewDialogProps) => {
   const t = useTranslations('BoardPage.filters');
+  const titleId = 'save-board-view-dialog-title';
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>{t('views.saveTitle')}</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby={titleId}
+      fullWidth
+      maxWidth="xs"
+    >
+      <DialogTitle id={titleId}>{t('views.saveTitle')}</DialogTitle>
       <DialogContent>
         <TextField
           autoFocus

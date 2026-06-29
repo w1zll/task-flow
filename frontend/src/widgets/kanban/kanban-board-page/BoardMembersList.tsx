@@ -3,6 +3,7 @@
 import type { BoardMember, Team } from '@/shared/api/api';
 import UserAvatar from '@/shared/ui/UserAvatar';
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -59,11 +60,7 @@ const BoardMembersList = ({
   }
 
   if (!boardMembers?.length) {
-    return (
-      <Typography variant="body2" color="text.secondary">
-        {t('noMembers')}
-      </Typography>
-    );
+    return <Alert severity="info">{t('noMembers')}</Alert>;
   }
 
   return (
@@ -183,9 +180,7 @@ const BoardMembersList = ({
           );
         })}
       {(isUpdateMemberRoleError || isRevokeMemberError) && (
-        <Typography variant="caption" color="error">
-          {t('memberUpdateError')}
-        </Typography>
+        <Alert severity="error">{t('memberUpdateError')}</Alert>
       )}
     </Stack>
   );

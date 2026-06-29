@@ -27,17 +27,26 @@ const DeleteTeamDialog = ({
   onConfirm,
 }: DeleteTeamDialogProps) => {
   const t = useTranslations('WorkspaceTeams');
+  const titleId = 'delete-team-dialog-title';
+  const descriptionId = 'delete-team-dialog-description';
 
   return (
-    <Dialog open={Boolean(team)} onClose={onRequestClose}>
-      <DialogTitle>{t('deleteTitle')}</DialogTitle>
+    <Dialog
+      open={Boolean(team)}
+      onClose={onRequestClose}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+    >
+      <DialogTitle id={titleId}>{t('deleteTitle')}</DialogTitle>
       <DialogContent>
-        <DialogContentText>
+        <DialogContentText id={descriptionId}>
           {t('deleteConfirm', { team: team?.name ?? '' })}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel}>{t('cancel')}</Button>
+        <Button autoFocus onClick={onCancel}>
+          {t('cancel')}
+        </Button>
         <Button
           color="error"
           variant="contained"

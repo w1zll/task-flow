@@ -27,19 +27,26 @@ const RemoveWorkspaceMemberDialog = ({
   onConfirm,
 }: RemoveWorkspaceMemberDialogProps) => {
   const t = useTranslations('WorkspaceSettings');
+  const titleId = 'remove-workspace-member-dialog-title';
+  const descriptionId = 'remove-workspace-member-dialog-description';
 
   return (
-    <Dialog open={Boolean(member)} onClose={onRequestClose}>
-      <DialogTitle>{t('removeMemberTitle')}</DialogTitle>
+    <Dialog
+      open={Boolean(member)}
+      onClose={onRequestClose}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+    >
+      <DialogTitle id={titleId}>{t('removeMemberTitle')}</DialogTitle>
       <DialogContent>
-        <DialogContentText>
+        <DialogContentText id={descriptionId}>
           {t('removeMemberConfirm', {
             name: member?.user.name ?? '',
           })}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button disabled={isRemoving} onClick={onCancel}>
+        <Button autoFocus disabled={isRemoving} onClick={onCancel}>
           {t('cancel')}
         </Button>
         <Button

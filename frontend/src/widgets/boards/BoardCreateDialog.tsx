@@ -8,6 +8,7 @@ import { useAuthStore } from '@/shared/store/root.store';
 import {
   Box,
   Button,
+  ButtonBase,
   Dialog,
   DialogActions,
   DialogContent,
@@ -79,6 +80,7 @@ const BoardCreateDialog = ({
     [defaultWorkspaceId, workspaces],
   );
   const [form, setForm] = useState(createInitialForm(fallbackWorkspaceId));
+  const titleId = 'board-create-dialog-title';
 
   useStableBodyScrollLock(open);
 
@@ -139,10 +141,13 @@ const BoardCreateDialog = ({
     <Dialog
       open={open}
       onClose={closeDialog}
+      aria-labelledby={titleId}
       maxWidth="xs"
       fullWidth
     >
-      <DialogTitle sx={{ fontWeight: 600 }}>{t('dialogTitle')}</DialogTitle>
+      <DialogTitle id={titleId} sx={{ fontWeight: 600 }}>
+        {t('dialogTitle')}
+      </DialogTitle>
       <DialogContent
         sx={{
           display: 'flex',
@@ -235,8 +240,10 @@ const BoardCreateDialog = ({
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             {BOARD_COLORS.map((color) => (
-              <Box
+              <ButtonBase
                 key={color}
+                aria-label={t('selectColor', { color })}
+                aria-pressed={form.color === color}
                 onClick={() =>
                   setForm((previous) => ({ ...previous, color }))
                 }
@@ -254,6 +261,11 @@ const BoardCreateDialog = ({
                     form.color === color ? 'text.primary' : 'transparent',
                   transition: 'transform 0.15s',
                   '&:hover': { transform: 'scale(1.12)' },
+                  '&.Mui-focusVisible': {
+                    outline: '3px solid',
+                    outlineColor: 'primary.main',
+                    outlineOffset: 2,
+                  },
                 }}
               />
             ))}

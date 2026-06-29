@@ -68,7 +68,11 @@ const TeamCard = ({
         {canManage && (
           <>
             <Tooltip title={t('edit')}>
-              <IconButton size="small" onClick={() => onEdit(team)}>
+              <IconButton
+                size="small"
+                onClick={() => onEdit(team)}
+                aria-label={`${t('edit')}: ${team.name}`}
+              >
                 <EditOutlined fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -77,6 +81,7 @@ const TeamCard = ({
                 size="small"
                 color="error"
                 onClick={() => onDelete(team)}
+                aria-label={`${t('delete')}: ${team.name}`}
               >
                 <DeleteOutlined fontSize="small" />
               </IconButton>

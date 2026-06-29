@@ -28,10 +28,17 @@ const CreateWorkspaceDialog = ({
   onCreate,
 }: CreateWorkspaceDialogProps) => {
   const t = useTranslations('Boards');
+  const titleId = 'create-workspace-dialog-title';
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ fontWeight: 600 }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby={titleId}
+      maxWidth="xs"
+      fullWidth
+    >
+      <DialogTitle id={titleId} sx={{ fontWeight: 600 }}>
         {t('workspaceDialogTitle')}
       </DialogTitle>
       <DialogContent sx={{ pt: '12px !important' }}>
