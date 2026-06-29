@@ -162,7 +162,6 @@ export const useUpdateColumn = () => {
     mutationFn: ({
       id,
       data,
-      boardId,
     }: {
       id: string;
       data: Partial<BoardColumn>;
@@ -217,7 +216,6 @@ export const useUpdateTask = () => {
     mutationFn: ({
       id,
       data,
-      boardId,
     }: {
       id: string;
       data: Partial<Task>;
@@ -239,7 +237,6 @@ export const useMoveTask = () => {
       id,
       columnId,
       order,
-      boardId,
     }: {
       id: string;
       columnId: string;

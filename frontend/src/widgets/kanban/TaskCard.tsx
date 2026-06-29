@@ -1,42 +1,29 @@
 'use client';
 
-import { Board, Task } from '@/shared/api/api';
+import type { Board, Task } from '@/shared/api/api';
 import {
   emitBoardSocketMutation,
   isBoardPermissionError,
   isBoardSocketMutationQueuedError,
 } from '@/shared/lib/boardSocketMutations';
+import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
 import {
   moveTaskToColumnEndInBoard,
   queryKeys,
   updateTaskInBoard,
 } from '@/shared/queries/boards.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
-import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
-import {
-  CalendarTodayOutlined,
-  CheckCircleOutlined,
-  FlagOutlined,
-  GroupsOutlined,
-  LabelOutlined,
-  RadioButtonUnchecked,
-} from '@mui/icons-material';
-import {
-  alpha,
-  Box,
-  Card,
-  Checkbox,
-  Chip,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import dayjs from 'dayjs';
 import { Draggable } from '@hello-pangea/dnd';
-import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
-import { useRef, useState } from 'react';
+import { Card } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
+import dayjs from 'dayjs';
+import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
-import UserAvatar from '@/shared/ui/UserAvatar';
+import { useState } from 'react';
+import TaskCardContent from './task-card/TaskCardContent';
+import TaskCardQuickActions from './task-card/TaskCardQuickActions';
+import { PRIORITY_CONFIG } from './task-card/taskCardPriority';
+import { getTaskCardSx } from './task-card/taskCardStyles';
 
 interface Props {
   task: Task;
@@ -47,13 +34,6 @@ interface Props {
   canEdit?: boolean;
   isHighlighted?: boolean;
 }
-
-const PRIORITY_CONFIG = {
-  low: { color: '#22c55e', labelKey: 'priority.low' as const },
-  medium: { color: '#f59e0b', labelKey: 'priority.medium' as const },
-  high: { color: '#f97316', labelKey: 'priority.high' as const },
-  urgent: { color: '#ef4444', labelKey: 'priority.urgent' as const },
-} as const;
 
 const TaskCard = ({
   task,
@@ -72,14 +52,14 @@ const TaskCard = ({
   const { enqueueSnackbar } = useSnackbar();
   const priority = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG.medium;
   const priorityLabel = t(priority.labelKey);
-  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
   const [isCompletionPending, setIsCompletionPending] = useState(false);
   const isCardPending = isPending || isCompletionPending;
 
-  const isOverdue =
+  const isOverdue = Boolean(
     !task.isCompleted &&
-    task.dueDate &&
-    dayjs(task.dueDate).isBefore(dayjs(), 'day');
+      task.dueDate &&
+      dayjs(task.dueDate).isBefore(dayjs(), 'day'),
+  );
 
   const handleToggleCompletion = async () => {
     if (isCardPending || !canEdit) return;
@@ -165,321 +145,30 @@ const TaskCard = ({
               event.stopPropagation();
             }
           }}
-          sx={{
-            mb: 1,
-            border: '1px solid',
-            borderColor: isHighlighted
-              ? 'primary.main'
-              : snapshot.isDragging
-              ? 'primary.main'
-              : task.isCompleted
-                ? 'success.light'
-                : 'divider',
-            bgcolor: task.isCompleted
-              ? (theme) => alpha(theme.palette.success.main, 0.06)
-              : 'background.paper',
-            cursor: isCardPending ? 'progress' : canEdit ? 'grab' : 'pointer',
-            '&:active': {
-              cursor: isCardPending ? 'progress' : canEdit ? 'grabbing' : 'pointer',
-            },
-            transform: snapshot.isDragging ? 'rotate(2deg)' : 'none',
-            transition: 'transform 0.15s, box-shadow 0.15s, opacity 0.15s, border-color 0.15s',
-            position: 'relative',
-            overflow: isCardPending ? 'hidden' : 'visible',
-            opacity: isCardPending ? 0.78 : 1,
-            scrollMargin: 96,
-            boxShadow: isHighlighted
-              ? (theme) =>
-                  `0 0 0 3px ${alpha(
-                    theme.palette.primary.main,
-                    0.28,
-                  )}, 0 14px 34px ${alpha(theme.palette.primary.main, 0.18)}`
-              : undefined,
-            animation: isCardPending
-              ? 'taskCardPendingPulse 1.15s ease-in-out infinite'
-              : isHighlighted
-                ? 'taskCardHighlightPulse 1s ease-in-out 3'
-              : undefined,
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              left: 0,
-              top: 4,
-              bottom: 4,
-              width: 3,
-              bgcolor: priority.color,
-              borderRadius: '0 2px 2px 0',
-            },
-            '&::after': isCardPending
-              ? {
-                  content: '""',
-                  position: 'absolute',
-                  inset: 0,
-                  pointerEvents: 'none',
-                  background: (theme) =>
-                    `linear-gradient(90deg, transparent 0%, ${alpha(
-                      theme.palette.action.hover,
-                      0.9,
-                    )} 50%, transparent 100%)`,
-                  transform: 'translateX(-100%)',
-                  animation: 'taskCardPending 1.35s ease-in-out infinite',
-                }
-              : undefined,
-            '@keyframes taskCardPending': {
-              '0%': { transform: 'translateX(-100%)' },
-              '100%': { transform: 'translateX(100%)' },
-            },
-            '@keyframes taskCardPendingPulse': {
-              '0%': { boxShadow: '0 0 0 0 rgba(34, 197, 94, 0.26)' },
-              '70%': { boxShadow: '0 0 0 7px rgba(34, 197, 94, 0)' },
-              '100%': { boxShadow: '0 0 0 0 rgba(34, 197, 94, 0)' },
-            },
-            '@keyframes taskCardHighlightPulse': {
-              '0%': {
-                transform: 'scale(1)',
-              },
-              '50%': {
-                transform: 'scale(1.025)',
-              },
-              '100%': {
-                transform: 'scale(1)',
-              },
-            },
-          }}
-          >
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 6,
-              right: 6,
-              zIndex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 0.5,
-            }}
-            onClick={(event) => {
-              event.stopPropagation();
-            }}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-            onPointerUp={(event) => event.stopPropagation()}
-          >
-            <Tooltip
-              title={
-                task.isCompleted ? t('markIncomplete') : t('markComplete')
-              }
-            >
-              <span>
-                <Checkbox
-                  size="small"
-                  checked={!!task.isCompleted}
-                  disabled={isCardPending || !canEdit}
-                  onChange={handleToggleCompletion}
-                  icon={<RadioButtonUnchecked fontSize="small" />}
-                  checkedIcon={<CheckCircleOutlined fontSize="small" />}
-                  slotProps={{
-                    input: {
-                      'aria-label': t('completionToggle'),
-                    },
-                  }}
-                  sx={{
-                    p: 0,
-                    width: 20,
-                    height: 20,
-                    color: 'text.disabled',
-                    '&.Mui-checked': {
-                      color: 'success.main',
-                    },
-                    '& .MuiSvgIcon-root': {
-                      fontSize: 20,
-                    },
-                  }}
-                />
-              </span>
-            </Tooltip>
-            {task.assigneeName && (
-              <Tooltip title={task.assigneeName}>
-                <Box>
-                  <UserAvatar
-                    name={task.assigneeName}
-                    src={task.assignee?.avatar}
-                    size={20}
-                  />
-                </Box>
-              </Tooltip>
-            )}
-          </Box>
-
-          <Box
-            onPointerDown={(event) => {
-              pointerStartRef.current = {
-                x: event.clientX,
-                y: event.clientY,
-              };
-            }}
-            onPointerUp={(event) => {
-              const pointerStart = pointerStartRef.current;
-              pointerStartRef.current = null;
-              if (!pointerStart || isCardPending) return;
-
-              const deltaX = event.clientX - pointerStart.x;
-              const deltaY = event.clientY - pointerStart.y;
-              const distance = Math.hypot(deltaX, deltaY);
-              if (distance > 6) return;
-
-              openTask(task.id);
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-            sx={{
-              p: 1.5,
-              pl: 2,
-              pr: 4.5,
-              pointerEvents: isCardPending ? 'none' : 'auto',
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                lineHeight: 1.4,
-                mb: task.labels?.length ? 1 : 0,
-                fontWeight: 500,
-                color: task.isCompleted ? 'text.secondary' : 'text.primary',
-                textDecoration: task.isCompleted ? 'line-through' : 'none',
-              }}
-            >
-              {task.title}
-            </Typography>
-
-            {task.labels && task.labels.length > 0 && (
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-                {task.labels.slice(0, 3).map((label) => (
-                  <Chip
-                    key={label}
-                    label={label}
-                    size="small"
-                    icon={
-                      <LabelOutlined sx={{ fontSize: '12px !important' }} />
-                    }
-                    sx={{
-                      height: 20,
-                      fontSize: 11,
-                      '& .MuiChip-label': { px: 0.75 },
-                    }}
-                  />
-                ))}
-              </Box>
-            )}
-
-            {task.team && (
-              <Tooltip title={t('teamTooltip', { team: task.team.name })}>
-                <Chip
-                  label={task.team.name}
-                  size="small"
-                  icon={<GroupsOutlined sx={{ fontSize: '12px !important' }} />}
-                  sx={{
-                    height: 20,
-                    mb: 1,
-                    bgcolor: alpha(task.team.color, 0.16),
-                    color: task.team.color,
-                    borderColor: alpha(task.team.color, 0.4),
-                    fontSize: 11,
-                    fontWeight: 600,
-                    '& .MuiChip-label': { px: 0.75 },
-                    '& .MuiChip-icon': { color: 'inherit' },
-                  }}
-                  variant="outlined"
-                />
-              </Tooltip>
-            )}
-
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                columnGap: 1,
-                rowGap: 0.5,
-                flexWrap: 'wrap',
-                mt: 0.5,
-              }}
-            >
-              {task.isCompleted && (
-                <Tooltip title={t('completedTooltip')}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.25,
-                      color: 'success.main',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <CheckCircleOutlined sx={{ fontSize: 13 }} />
-                    <Typography
-                      variant="caption"
-                      sx={{ fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
-                    >
-                      {t('completed')}
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              )}
-
-              <Tooltip title={t('priorityTooltip', { priority: priorityLabel })}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.25,
-                    flexShrink: 0,
-                  }}
-                >
-                  <FlagOutlined sx={{ fontSize: 13, color: priority.color }} />
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: priority.color,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {priorityLabel}
-                  </Typography>
-                </Box>
-              </Tooltip>
-
-              {task.dueDate && (
-                <Tooltip
-                  title={t('deadlineTooltip', {
-                    date: dayjs(task.dueDate).locale(dayjsLocale).format('D MMM'),
-                  })}
-                >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.25,
-                      color: isOverdue ? 'error.main' : 'text.secondary',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <CalendarTodayOutlined sx={{ fontSize: 12 }} />
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontSize: 11,
-                        fontWeight: isOverdue ? 600 : 400,
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {dayjs(task.dueDate).locale(dayjsLocale).format('D MMM')}
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              )}
-            </Box>
-          </Box>
+          sx={getTaskCardSx({
+            isDragging: snapshot.isDragging,
+            isHighlighted,
+            isCardPending,
+            isCompleted: task.isCompleted,
+            canEdit,
+            priorityColor: priority.color,
+          })}
+        >
+          <TaskCardQuickActions
+            task={task}
+            isDisabled={isCardPending}
+            canEdit={canEdit}
+            onToggleCompletion={handleToggleCompletion}
+          />
+          <TaskCardContent
+            task={task}
+            priority={priority}
+            priorityLabel={priorityLabel}
+            isOverdue={isOverdue}
+            dayjsLocale={dayjsLocale}
+            isCardPending={isCardPending}
+            onOpenTask={openTask}
+          />
         </Card>
       )}
     </Draggable>

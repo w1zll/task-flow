@@ -1,81 +1,42 @@
 'use client';
 
-import { Board, Task } from '@/shared/api/api';
+import type { Board, Task } from '@/shared/api/api';
 import {
   emitBoardSocketMutation,
   isBoardPermissionError,
   isBoardSocketMutationQueuedError,
 } from '@/shared/lib/boardSocketMutations';
+import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
 import { getSocket } from '@/shared/lib/socket';
+import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import {
   moveTaskToColumnEndInBoard,
   queryKeys,
   updateTaskInBoard,
   useDeleteTask,
 } from '@/shared/queries/boards.queries';
-import { useBoardUIStore } from '@/shared/store/root.store';
-import {
-  CalendarToday,
-  Close,
-  Delete,
-  Flag,
-  Label,
-  Save,
-} from '@mui/icons-material';
-import {
-  Box,
-  Button,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  FormControl,
-  FormControlLabel,
-  IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
-  Switch,
-  TextField,
-  Typography,
-} from '@mui/material';
-import dayjs from 'dayjs';
-import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
-import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
-import { useQueryClient } from '@tanstack/react-query';
-import { useSnackbar } from 'notistack';
-import UserAvatar from '@/shared/ui/UserAvatar';
 import { useWorkspaceTeams } from '@/shared/queries/teams.queries';
+import { useBoardUIStore } from '@/shared/store/root.store';
+import { Box, Dialog, DialogContent, Divider } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
+import dayjs from 'dayjs';
+import { useTranslations } from 'next-intl';
+import { useSnackbar } from 'notistack';
+import { useEffect, useState } from 'react';
+import TaskAssignmentFields from './task-detail/TaskAssignmentFields';
+import TaskDetailActions from './task-detail/TaskDetailActions';
+import TaskDetailHeader from './task-detail/TaskDetailHeader';
+import TaskLabelsEditor from './task-detail/TaskLabelsEditor';
+import TaskPriorityDateFields from './task-detail/TaskPriorityDateFields';
+import TaskTimestamps from './task-detail/TaskTimestamps';
+import TaskTitleDescriptionFields from './task-detail/TaskTitleDescriptionFields';
+import type { TaskDraft } from './task-detail/types';
 
 interface Props {
   board: Board;
 }
 
-const PRIORITY_OPTIONS = [
-  { value: 'low', color: '#22c55e' },
-  { value: 'medium', color: '#f59e0b' },
-  { value: 'high', color: '#f97316' },
-  { value: 'urgent', color: '#ef4444' },
-] as const;
-
-const LABEL_PRESETS = [
-  'bug',
-  'feature',
-  'design',
-  'backend',
-  'frontend',
-  'docs',
-  'refactor',
-  'test',
-];
-
 const TaskDetailModal = ({ board }: Props) => {
-  const t = useTranslations('TaskDetail');
-  const tPriority = useTranslations('TaskCard');
   const tNotifications = useTranslations('Notifications');
   const boardUI = useBoardUIStore();
   const deleteTask = useDeleteTask();
@@ -86,10 +47,10 @@ const TaskDetailModal = ({ board }: Props) => {
 
   const task =
     board.columns
-      ?.flatMap((c) => c.tasks ?? [])
-      .find((t) => t.id === boardUI.openTaskId) ?? null;
+      ?.flatMap((column) => column.tasks ?? [])
+      .find((item) => item.id === boardUI.openTaskId) ?? null;
 
-  const [form, setForm] = useState<Partial<Task>>({});
+  const [form, setForm] = useState<TaskDraft>({});
   const [labelInput, setLabelInput] = useState('');
   const [isDirty, setIsDirty] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -112,7 +73,7 @@ const TaskDetailModal = ({ board }: Props) => {
       });
       setIsDirty(false);
     }
-  }, [task?.id]);
+  }, [task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const handleTaskUpdate = ({
@@ -136,9 +97,9 @@ const TaskDetailModal = ({ board }: Props) => {
     };
   }, [board.id, task?.id]);
 
-  const patch = <K extends keyof Task>(key: K, value: Task[K]) => {
+  const patch = <K extends keyof Task,>(key: K, value: Task[K]) => {
     if (!canEdit) return;
-    setForm((p) => ({ ...p, [key]: value }));
+    setForm((previous) => ({ ...previous, [key]: value }));
     setIsDirty(true);
   };
 
@@ -243,9 +204,9 @@ const TaskDetailModal = ({ board }: Props) => {
   const addLabel = (label: string) => {
     const trimmed = label.trim().toLowerCase();
     if (!trimmed) return;
-    const current = (form.labels as string[]) ?? [];
+    const current = form.labels ?? [];
     if (!current.includes(trimmed)) {
-      patch('labels', [...current, trimmed] as any);
+      patch('labels', [...current, trimmed]);
     }
     setLabelInput('');
   };
@@ -253,14 +214,14 @@ const TaskDetailModal = ({ board }: Props) => {
   const removeLabel = (label: string) => {
     patch(
       'labels',
-      ((form.labels as string[]) ?? []).filter((l) => l !== label) as any,
+      (form.labels ?? []).filter((item) => item !== label),
     );
   };
 
   if (!task) return null;
 
   const columnTitle =
-    board.columns?.find((c) => c.id === task.columnId)?.title ?? '';
+    board.columns?.find((column) => column.id === task.columnId)?.title ?? '';
 
   return (
     <Dialog
@@ -270,26 +231,10 @@ const TaskDetailModal = ({ board }: Props) => {
       fullWidth
       slotProps={{ paper: { sx: { borderRadius: '6px' } } }}
     >
-      <DialogTitle
-        sx={{ pb: 1, display: 'flex', alignItems: 'flex-start', gap: 1 }}
-      >
-        <Box sx={{ flex: 1 }}>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ display: 'block', mb: 0.5 }}
-          >
-            {t('inColumn', { column: columnTitle })}
-          </Typography>
-        </Box>
-        <IconButton
-          size="small"
-          onClick={() => boardUI.closeTask()}
-          sx={{ mt: -0.5 }}
-        >
-          <Close fontSize="small" />
-        </IconButton>
-      </DialogTitle>
+      <TaskDetailHeader
+        columnTitle={columnTitle}
+        onClose={() => boardUI.closeTask()}
+      />
 
       <DialogContent
         sx={{
@@ -299,314 +244,50 @@ const TaskDetailModal = ({ board }: Props) => {
           pt: '8px !important',
         }}
       >
-        <TextField
-          label={t('title')}
-          fullWidth
-          value={form.title ?? ''}
-          disabled={!canEdit}
-          onChange={(e) => patch('title', e.target.value as any)}
-          slotProps={{ htmlInput: { style: { fontWeight: 600 } } }}
-        />
-
-        <FormControlLabel
-          control={
-            <Switch
-              checked={!!form.isCompleted}
-              disabled={!canEdit}
-              onChange={(event) =>
-                patch('isCompleted', event.target.checked as any)
-              }
-              color="success"
-            />
-          }
-          label={t('completed')}
-          sx={{
-            alignSelf: 'flex-start',
-            m: 0,
-            '& .MuiFormControlLabel-label': {
-              fontSize: 14,
-              fontWeight: 500,
-            },
-          }}
-        />
-
-        <TextField
-          label={t('description')}
-          fullWidth
-          multiline
-          rows={3}
-          value={form.description ?? ''}
-          disabled={!canEdit}
-          onChange={(e) => patch('description', e.target.value as any)}
-          placeholder={t('descriptionPlaceholder')}
+        <TaskTitleDescriptionFields
+          form={form}
+          canEdit={canEdit}
+          onPatch={patch}
         />
 
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>{t('priority')}</InputLabel>
-            <Select
-              label={t('priority')}
-              value={form.priority ?? 'medium'}
-              disabled={!canEdit}
-              onChange={(e) => patch('priority', e.target.value as any)}
-              renderValue={(val) => {
-                const opt = PRIORITY_OPTIONS.find((o) => o.value === val);
-                return (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Flag sx={{ fontSize: 14, color: opt?.color }} />
-                    <span>{opt ? tPriority(`priority.${opt.value}` as const) : ''}</span>
-                  </Box>
-                );
-              }}
-            >
-              {PRIORITY_OPTIONS.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  <Flag sx={{ fontSize: 14, color: opt.color, mr: 1 }} />
-                  {tPriority(`priority.${opt.value}` as const)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <TextField
-            label={t('dueDate')}
-            type="date"
-            size="small"
-            sx={{ minWidth: 160 }}
-            value={form.dueDate ?? ''}
-            disabled={!canEdit}
-            onChange={(e) => patch('dueDate', e.target.value as any)}
-            slotProps={{
-              inputLabel: { shrink: true },
-              input: {
-                startAdornment: (
-                  <CalendarToday
-                    sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }}
-                  />
-                ),
-              },
-            }}
+          <TaskPriorityDateFields
+            form={form}
+            canEdit={canEdit}
+            onPatch={patch}
           />
-
-          <FormControl size="small" sx={{ minWidth: 180, flex: 1 }}>
-            <InputLabel>{t('assignee')}</InputLabel>
-            <Select
-              label={t('assignee')}
-              value={form.assigneeId ?? ''}
-              disabled={!canEdit}
-              onChange={(e) => {
-                const selected = e.target.value as string;
-                const member = board.members?.find(
-                  (m) => m.userId === selected,
-                );
-                patch('assigneeId', selected as any);
-                patch('assigneeName', member?.user?.name ?? '');
-              }}
-              renderValue={(val) => {
-                const member = board.members?.find((m) => m.userId === val);
-                return member ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <UserAvatar
-                      name={member.user.name}
-                      src={member.user.avatar}
-                      size={24}
-                    />
-                    <span>{member.user.name}</span>
-                  </Box>
-                ) : (
-                  t('unassigned')
-                );
-              }}
-            >
-              <MenuItem value="">{t('unassigned')}</MenuItem>
-              {board.members?.map((member) => (
-                <MenuItem key={member.id} value={member.userId}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <UserAvatar
-                      name={member.user.name}
-                      src={member.user.avatar}
-                      size={24}
-                    />
-                    <span>{member.user.name}</span>
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl size="small" sx={{ minWidth: 180, flex: 1 }}>
-            <InputLabel>{t('team')}</InputLabel>
-            <Select
-              label={t('team')}
-              value={form.teamId ?? ''}
-              disabled={!canEdit || teams.isLoading}
-              onChange={(event) =>
-                patch(
-                  'teamId',
-                  (event.target.value || null) as Task['teamId'],
-                )
-              }
-              renderValue={(value) => {
-                const team = teams.data?.find((item) => item.id === value);
-                return team ? (
-                  <Chip
-                    size="small"
-                    label={team.name}
-                    sx={{
-                      bgcolor: team.color,
-                      color: '#fff',
-                      fontWeight: 600,
-                    }}
-                  />
-                ) : (
-                  t('noTeam')
-                );
-              }}
-            >
-              <MenuItem value="">{t('noTeam')}</MenuItem>
-              {teams.data?.map((team) => (
-                <MenuItem key={team.id} value={team.id}>
-                  <Box
-                    sx={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      bgcolor: team.color,
-                      mr: 1,
-                    }}
-                  />
-                  {team.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <TaskAssignmentFields
+            form={form}
+            board={board}
+            teams={teams.data}
+            isTeamsLoading={teams.isLoading}
+            canEdit={canEdit}
+            onPatch={patch}
+          />
         </Box>
 
-        <Box>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}
-          >
-            <Label sx={{ fontSize: 14 }} /> {t('labels')}
-          </Typography>
+        <TaskLabelsEditor
+          labels={form.labels ?? []}
+          labelInput={labelInput}
+          canEdit={canEdit}
+          onLabelInputChange={setLabelInput}
+          onAddLabel={addLabel}
+          onRemoveLabel={removeLabel}
+        />
 
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-            {LABEL_PRESETS.map((preset) => {
-              const active = ((form.labels as string[]) ?? []).includes(preset);
-              return (
-                <Chip
-                  key={preset}
-                  label={preset}
-                  size="small"
-                  variant={active ? 'filled' : 'outlined'}
-                  color={active ? 'primary' : 'default'}
-                  onClick={
-                    canEdit
-                      ? () =>
-                          active ? removeLabel(preset) : addLabel(preset)
-                      : undefined
-                  }
-                  sx={{
-                    cursor: canEdit ? 'pointer' : 'default',
-                    fontSize: 11,
-                  }}
-                />
-              );
-            })}
-          </Box>
-
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <TextField
-              size="small"
-              placeholder={t('newLabel')}
-              value={labelInput}
-              disabled={!canEdit}
-              onChange={(e) => setLabelInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  addLabel(labelInput);
-                }
-              }}
-              sx={{ flex: 1 }}
-            />
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => addLabel(labelInput)}
-              disabled={!canEdit}
-            >
-              {t('add')}
-            </Button>
-          </Box>
-
-          {((form.labels as string[]) ?? []).filter(
-            (l) => !LABEL_PRESETS.includes(l),
-          ).length > 0 && (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
-              {((form.labels as string[]) ?? [])
-                .filter((l) => !LABEL_PRESETS.includes(l))
-                .map((label) => (
-                  <Chip
-                    key={label}
-                    label={label}
-                    size="small"
-                    color="secondary"
-                    onDelete={canEdit ? () => removeLabel(label) : undefined}
-                    sx={{ fontSize: 11 }}
-                  />
-                ))}
-            </Box>
-          )}
-        </Box>
-
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Typography variant="caption" color="text.secondary">
-            {t('created')}{' '}
-            {dayjs(task.createdAt).locale(dayjsLocale).format('D MMM')}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {t('updated')}{' '}
-            {dayjs(task.updatedAt).locale(dayjsLocale).format('D MMM')}
-          </Typography>
-        </Box>
+        <TaskTimestamps task={task} dayjsLocale={dayjsLocale} />
       </DialogContent>
 
       <Divider />
 
-      <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
-        {canEdit ? (
-          <Button
-            color="error"
-            startIcon={<Delete />}
-            onClick={handleDelete}
-            size="small"
-          >
-            {t('deleteTask')}
-          </Button>
-        ) : (
-          <Typography variant="body2" color="text.secondary">
-            {t('readOnly')}
-          </Typography>
-        )}
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button onClick={() => boardUI.closeTask()} size="small">
-            {canEdit ? t('cancel') : t('close')}
-          </Button>
-          {canEdit && (
-            <Button
-              variant="contained"
-              startIcon={<Save />}
-              onClick={handleSave}
-              disabled={!isDirty || isUpdating}
-              size="small"
-            >
-              {isUpdating ? t('saving') : t('save')}
-            </Button>
-          )}
-        </Box>
-      </DialogActions>
+      <TaskDetailActions
+        canEdit={canEdit}
+        isDirty={isDirty}
+        isUpdating={isUpdating}
+        onClose={() => boardUI.closeTask()}
+        onDelete={handleDelete}
+        onSave={handleSave}
+      />
     </Dialog>
   );
 };

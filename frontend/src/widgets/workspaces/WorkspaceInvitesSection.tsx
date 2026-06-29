@@ -6,40 +6,24 @@ import {
   useRevokeWorkspaceInvite,
   useWorkspaceInvites,
 } from '@/shared/queries/workspaces.queries';
-import { AddLink, ContentCopy, LinkOff } from '@mui/icons-material';
+import { AddLink } from '@mui/icons-material';
 import {
-  Alert,
   Box,
   Button,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
-  IconButton,
-  MenuItem,
   Paper,
-  Stack,
-  TextField,
-  Tooltip,
   Typography,
 } from '@mui/material';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
+import CreateInviteDialog from './workspace-invites/CreateInviteDialog';
+import type { InviteForm } from './workspace-invites/types';
+import WorkspaceInvitesList from './workspace-invites/WorkspaceInvitesList';
 
 interface Props {
   workspaceId: string;
   currentUserRole: 'owner' | 'admin';
-}
-
-interface InviteForm {
-  defaultRole: 'member' | 'admin';
-  expiresInDays: string;
-  maxUses: string;
-  allowedEmail: string;
-  allowedEmailDomain: string;
 }
 
 const initialForm: InviteForm = {
@@ -55,7 +39,6 @@ const WorkspaceInvitesSection = ({
   currentUserRole,
 }: Props) => {
   const t = useTranslations('WorkspaceInvites');
-  const format = useFormatter();
   const { enqueueSnackbar } = useSnackbar();
   const invites = useWorkspaceInvites(workspaceId);
   const createInvite = useCreateWorkspaceInvite(workspaceId);
@@ -66,7 +49,7 @@ const WorkspaceInvitesSection = ({
 
   useStableBodyScrollLock(isCreateOpen);
 
-  const updateForm = <K extends keyof InviteForm>(
+  const updateForm = <K extends keyof InviteForm,>(
     key: K,
     value: InviteForm[K],
   ) => setForm((current) => ({ ...current, [key]: value }));
@@ -140,203 +123,31 @@ const WorkspaceInvitesSection = ({
         </Box>
         <Divider />
 
-        {invites.isLoading ? (
-          <Typography color="text.secondary" sx={{ p: 3 }}>
-            {t('loading')}
-          </Typography>
-        ) : invites.isError ? (
-          <Alert severity="error" sx={{ m: 2 }}>
-            {t('loadError')}
-          </Alert>
-        ) : invites.data?.length === 0 ? (
-          <Typography color="text.secondary" sx={{ p: 3 }}>
-            {t('empty')}
-          </Typography>
-        ) : (
-          <Stack divider={<Divider flexItem />}>
-            {invites.data?.map((invite) => (
-              <Box
-                key={invite.id}
-                sx={{
-                  px: { xs: 2, sm: 3 },
-                  py: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                }}
-              >
-                <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    useFlexGap
-                    sx={{ flexWrap: 'wrap' }}
-                  >
-                    <Chip
-                      size="small"
-                      label={t(`role.${invite.defaultRole}`)}
-                    />
-                    {invite.allowedEmailDomain && (
-                      <Chip
-                        size="small"
-                        variant="outlined"
-                        label={`@${invite.allowedEmailDomain}`}
-                      />
-                    )}
-                    {invite.hasSpecificEmailRestriction && (
-                      <Chip
-                        size="small"
-                        variant="outlined"
-                        label={t('specificEmail')}
-                      />
-                    )}
-                  </Stack>
-                  <Typography variant="body2" sx={{ mt: 0.75 }}>
-                    {t('usage', {
-                      used: invite.usesCount,
-                      max: invite.maxUses ?? t('unlimited'),
-                    })}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {t('expires', {
-                      date: format.dateTime(new Date(invite.expiresAt), {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      }),
-                    })}
-                  </Typography>
-                </Box>
-                <Tooltip title={t('revoke')}>
-                  <IconButton
-                    color="error"
-                    onClick={() =>
-                      revokeInvite.mutate(invite.id, {
-                        onError: () =>
-                          enqueueSnackbar(t('revokeError'), {
-                            variant: 'error',
-                          }),
-                      })
-                    }
-                    disabled={revokeInvite.isPending}
-                  >
-                    <LinkOff />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            ))}
-          </Stack>
-        )}
+        <WorkspaceInvitesList
+          invites={invites.data}
+          isLoading={invites.isLoading}
+          isError={invites.isError}
+          isRevoking={revokeInvite.isPending}
+          onRevoke={(inviteId) =>
+            revokeInvite.mutate(inviteId, {
+              onError: () =>
+                enqueueSnackbar(t('revokeError'), { variant: 'error' }),
+            })
+          }
+        />
       </Paper>
 
-      <Dialog
+      <CreateInviteDialog
         open={isCreateOpen}
+        form={form}
+        createdLink={createdLink}
+        currentUserRole={currentUserRole}
+        isCreating={createInvite.isPending}
         onClose={closeDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>{t('dialogTitle')}</DialogTitle>
-        <DialogContent
-          sx={{
-            pt: '12px !important',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          {createdLink ? (
-            <>
-              <Alert severity="success">{t('createdDescription')}</Alert>
-              <TextField
-                label={t('link')}
-                value={createdLink}
-                fullWidth
-                slotProps={{ htmlInput: { readOnly: true } }}
-              />
-              <Button
-                variant="contained"
-                startIcon={<ContentCopy />}
-                onClick={copyLink}
-              >
-                {t('copy')}
-              </Button>
-            </>
-          ) : (
-            <>
-              <TextField
-                select
-                label={t('defaultRole')}
-                value={form.defaultRole}
-                onChange={(event) =>
-                  updateForm(
-                    'defaultRole',
-                    event.target.value as InviteForm['defaultRole'],
-                  )
-                }
-              >
-                <MenuItem value="member">{t('role.member')}</MenuItem>
-                {currentUserRole === 'owner' && (
-                  <MenuItem value="admin">{t('role.admin')}</MenuItem>
-                )}
-              </TextField>
-              <TextField
-                label={t('expiresInDays')}
-                type="number"
-                value={form.expiresInDays}
-                onChange={(event) =>
-                  updateForm('expiresInDays', event.target.value)
-                }
-                slotProps={{ htmlInput: { min: 1, max: 30 } }}
-              />
-              <TextField
-                label={t('maxUses')}
-                type="number"
-                value={form.maxUses}
-                onChange={(event) =>
-                  updateForm('maxUses', event.target.value)
-                }
-                helperText={t('maxUsesHint')}
-                slotProps={{ htmlInput: { min: 1, max: 1000 } }}
-              />
-              <TextField
-                label={t('allowedEmail')}
-                type="email"
-                value={form.allowedEmail}
-                onChange={(event) =>
-                  updateForm('allowedEmail', event.target.value)
-                }
-                helperText={t('allowedEmailHint')}
-              />
-              <TextField
-                label={t('allowedDomain')}
-                placeholder="example.com"
-                value={form.allowedEmailDomain}
-                onChange={(event) =>
-                  updateForm('allowedEmailDomain', event.target.value)
-                }
-                helperText={t('allowedDomainHint')}
-              />
-            </>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={closeDialog}>
-            {createdLink ? t('done') : t('cancel')}
-          </Button>
-          {!createdLink && (
-            <Button
-              variant="contained"
-              onClick={handleCreate}
-              disabled={
-                createInvite.isPending ||
-                Number(form.expiresInDays) < 1 ||
-                Number(form.expiresInDays) > 30
-              }
-            >
-              {createInvite.isPending ? t('creating') : t('createAction')}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+        onFormChange={updateForm}
+        onCreate={handleCreate}
+        onCopyLink={copyLink}
+      />
     </>
   );
 };
