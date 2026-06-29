@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/entities/user.entity';
 import { Board } from './boards/entities/board.entity';
+import { BoardActivity } from './boards/entities/board-activity.entity';
 import { BoardMember } from './boards/entities/board-member.entity';
 import { BoardView } from './boards/entities/board-view.entity';
 import { Column } from './columns/entities/column.entity';
@@ -59,6 +60,7 @@ import { DemoModule } from './demo/demo.module';
             Board,
             BoardMember,
             BoardView,
+            BoardActivity,
             Column,
             Task,
             RefreshToken,

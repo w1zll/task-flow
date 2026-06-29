@@ -4,11 +4,13 @@ import { BoardPermissionsService } from '@/boards/board-permissions.service';
 import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
 import { ColumnsService } from './column.service';
 import { Column } from './entities/column.entity';
+import { BoardActivityEventsService } from '@/boards/board-activity-events.service';
 
 describe('ColumnsService permissions', () => {
   let service: ColumnsService;
   let columnRepo: jest.Mocked<Partial<Repository<Column>>>;
   let boardPermissions: jest.Mocked<Partial<BoardPermissionsService>>;
+  let boardActivityEvents: jest.Mocked<Partial<BoardActivityEventsService>>;
 
   beforeEach(() => {
     columnRepo = {
@@ -22,10 +24,17 @@ describe('ColumnsService permissions', () => {
     boardPermissions = {
       assertCanManageColumns: jest.fn().mockResolvedValue({} as never),
     };
+    boardActivityEvents = {
+      logColumnCreated: jest.fn(),
+      logColumnUpdated: jest.fn(),
+      logColumnDeleted: jest.fn(),
+      logColumnReordered: jest.fn(),
+    };
     service = new ColumnsService(
       columnRepo as Repository<Column>,
       { revalidateBoard: jest.fn() } as unknown as FrontendCacheService,
       boardPermissions as BoardPermissionsService,
+      boardActivityEvents as BoardActivityEventsService,
     );
   });
 

@@ -330,6 +330,15 @@ export const useBoardMembers = (boardId: string) => {
   });
 };
 
+export const useBoardActivities = (boardId: string) => {
+  return useQuery({
+    queryKey: queryKeys.boardActivities(boardId),
+    queryFn: () => boardsApi.getActivities(boardId).then((r) => r.data),
+    enabled: !!boardId,
+    staleTime: 30_000,
+  });
+};
+
 export const useBoardViews = (boardId: string) => {
   return useQuery({
     queryKey: queryKeys.boardViews(boardId),

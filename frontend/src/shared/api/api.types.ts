@@ -521,6 +521,160 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/boards/{id}/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List board activity entries */
+        get: operations["BoardActivityController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Создать задачу в колонке */
+        post: operations["TasksController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Изменить задачу */
+        put: operations["TasksController_update"];
+        post?: never;
+        /** Удалить задачу */
+        delete: operations["TasksController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Переместить задачу в другую колонку (drag & drop) */
+        patch: operations["TasksController_move"];
+        trace?: never;
+    };
+    "/api/tasks/column/{columnId}/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Переупорядочить задачи в колонке */
+        put: operations["TasksController_reorder"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/analytics/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Статистика выполненных задач по дням */
+        get: operations["TasksController_analyticsDaily"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/analytics/weekly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Статистика выполненных задач по неделям */
+        get: operations["TasksController_analyticsWeekly"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/analytics/monthly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Статистика выполненных задач по месяцам */
+        get: operations["TasksController_analyticsMonthly"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/analytics/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Сводка по выполнению задач в срок и с опозданием */
+        get: operations["TasksController_analyticsSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workspaces/{workspaceId}/teams": {
         parameters: {
             query?: never;
@@ -723,143 +877,6 @@ export interface paths {
         get?: never;
         /** Reorder columns in board */
         put: operations["ColumnsController_reorder"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tasks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Создать задачу в колонке */
-        post: operations["TasksController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tasks/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Изменить задачу */
-        put: operations["TasksController_update"];
-        post?: never;
-        /** Удалить задачу */
-        delete: operations["TasksController_remove"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tasks/{id}/move": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Переместить задачу в другую колонку (drag & drop) */
-        patch: operations["TasksController_move"];
-        trace?: never;
-    };
-    "/api/tasks/column/{columnId}/reorder": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Переупорядочить задачи в колонке */
-        put: operations["TasksController_reorder"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tasks/analytics/daily": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Статистика выполненных задач по дням */
-        get: operations["TasksController_analyticsDaily"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tasks/analytics/weekly": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Статистика выполненных задач по неделям */
-        get: operations["TasksController_analyticsWeekly"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tasks/analytics/monthly": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Статистика выполненных задач по месяцам */
-        get: operations["TasksController_analyticsMonthly"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tasks/analytics/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Сводка по выполнению задач в срок и с опозданием */
-        get: operations["TasksController_analyticsSummary"];
-        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -1257,81 +1274,29 @@ export interface components {
             /** @example #669266 */
             color?: string;
         };
-        TeamMemberResponseDto: {
-            /** @example team-membership-uuid */
+        BoardActivityResponseDto: {
+            /** @example activity-uuid */
             id: string;
-            /** @example team-uuid */
-            teamId: string;
-            /** @example user-uuid */
-            userId: string;
-            user: components["schemas"]["UserResponseDto"];
-            /** @example 2026-06-25T12:00:00.000Z */
-            createdAt: string;
-        };
-        TeamResponseDto: {
-            /** @example team-uuid */
-            id: string;
-            /** @example Design */
-            name: string;
-            description?: string | null;
-            /** @example #8b5cf6 */
-            color: string;
-            /** @example workspace-uuid */
-            workspaceId: string;
-            /** @example user-uuid */
-            createdById: string | null;
-            members: components["schemas"]["TeamMemberResponseDto"][];
-            /** @example 2026-06-25T12:00:00.000Z */
-            createdAt: string;
-            /** @example 2026-06-25T12:00:00.000Z */
-            updatedAt: string;
-        };
-        CreateTeamDto: {
-            /** @example Design */
-            name: string;
-            /** @example Product design team */
-            description?: string;
-            /** @example #8b5cf6 */
-            color?: string;
-        };
-        UpdateTeamDto: {
-            /** @example Design */
-            name?: string;
-            /** @example Product design team */
-            description?: string;
-            /** @example #8b5cf6 */
-            color?: string;
-        };
-        AddTeamMemberDto: {
-            /** @example user-uuid */
-            userId: string;
-        };
-        DemoWorkspaceSessionDto: {
-            user: components["schemas"]["UserDto"];
-            /** @example workspace-uuid */
-            workspaceId: string;
             /** @example board-uuid */
             boardId: string;
-        };
-        CreateColumnDto: {
-            /** @example To Do */
-            title: string;
-            /** @example board-uuid */
-            boardId: string;
-            /** @example 0 */
-            order?: number;
-        };
-        UpdateColumnDto: {
-            /** @example To Do */
-            title?: string;
-            /** @example board-uuid */
-            boardId?: string;
-            /** @example 0 */
-            order?: number;
-        };
-        ReorderColumnsDto: {
-            /** @description Массив ID колонок в новой последовательности */
-            columnIds: string[];
+            actorUser?: components["schemas"]["UserResponseDto"] | null;
+            /** @enum {string} */
+            event: "board_created" | "board_updated" | "board_member_invited" | "board_member_role_changed" | "board_member_removed" | "task_created" | "task_updated" | "task_completed" | "task_moved" | "task_reordered" | "task_deleted" | "column_created" | "column_updated" | "column_reordered" | "column_deleted";
+            /** @enum {string} */
+            entityType: "board" | "board_member" | "task" | "column";
+            /** @example task-uuid */
+            entityId?: string | null;
+            /**
+             * @example {
+             *       "taskId": "task-uuid",
+             *       "title": "Fix bug"
+             *     }
+             */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+            /** @example 2026-06-01T00:00:00.000Z */
+            createdAt: string;
         };
         CreateTaskDto: {
             /** @example Task 1 */
@@ -1414,6 +1379,82 @@ export interface components {
             onTime: number;
             /** @example 6 */
             late: number;
+        };
+        TeamMemberResponseDto: {
+            /** @example team-membership-uuid */
+            id: string;
+            /** @example team-uuid */
+            teamId: string;
+            /** @example user-uuid */
+            userId: string;
+            user: components["schemas"]["UserResponseDto"];
+            /** @example 2026-06-25T12:00:00.000Z */
+            createdAt: string;
+        };
+        TeamResponseDto: {
+            /** @example team-uuid */
+            id: string;
+            /** @example Design */
+            name: string;
+            description?: string | null;
+            /** @example #8b5cf6 */
+            color: string;
+            /** @example workspace-uuid */
+            workspaceId: string;
+            /** @example user-uuid */
+            createdById: string | null;
+            members: components["schemas"]["TeamMemberResponseDto"][];
+            /** @example 2026-06-25T12:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-06-25T12:00:00.000Z */
+            updatedAt: string;
+        };
+        CreateTeamDto: {
+            /** @example Design */
+            name: string;
+            /** @example Product design team */
+            description?: string;
+            /** @example #8b5cf6 */
+            color?: string;
+        };
+        UpdateTeamDto: {
+            /** @example Design */
+            name?: string;
+            /** @example Product design team */
+            description?: string;
+            /** @example #8b5cf6 */
+            color?: string;
+        };
+        AddTeamMemberDto: {
+            /** @example user-uuid */
+            userId: string;
+        };
+        DemoWorkspaceSessionDto: {
+            user: components["schemas"]["UserDto"];
+            /** @example workspace-uuid */
+            workspaceId: string;
+            /** @example board-uuid */
+            boardId: string;
+        };
+        CreateColumnDto: {
+            /** @example To Do */
+            title: string;
+            /** @example board-uuid */
+            boardId: string;
+            /** @example 0 */
+            order?: number;
+        };
+        UpdateColumnDto: {
+            /** @example To Do */
+            title?: string;
+            /** @example board-uuid */
+            boardId?: string;
+            /** @example 0 */
+            order?: number;
+        };
+        ReorderColumnsDto: {
+            /** @description Массив ID колонок в новой последовательности */
+            columnIds: string[];
         };
     };
     responses: never;
@@ -2234,6 +2275,238 @@ export interface operations {
             };
         };
     };
+    BoardActivityController_findAll: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before?: string;
+                event?: ("board_created" | "board_updated" | "board_member_invited" | "board_member_role_changed" | "board_member_removed" | "task_created" | "task_updated" | "task_completed" | "task_moved" | "task_reordered" | "task_deleted" | "column_created" | "column_updated" | "column_reordered" | "column_deleted")[];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardActivityResponseDto"][];
+                };
+            };
+        };
+    };
+    TasksController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+        };
+    };
+    TasksController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaskDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+        };
+    };
+    TasksController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_move: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveTaskDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponseDto"];
+                };
+            };
+        };
+    };
+    TasksController_reorder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                columnId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderTasksDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_analyticsDaily: {
+        parameters: {
+            query?: {
+                boardId?: string;
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsItemDto"][];
+                };
+            };
+        };
+    };
+    TasksController_analyticsWeekly: {
+        parameters: {
+            query?: {
+                boardId?: string;
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsItemDto"][];
+                };
+            };
+        };
+    };
+    TasksController_analyticsMonthly: {
+        parameters: {
+            query?: {
+                boardId?: string;
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsItemDto"][];
+                };
+            };
+        };
+    };
+    TasksController_analyticsSummary: {
+        parameters: {
+            query?: {
+                boardId?: string;
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompletionSummaryDto"];
+                };
+            };
+        };
+    };
     TeamsController_list: {
         parameters: {
             query?: never;
@@ -2606,213 +2879,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    TasksController_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTaskDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskResponseDto"];
-                };
-            };
-        };
-    };
-    TasksController_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateTaskDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskResponseDto"];
-                };
-            };
-        };
-    };
-    TasksController_remove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_move: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MoveTaskDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskResponseDto"];
-                };
-            };
-        };
-    };
-    TasksController_reorder: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                columnId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReorderTasksDto"];
-            };
-        };
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    TasksController_analyticsDaily: {
-        parameters: {
-            query?: {
-                boardId?: string;
-                fromDate?: string;
-                toDate?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnalyticsItemDto"][];
-                };
-            };
-        };
-    };
-    TasksController_analyticsWeekly: {
-        parameters: {
-            query?: {
-                boardId?: string;
-                fromDate?: string;
-                toDate?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnalyticsItemDto"][];
-                };
-            };
-        };
-    };
-    TasksController_analyticsMonthly: {
-        parameters: {
-            query?: {
-                boardId?: string;
-                fromDate?: string;
-                toDate?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnalyticsItemDto"][];
-                };
-            };
-        };
-    };
-    TasksController_analyticsSummary: {
-        parameters: {
-            query?: {
-                boardId?: string;
-                fromDate?: string;
-                toDate?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CompletionSummaryDto"];
-                };
             };
         };
     };
