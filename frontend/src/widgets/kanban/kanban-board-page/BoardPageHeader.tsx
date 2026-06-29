@@ -51,7 +51,7 @@ const BoardPageHeader = ({
     <Box
       sx={{
         px: { xs: 2, sm: 3 },
-        py: 2,
+        py: { xs: .5, sm: 2 },
         borderBottom: '1px solid',
         borderColor: 'divider',
         display: 'flex',

@@ -148,7 +148,7 @@ const MobileKanbanBoard = ({
           borderBottom: '1px solid',
           borderColor: 'divider',
           px: 2,
-          pt: 1.25,
+          pt: 1,
         }}
       >
         <Stack
@@ -158,7 +158,7 @@ const MobileKanbanBoard = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             minWidth: 0,
-            pb: 1,
+            pb: 0.5,
           }}
         >
           <Box sx={{ minWidth: 0 }}>
@@ -199,10 +199,13 @@ const MobileKanbanBoard = ({
         >
           {columns.map((column) => (
             <Tab
+              sx={{
+                p: 0,
+              }}
               key={column.id}
               value={column.id}
               label={
-                <Stack spacing={0.25} sx={{ alignItems: 'flex-start' }}>
+                <Stack spacing={0.1} sx={{ alignItems: 'flex-start' }}>
                   <Typography variant="caption" sx={{ fontWeight: 700 }}>
                     {column.title}
                   </Typography>
