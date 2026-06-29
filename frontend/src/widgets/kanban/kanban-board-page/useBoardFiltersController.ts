@@ -1,7 +1,14 @@
 import { useSnackbar } from 'notistack';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import {
   useBoardViews,
   useCreateBoardView,
@@ -23,6 +30,10 @@ export const useBoardFiltersController = (boardId: string) => {
   const searchParams = useSearchParams();
   const searchParamsString = searchParams.toString();
   const { enqueueSnackbar } = useSnackbar();
+  const [isFilterRefreshVisible, setFilterRefreshVisible] = useState(false);
+  const [isFilterNavigationPending, startFilterNavigation] = useTransition();
+  const filterRefreshTargetRef = useRef<string | null>(null);
+  const filterRefreshTimerRef = useRef<number | null>(null);
   const boardViews = useBoardViews(boardId);
   const createBoardView = useCreateBoardView();
   const deleteBoardView = useDeleteBoardView();
@@ -36,6 +47,67 @@ export const useBoardFiltersController = (boardId: string) => {
     [searchParamsString],
   );
 
+  const clearFilterRefreshTimer = useCallback(() => {
+    if (!filterRefreshTimerRef.current) return;
+    window.clearTimeout(filterRefreshTimerRef.current);
+    filterRefreshTimerRef.current = null;
+  }, []);
+
+  const beginFilterRefresh = useCallback(
+    (nextQuery: string) => {
+      clearFilterRefreshTimer();
+      filterRefreshTargetRef.current = nextQuery;
+      setFilterRefreshVisible(true);
+      filterRefreshTimerRef.current = window.setTimeout(() => {
+        filterRefreshTargetRef.current = null;
+        setFilterRefreshVisible(false);
+      }, 3000);
+    },
+    [clearFilterRefreshTimer],
+  );
+
+  useEffect(
+    () => () => {
+      clearFilterRefreshTimer();
+    },
+    [clearFilterRefreshTimer],
+  );
+
+  useEffect(() => {
+    if (filterRefreshTargetRef.current !== searchParamsString) return;
+
+    clearFilterRefreshTimer();
+    filterRefreshTimerRef.current = window.setTimeout(() => {
+      filterRefreshTargetRef.current = null;
+      setFilterRefreshVisible(false);
+    }, 450);
+
+    return () => {
+      clearFilterRefreshTimer();
+    };
+  }, [clearFilterRefreshTimer, searchParamsString]);
+
+  const replaceBoardFilterUrl = useCallback(
+    (nextSearchParams: URLSearchParams) => {
+      const nextQuery = nextSearchParams.toString();
+      if (nextQuery === searchParamsString) return;
+
+      beginFilterRefresh(nextQuery);
+      startFilterNavigation(() => {
+        router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+          scroll: false,
+        });
+      });
+    },
+    [
+      beginFilterRefresh,
+      pathname,
+      router,
+      searchParamsString,
+      startFilterNavigation,
+    ],
+  );
+
   const updateBoardFilters = useCallback(
     (filters: BoardFilters) => {
       const nextSearchParams = writeBoardFiltersToSearchParams(
@@ -43,12 +115,9 @@ export const useBoardFiltersController = (boardId: string) => {
         new URLSearchParams(searchParamsString),
       );
       nextSearchParams.delete('view');
-      const nextQuery = nextSearchParams.toString();
-      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
-        scroll: false,
-      });
+      replaceBoardFilterUrl(nextSearchParams);
     },
-    [pathname, router, searchParamsString],
+    [replaceBoardFilterUrl, searchParamsString],
   );
 
   const resetBoardFilters = useCallback(() => {
@@ -71,15 +140,11 @@ export const useBoardFiltersController = (boardId: string) => {
         new URLSearchParams(searchParamsString),
       );
       nextSearchParams.set('view', viewId);
-      const nextQuery = nextSearchParams.toString();
-      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
-        scroll: false,
-      });
+      replaceBoardFilterUrl(nextSearchParams);
     },
     [
       boardViews.data,
-      pathname,
-      router,
+      replaceBoardFilterUrl,
       searchParamsString,
       updateBoardFilters,
     ],
@@ -107,10 +172,7 @@ export const useBoardFiltersController = (boardId: string) => {
               new URLSearchParams(searchParamsString),
             );
             nextSearchParams.set('view', view.id);
-            const nextQuery = nextSearchParams.toString();
-            router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
-              scroll: false,
-            });
+            replaceBoardFilterUrl(nextSearchParams);
           },
           onError: () => {
             enqueueSnackbar(t('filters.views.createError'), {
@@ -125,8 +187,7 @@ export const useBoardFiltersController = (boardId: string) => {
       boardId,
       createBoardView,
       enqueueSnackbar,
-      pathname,
-      router,
+      replaceBoardFilterUrl,
       searchParamsString,
       t,
     ],
@@ -168,6 +229,7 @@ export const useBoardFiltersController = (boardId: string) => {
     boardViews,
     selectedViewId,
     taskToHighlightId,
+    isFiltering: isFilterRefreshVisible || isFilterNavigationPending,
     createBoardView,
     deleteBoardView,
     updateBoardFilters,

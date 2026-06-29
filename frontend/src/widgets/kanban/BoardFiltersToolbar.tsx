@@ -1,7 +1,7 @@
 'use client';
 
 import type { BoardMember, BoardView, Team } from '@/shared/api/api';
-import { Box, Stack } from '@mui/material';
+import { Box, Collapse, LinearProgress, Stack } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import {
   type KeyboardEvent,
@@ -35,6 +35,7 @@ interface Props {
   teams?: Team[];
   filteredCount: number;
   totalCount: number;
+  isFiltering: boolean;
   isReorderDisabled: boolean;
   savedViews?: BoardView[];
   selectedViewId?: string | null;
@@ -53,6 +54,7 @@ const BoardFiltersToolbar = ({
   teams,
   filteredCount,
   totalCount,
+  isFiltering,
   isReorderDisabled,
   savedViews = [],
   selectedViewId,
@@ -68,7 +70,9 @@ const BoardFiltersToolbar = ({
   const [searchInput, setSearchInput] = useState(filters.search);
   const [labelsInput, setLabelsInput] = useState(filters.labels.join(', '));
   const [isSaveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [isDesktopFiltersExpanded, setDesktopFiltersExpanded] = useState(true);
   const [viewTitle, setViewTitle] = useState('');
+  const desktopFiltersPanelId = 'board-filters-desktop-panel';
   const isActive = areBoardFiltersActive(filters);
   const members = useMemo(() => uniqueMembers(boardMembers), [boardMembers]);
   const sortedTeams = useMemo(() => uniqueTeams(teams), [teams]);
@@ -238,6 +242,7 @@ const BoardFiltersToolbar = ({
         borderColor: 'divider',
         bgcolor: 'background.paper',
         flexShrink: 0,
+        position: 'relative',
       }}
     >
       <Stack spacing={1.25}>
@@ -245,17 +250,52 @@ const BoardFiltersToolbar = ({
           isActive={isActive}
           filteredCount={filteredCount}
           totalCount={totalCount}
+          isFiltering={isFiltering}
+          isDesktopExpanded={isDesktopFiltersExpanded}
+          desktopPanelId={desktopFiltersPanelId}
           onReset={handleReset}
           onOpenMobileDrawer={() => setMobileDrawerOpen(true)}
+          onToggleDesktopExpanded={() =>
+            setDesktopFiltersExpanded((expanded) => !expanded)
+          }
         />
 
-        <Box sx={{ display: { xs: 'none', md: 'block' } }}>{filterForm}</Box>
+        <Collapse
+          in={isDesktopFiltersExpanded}
+          timeout="auto"
+          unmountOnExit
+          sx={{ display: { xs: 'none', md: 'block' } }}
+        >
+          <Stack id={desktopFiltersPanelId} spacing={1.25}>
+            <Box>{filterForm}</Box>
 
-        <ActiveFilterChips
-          activeChips={activeChips}
-          isReorderDisabled={isReorderDisabled}
-        />
+            <ActiveFilterChips
+              activeChips={activeChips}
+              isReorderDisabled={isReorderDisabled}
+            />
+          </Stack>
+        </Collapse>
+
+        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+          <ActiveFilterChips
+            activeChips={activeChips}
+            isReorderDisabled={isReorderDisabled}
+          />
+        </Box>
       </Stack>
+
+      {isFiltering && (
+        <LinearProgress
+          aria-label={t('loadingResults')}
+          sx={{
+            position: 'absolute',
+            right: 0,
+            bottom: 0,
+            left: 0,
+            height: 2,
+          }}
+        />
+      )}
 
       <BoardFiltersMobileDrawer
         open={isMobileDrawerOpen}
