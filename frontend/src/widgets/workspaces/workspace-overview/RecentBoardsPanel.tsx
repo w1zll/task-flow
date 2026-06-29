@@ -31,17 +31,24 @@ const RecentBoardsPanel = ({
   const shellT = useTranslations('WorkspaceShell');
 
   return (
-    <Paper variant="outlined" sx={{ p: 2.5, height: '100%' }}>
+    <Paper
+      variant="outlined"
+      sx={{ p: { xs: 2, sm: 2.5 }, minWidth: 0, height: '100%' }}
+    >
       <Stack
-        direction="row"
+        direction={{ xs: 'column', sm: 'row' }}
         spacing={1}
-        sx={{ justifyContent: 'space-between', mb: 2 }}
+        sx={{ minWidth: 0, justifyContent: 'space-between', mb: 2 }}
       >
-        <Box>
+        <Box sx={{ minWidth: 0 }}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
             {t('recentBoards')}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ overflowWrap: 'anywhere' }}
+          >
             {t('recentBoardsDescription')}
           </Typography>
         </Box>
@@ -70,7 +77,11 @@ const RecentBoardsPanel = ({
                 href={`/workspaces/${workspaceId}/boards/${board.id}`}
                 sx={{ p: 1.5 }}
               >
-                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                <Stack
+                  direction="row"
+                  spacing={1.5}
+                  sx={{ minWidth: 0, alignItems: 'center' }}
+                >
                   <Box
                     sx={{
                       width: 10,
@@ -81,16 +92,17 @@ const RecentBoardsPanel = ({
                     }}
                   />
                   <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography sx={{ fontWeight: 700 }} noWrap>
+                    <Typography sx={{ fontWeight: 700 }}>
                       {board.title}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" noWrap>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>
                       {board.description || t('noDescription')}
                     </Typography>
                   </Box>
                   <Chip
                     size="small"
                     label={shellT(`boardRole.${board.currentUserRole}`)}
+                    sx={{ flexShrink: 0 }}
                   />
                 </Stack>
               </CardActionArea>
@@ -105,6 +117,7 @@ const RecentBoardsPanel = ({
             href={`/workspaces/${workspaceId}/boards`}
             startIcon={<Add />}
             variant="contained"
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             {t('createFirstBoard')}
           </Button>

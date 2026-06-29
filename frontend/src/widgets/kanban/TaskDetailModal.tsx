@@ -17,7 +17,14 @@ import {
 } from '@/shared/queries/boards.queries';
 import { useWorkspaceTeams } from '@/shared/queries/teams.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
-import { Box, Dialog, DialogContent, Divider } from '@mui/material';
+import {
+  Box,
+  Dialog,
+  DialogContent,
+  Divider,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
@@ -43,6 +50,10 @@ const TaskDetailModal = ({ board }: Props) => {
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const dayjsLocale = useDayjsLocale();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'), {
+    defaultMatches: false,
+  });
   useStableBodyScrollLock(!!boardUI.openTaskId);
 
   const task =
@@ -229,7 +240,14 @@ const TaskDetailModal = ({ board }: Props) => {
       onClose={() => boardUI.closeTask()}
       maxWidth="sm"
       fullWidth
-      slotProps={{ paper: { sx: { borderRadius: '6px' } } }}
+      fullScreen={isMobile}
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: isMobile ? 0 : '6px',
+          },
+        },
+      }}
     >
       <TaskDetailHeader
         columnTitle={columnTitle}
@@ -241,6 +259,7 @@ const TaskDetailModal = ({ board }: Props) => {
           display: 'flex',
           flexDirection: 'column',
           gap: 2.5,
+          px: { xs: 2, sm: 3 },
           pt: '8px !important',
         }}
       >
@@ -250,7 +269,16 @@ const TaskDetailModal = ({ board }: Props) => {
           onPatch={patch}
         />
 
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            flexWrap: 'wrap',
+            '& > *': {
+              flex: { xs: '1 1 100%', sm: '1 1 220px' },
+            },
+          }}
+        >
           <TaskPriorityDateFields
             form={form}
             canEdit={canEdit}

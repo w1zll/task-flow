@@ -2,16 +2,25 @@
 
 import type { Board } from '@/shared/api/api';
 import {
+  ViewColumnOutlined,
+  ViewKanbanOutlined,
+} from '@mui/icons-material';
+import {
   alpha,
   Box,
   CircularProgress,
   Skeleton,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import type { RefObject } from 'react';
+import { type RefObject, useState } from 'react';
 import KanbanBoard from '../KanbanBoard';
+import MobileKanbanBoard from '../MobileKanbanBoard';
 import AddColumnComposer from './AddColumnComposer';
 import { subtleScrollbarSx } from './scrollbarSx';
 
@@ -38,6 +47,8 @@ interface BoardCanvasSectionProps {
   onCancelAddColumn: () => void;
 }
 
+type MobileBoardMode = 'single' | 'board';
+
 const BoardCanvasSection = ({
   boardId,
   isLoading,
@@ -60,7 +71,16 @@ const BoardCanvasSection = ({
   onAddColumn,
   onCancelAddColumn,
 }: BoardCanvasSectionProps) => {
-  const t = useTranslations('BoardPage.filters');
+  const tFilters = useTranslations('BoardPage.filters');
+  const tMobile = useTranslations('BoardPage.mobile');
+  const theme = useTheme();
+  const isMobileBoard = useMediaQuery(theme.breakpoints.down('md'), {
+    defaultMatches: false,
+  });
+  const [mobileBoardMode, setMobileBoardMode] =
+    useState<MobileBoardMode>('single');
+  const isSingleColumnMode =
+    isMobileBoard && mobileBoardMode === 'single';
 
   return (
     <Box
@@ -84,7 +104,7 @@ const BoardCanvasSection = ({
             pt: 2,
           }}
         >
-          {Array.from({ length: 3 }).map((_, index) => (
+          {Array.from({ length: isMobileBoard ? 1 : 3 }).map((_, index) => (
             <Skeleton key={index} variant="rounded" width={280} height={400} />
           ))}
         </Box>
@@ -137,70 +157,148 @@ const BoardCanvasSection = ({
                   variant="caption"
                   sx={{ fontWeight: 600, overflowWrap: 'anywhere' }}
                 >
-                  {t('loadingResults')}
+                  {tFilters('loadingResults')}
                 </Typography>
               </Stack>
             </Box>
           )}
-          <Box
-            ref={boardTopScrollRef}
-            onScroll={onTopScroll}
-            sx={{
-              ...subtleScrollbarSx,
-              display: hasBoardHorizontalOverflow ? 'block' : 'none',
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              height: 14,
-              flexShrink: 0,
-            }}
-          >
-            <Box sx={{ width: boardScrollWidth, height: 1 }} />
-          </Box>
-          <Box
-            ref={boardScrollRef}
-            onScroll={onBoardScroll}
-            sx={{
-              ...subtleScrollbarSx,
-              flex: 1,
-              minHeight: 0,
-              overflowX: 'auto',
-              overflowY: 'auto',
-              minWidth: 0,
-            }}
-          >
+          {isMobileBoard && (
             <Box
-              ref={boardContentRef}
               sx={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 2,
-                width: 'max-content',
-                minWidth: '100%',
-                boxSizing: 'border-box',
-                px: { xs: 2, sm: 3 },
-                pt: 2,
-                pb: 2,
+                flexShrink: 0,
+                px: 2,
+                py: 1,
+                bgcolor: 'background.paper',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
               }}
             >
-              <Box sx={{ flexShrink: 0 }}>
-                <KanbanBoard
-                  key={boardId}
-                  board={filteredBoard}
-                  highlightedTaskId={highlightedTaskId}
-                  isReorderDisabled={isReorderDisabled}
-                />
-              </Box>
-              {canManageColumns && isAddingColumn ? (
-                <AddColumnComposer
-                  title={newColumnTitle}
-                  isCreating={isCreatingColumn}
-                  onTitleChange={onNewColumnTitleChange}
-                  onSubmit={onAddColumn}
-                  onCancel={onCancelAddColumn}
-                />
-              ) : null}
+              <ToggleButtonGroup
+                exclusive
+                size="small"
+                value={mobileBoardMode}
+                aria-label={tMobile('viewModeLabel')}
+                onChange={(_, nextMode: MobileBoardMode | null) => {
+                  if (nextMode) setMobileBoardMode(nextMode);
+                }}
+                sx={{
+                  width: '100%',
+                  '& .MuiToggleButton-root': {
+                    flex: 1,
+                    gap: 0.75,
+                    minHeight: 40,
+                    px: 1,
+                    textTransform: 'none',
+                    whiteSpace: 'nowrap',
+                  },
+                }}
+              >
+                <ToggleButton
+                  value="single"
+                  aria-label={tMobile('viewSingle')}
+                >
+                  <ViewColumnOutlined fontSize="small" />
+                  {tMobile('viewSingle')}
+                </ToggleButton>
+                <ToggleButton
+                  value="board"
+                  aria-label={tMobile('viewBoard')}
+                >
+                  <ViewKanbanOutlined fontSize="small" />
+                  {tMobile('viewBoard')}
+                </ToggleButton>
+              </ToggleButtonGroup>
             </Box>
-          </Box>
+          )}
+          {isSingleColumnMode ? (
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              {canManageColumns && isAddingColumn ? (
+                <Box sx={{ px: 2, pt: 2, pb: 0, flexShrink: 0 }}>
+                  <AddColumnComposer
+                    title={newColumnTitle}
+                    isCreating={isCreatingColumn}
+                    onTitleChange={onNewColumnTitleChange}
+                    onSubmit={onAddColumn}
+                    onCancel={onCancelAddColumn}
+                  />
+                </Box>
+              ) : null}
+              <MobileKanbanBoard
+                board={filteredBoard}
+                highlightedTaskId={highlightedTaskId}
+                isReorderDisabled={isReorderDisabled}
+              />
+            </Box>
+          ) : (
+            <>
+              <Box
+                ref={boardTopScrollRef}
+                onScroll={onTopScroll}
+                sx={{
+                  ...subtleScrollbarSx,
+                  display: hasBoardHorizontalOverflow ? 'block' : 'none',
+                  overflowX: 'auto',
+                  overflowY: 'hidden',
+                  height: 14,
+                  flexShrink: 0,
+                }}
+              >
+                <Box sx={{ width: boardScrollWidth, height: 1 }} />
+              </Box>
+              <Box
+                ref={boardScrollRef}
+                onScroll={onBoardScroll}
+                sx={{
+                  ...subtleScrollbarSx,
+                  flex: 1,
+                  minHeight: 0,
+                  overflowX: 'auto',
+                  overflowY: 'auto',
+                  minWidth: 0,
+                }}
+              >
+                <Box
+                  ref={boardContentRef}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 2,
+                    width: 'max-content',
+                    minWidth: '100%',
+                    boxSizing: 'border-box',
+                    px: { xs: 2, sm: 3 },
+                    pt: 2,
+                    pb: 2,
+                  }}
+                >
+                  <Box sx={{ flexShrink: 0 }}>
+                    <KanbanBoard
+                      key={boardId}
+                      board={filteredBoard}
+                      highlightedTaskId={highlightedTaskId}
+                      isReorderDisabled={isReorderDisabled}
+                    />
+                  </Box>
+                  {canManageColumns && isAddingColumn ? (
+                    <AddColumnComposer
+                      title={newColumnTitle}
+                      isCreating={isCreatingColumn}
+                      onTitleChange={onNewColumnTitleChange}
+                      onSubmit={onAddColumn}
+                      onCancel={onCancelAddColumn}
+                    />
+                  ) : null}
+                </Box>
+              </Box>
+            </>
+          )}
         </Box>
       ) : null}
     </Box>

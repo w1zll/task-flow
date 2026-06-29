@@ -28,7 +28,12 @@ const TaskDetailHeader = ({
           {t('inColumn', { column: columnTitle })}
         </Typography>
       </Box>
-      <IconButton size="small" onClick={onClose} sx={{ mt: -0.5 }}>
+      <IconButton
+        size="small"
+        onClick={onClose}
+        aria-label={t('close')}
+        sx={{ mt: -0.5, width: { xs: 44, sm: 32 }, height: { xs: 44, sm: 32 } }}
+      >
         <Close fontSize="small" />
       </IconButton>
     </DialogTitle>

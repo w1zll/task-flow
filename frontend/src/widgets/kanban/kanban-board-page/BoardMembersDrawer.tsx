@@ -8,6 +8,8 @@ import {
   Drawer,
   IconButton,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import BoardMembersList from './BoardMembersList';
@@ -68,19 +70,26 @@ const BoardMembersDrawer = ({
   onRevokeMember,
 }: BoardMembersDrawerProps) => {
   const t = useTranslations('BoardPage');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'), {
+    defaultMatches: false,
+  });
 
   return (
     <Drawer
-      anchor="right"
+      anchor={isMobile ? 'bottom' : 'right'}
       open={open}
       onClose={onClose}
       slotProps={{
         paper: {
           sx: {
-            width: { xs: '100%', sm: 460 },
+            width: isMobile ? '100%' : 460,
+            height: isMobile ? '100%' : 'auto',
             bgcolor: 'background.paper',
-            borderLeft: '1px solid',
+            borderLeft: isMobile ? 'none' : '1px solid',
+            borderTop: isMobile ? '1px solid' : 'none',
             borderColor: 'divider',
+            overflowY: 'auto',
           },
         },
       }}
@@ -102,7 +111,12 @@ const BoardMembersDrawer = ({
               {t('membersDescription')}
             </Typography>
           </Box>
-          <IconButton size="small" onClick={onClose}>
+          <IconButton
+            size="small"
+            onClick={onClose}
+            aria-label={t('closePanel')}
+            sx={{ width: { xs: 44, sm: 32 }, height: { xs: 44, sm: 32 } }}
+          >
             <Close fontSize="small" />
           </IconButton>
         </Box>

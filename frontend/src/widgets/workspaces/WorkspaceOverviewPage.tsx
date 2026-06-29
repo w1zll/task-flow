@@ -61,7 +61,17 @@ const WorkspaceOverviewPage = ({ workspaceId }: Props) => {
   const isLoading = workspacesLoading || boardsLoading;
 
   return (
-    <Box sx={{ maxWidth: 1180, mx: 'auto', px: { xs: 2, sm: 3 }, py: 4 }}>
+    <Box
+      sx={{
+        width: '100%',
+        maxWidth: 1180,
+        minWidth: 0,
+        boxSizing: 'border-box',
+        mx: 'auto',
+        px: { xs: 2, sm: 3 },
+        py: { xs: 2.5, sm: 4 },
+      }}
+    >
       <WorkspaceOverviewHeader workspace={workspace} workspaceId={workspaceId} />
 
       <WorkspaceStatsGrid

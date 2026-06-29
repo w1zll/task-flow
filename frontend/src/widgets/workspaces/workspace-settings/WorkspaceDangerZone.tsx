@@ -23,11 +23,15 @@ const WorkspaceDangerZone = ({
         overflow: 'hidden',
       }}
     >
-      <Box sx={{ px: 3, py: 2.5 }}>
+      <Box sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.5 } }}>
         <Typography variant="h6" color="error" sx={{ fontWeight: 600 }}>
           {t('dangerZoneTitle')}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ overflowWrap: 'anywhere' }}
+        >
           {t('deleteWorkspaceDescription')}
         </Typography>
         <Button

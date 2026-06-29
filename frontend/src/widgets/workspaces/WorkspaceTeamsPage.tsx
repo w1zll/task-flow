@@ -18,11 +18,33 @@ const WorkspaceTeamsPage = ({ workspaceId }: Props) => {
     workspace?.currentUserRole === 'admin';
 
   return (
-    <Box sx={{ maxWidth: 960, mx: 'auto', px: { xs: 2, sm: 3 }, py: 4 }}>
-      <Typography variant="h4" sx={{ fontWeight: 800 }}>
+    <Box
+      sx={{
+        width: '100%',
+        maxWidth: 960,
+        minWidth: 0,
+        boxSizing: 'border-box',
+        mx: 'auto',
+        px: { xs: 2, sm: 3 },
+        py: { xs: 2.5, sm: 4 },
+      }}
+    >
+      <Typography
+        variant="h4"
+        sx={{
+          fontSize: { xs: '1.5rem', sm: '2.125rem' },
+          fontWeight: 800,
+          lineHeight: 1.2,
+          overflowWrap: 'anywhere',
+        }}
+      >
         {t('title')}
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mt: 0.5, overflowWrap: 'anywhere' }}
+      >
         {t('description')}
       </Typography>
       <WorkspaceTeamsSection

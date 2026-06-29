@@ -66,6 +66,7 @@ const WorkspaceInvitesList = ({
             py: 2,
             display: 'flex',
             alignItems: 'center',
+            minWidth: 0,
             gap: 1.5,
           }}
         >
@@ -92,13 +93,20 @@ const WorkspaceInvitesList = ({
                 />
               )}
             </Stack>
-            <Typography variant="body2" sx={{ mt: 0.75 }}>
+            <Typography
+              variant="body2"
+              sx={{ mt: 0.75, overflowWrap: 'anywhere' }}
+            >
               {t('usage', {
                 used: invite.usesCount,
                 max: invite.maxUses ?? t('unlimited'),
               })}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ overflowWrap: 'anywhere' }}
+            >
               {t('expires', {
                 date: format.dateTime(new Date(invite.expiresAt), {
                   dateStyle: 'medium',

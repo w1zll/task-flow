@@ -71,17 +71,21 @@ const DemoWorkspaceBanner = ({ workspace, startBoardId }: Props) => {
           borderBottom: '1px solid',
           borderColor: 'divider',
           bgcolor: alpha(theme.palette.warning.main, 0.1),
-          px: { xs: 2, sm: 3 },
-          py: 1,
+          px: { xs: 1, sm: 3 },
+          py: { xs: 0.75, sm: 1 },
         }}
       >
         <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1}
+          direction="row"
+          spacing={{ xs: 0.75, sm: 1 }}
           sx={{
-            alignItems: { xs: 'stretch', sm: 'center' },
+            alignItems: 'center',
             justifyContent: 'space-between',
             minWidth: 0,
+            overflowX: { xs: 'auto', sm: 'visible' },
+            overflowY: 'hidden',
+            scrollbarWidth: 'none',
+            '&::-webkit-scrollbar': { display: 'none' },
           }}
         >
           <Stack
@@ -100,7 +104,6 @@ const DemoWorkspaceBanner = ({ workspace, startBoardId }: Props) => {
               variant="body2"
               color="text.secondary"
               sx={{ display: { xs: 'none', md: 'block' } }}
-              noWrap
             >
               {t('description')}
             </Typography>
@@ -108,35 +111,20 @@ const DemoWorkspaceBanner = ({ workspace, startBoardId }: Props) => {
 
           <Stack
             direction="row"
-            spacing={1}
+            spacing={{ xs: 0.5, sm: 1 }}
             sx={{
               alignItems: 'center',
-              flexWrap: 'wrap',
-              rowGap: 1,
+              flexWrap: 'nowrap',
+              flexShrink: 0,
             }}
           >
-            <Button
-              size="small"
-              component={NextLink}
-              href={`/workspaces/${workspace.id}/my-tasks`}
-              startIcon={<TaskAltOutlined />}
-            >
-              {t('myTasks')}
-            </Button>
-            <Button
-              size="small"
-              component={NextLink}
-              href={`${boardHref}?status=overdue&sort=dueDate`}
-              startIcon={<WarningAmberOutlined />}
-            >
-              {t('overdue')}
-            </Button>
             <Button
               size="small"
               color="warning"
               variant="outlined"
               startIcon={<RefreshOutlined />}
               onClick={() => setConfirmOpen(true)}
+              sx={{ minWidth: 'max-content', px: { xs: 1, sm: 1.25 } }}
             >
               {t('reset')}
             </Button>

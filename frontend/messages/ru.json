@@ -188,6 +188,19 @@
     "shareSend": "Отправить",
     "add": "Добавить",
     "cancel": "Отмена",
+    "closePanel": "Закрыть панель",
+    "mobile": {
+      "viewModeLabel": "Режим доски",
+      "viewSingle": "По колонке",
+      "viewBoard": "Вся доска",
+      "columnsTabs": "Колонки доски",
+      "columnPosition": "Колонка {current} из {total}",
+      "taskCount": "{count, plural, one {# задача} few {# задачи} many {# задач} other {# задачи}}",
+      "emptyColumn": "В этой колонке пока нет задач.",
+      "noColumns": "В доске пока нет колонок.",
+      "addTask": "Новая задача",
+      "moveDisabledByFilters": "Перемещение задач недоступно, пока включены фильтры или сортировка."
+    },
     "filters": {
       "title": "Фильтры",
       "open": "Фильтры",
@@ -536,6 +549,7 @@
     "completionToggle": "Переключить выполнение задачи",
     "markComplete": "Отметить выполненной",
     "markIncomplete": "Снять отметку выполнения",
+    "moveTask": "Переместить задачу",
     "teamTooltip": "Команда: {team}",
     "priority": {
       "low": "Низкий",

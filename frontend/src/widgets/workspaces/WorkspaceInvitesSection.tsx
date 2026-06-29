@@ -93,11 +93,14 @@ const WorkspaceInvitesSection = ({
 
   return (
     <>
-      <Paper variant="outlined" sx={{ borderRadius: '6px', mt: 3 }}>
+      <Paper
+        variant="outlined"
+        sx={{ minWidth: 0, borderRadius: '6px', mt: 3, overflow: 'hidden' }}
+      >
         <Box
           sx={{
-            px: 3,
-            py: 2.5,
+            px: { xs: 2, sm: 3 },
+            py: { xs: 2, sm: 2.5 },
             display: 'flex',
             alignItems: { xs: 'flex-start', sm: 'center' },
             justifyContent: 'space-between',
@@ -105,11 +108,15 @@ const WorkspaceInvitesSection = ({
             flexDirection: { xs: 'column', sm: 'row' },
           }}
         >
-          <Box>
+          <Box sx={{ minWidth: 0 }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               {t('title')}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ overflowWrap: 'anywhere' }}
+            >
               {t('description')}
             </Typography>
           </Box>

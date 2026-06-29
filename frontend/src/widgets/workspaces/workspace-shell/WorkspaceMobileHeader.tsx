@@ -30,7 +30,7 @@ const WorkspaceMobileHeader = ({
     <Box
       sx={{
         position: 'sticky',
-        top: 0,
+        top: -2,
         zIndex: 9,
         display: { xs: 'flex', md: 'none' },
         alignItems: 'center',
