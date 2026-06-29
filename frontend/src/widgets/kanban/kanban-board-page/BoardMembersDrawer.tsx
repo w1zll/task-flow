@@ -1,0 +1,145 @@
+'use client';
+
+import type { BoardMember, Team, WorkspaceMember } from '@/shared/api/api';
+import { Close } from '@mui/icons-material';
+import {
+  Box,
+  Divider,
+  Drawer,
+  IconButton,
+  Typography,
+} from '@mui/material';
+import { useTranslations } from 'next-intl';
+import BoardMembersList from './BoardMembersList';
+import BoardShareMemberForm from './BoardShareMemberForm';
+
+interface BoardMembersDrawerProps {
+  open: boolean;
+  canManageBoardMembers: boolean;
+  currentUserId?: string;
+  boardMembers?: BoardMember[];
+  isBoardMembersLoading: boolean;
+  workspaceTeams?: Team[];
+  availableWorkspaceMembers: WorkspaceMember[];
+  shareUserId: string;
+  shareRole: 'editor' | 'viewer';
+  isShareMembersLoading: boolean;
+  isShareMembersError: boolean;
+  isSharePending: boolean;
+  isShareError: boolean;
+  isUpdateMemberRolePending: boolean;
+  isUpdateMemberRoleError: boolean;
+  isRevokeMemberPending: boolean;
+  isRevokeMemberError: boolean;
+  onClose: () => void;
+  onShareUserIdChange: (userId: string) => void;
+  onShareRoleChange: (role: 'editor' | 'viewer') => void;
+  onShareBoard: () => void;
+  onUpdateMemberRole: (
+    memberId: string,
+    role: 'editor' | 'viewer',
+  ) => void;
+  onRevokeMember: (memberId: string) => void;
+}
+
+const BoardMembersDrawer = ({
+  open,
+  canManageBoardMembers,
+  currentUserId,
+  boardMembers,
+  isBoardMembersLoading,
+  workspaceTeams,
+  availableWorkspaceMembers,
+  shareUserId,
+  shareRole,
+  isShareMembersLoading,
+  isShareMembersError,
+  isSharePending,
+  isShareError,
+  isUpdateMemberRolePending,
+  isUpdateMemberRoleError,
+  isRevokeMemberPending,
+  isRevokeMemberError,
+  onClose,
+  onShareUserIdChange,
+  onShareRoleChange,
+  onShareBoard,
+  onUpdateMemberRole,
+  onRevokeMember,
+}: BoardMembersDrawerProps) => {
+  const t = useTranslations('BoardPage');
+
+  return (
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={onClose}
+      slotProps={{
+        paper: {
+          sx: {
+            width: { xs: '100%', sm: 460 },
+            bgcolor: 'background.paper',
+            borderLeft: '1px solid',
+            borderColor: 'divider',
+          },
+        },
+      }}
+    >
+      <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              {t('members')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('membersDescription')}
+            </Typography>
+          </Box>
+          <IconButton size="small" onClick={onClose}>
+            <Close fontSize="small" />
+          </IconButton>
+        </Box>
+
+        {canManageBoardMembers && (
+          <BoardShareMemberForm
+            availableWorkspaceMembers={availableWorkspaceMembers}
+            shareUserId={shareUserId}
+            shareRole={shareRole}
+            isShareMembersLoading={isShareMembersLoading}
+            isShareMembersError={isShareMembersError}
+            isSharePending={isSharePending}
+            isShareError={isShareError}
+            onShareUserIdChange={onShareUserIdChange}
+            onShareRoleChange={onShareRoleChange}
+            onShareBoard={onShareBoard}
+          />
+        )}
+
+        <Divider />
+
+        <BoardMembersList
+          boardMembers={boardMembers}
+          isLoading={isBoardMembersLoading}
+          workspaceTeams={workspaceTeams}
+          currentUserId={currentUserId}
+          canManageBoardMembers={canManageBoardMembers}
+          isUpdateMemberRolePending={isUpdateMemberRolePending}
+          isUpdateMemberRoleError={isUpdateMemberRoleError}
+          isRevokeMemberPending={isRevokeMemberPending}
+          isRevokeMemberError={isRevokeMemberError}
+          onUpdateMemberRole={onUpdateMemberRole}
+          onRevokeMember={onRevokeMember}
+        />
+      </Box>
+    </Drawer>
+  );
+};
+
+export default BoardMembersDrawer;
