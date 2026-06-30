@@ -123,6 +123,8 @@
     "workspaceDeleteSuccess": "Пространство удалено",
     "workspaceDeleteError": "Не удалось удалить пространство",
     "deleteSuccess": "Доска удалена",
+    "offlineBoardUnavailable": "Эта доска ещё не сохранена для офлайн-просмотра. Подключитесь к интернету и откройте её один раз.",
+    "offlineWorkspaceUnavailable": "Это пространство ещё не сохранено для офлайн-просмотра. Подключитесь к интернету и откройте внутри него хотя бы одну доску.",
     "dialogTitle": "Новая доска",
     "boardTitle": "Название доски",
     "boardDescription": "Описание (необязательно)",
@@ -375,7 +377,9 @@
     "accountMenu": "Меню аккаунта",
     "signIn": "Войти",
     "profile": "Профиль",
-    "logout": "Выход"
+    "logout": "Выход",
+    "profileOfflineUnavailable": "Профиль недоступен без интернета.",
+    "localeOfflineUnavailable": "Сменить язык можно после подключения к интернету."
   },
   "WorkspaceSwitcher": {
     "title": "Рабочие пространства",
@@ -404,6 +408,7 @@
     "emptyBoards": "Досок пока нет",
     "boardsCount": "Досок: {count}",
     "openNavigation": "Открыть навигацию workspace",
+    "offlineSectionUnavailable": "Этот раздел workspace недоступен без интернета.",
     "nav": {
       "overview": "Обзор",
       "myTasks": "Мои задачи",

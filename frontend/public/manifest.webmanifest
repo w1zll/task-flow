@@ -1,0 +1,24 @@
+{
+  "name": "TaskFlow",
+  "short_name": "TaskFlow",
+  "description": "Workspace task tracking for teams.",
+  "start_url": "/workspaces",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101510",
+  "theme_color": "#669266",
+  "icons": [
+    {
+      "src": "/icons/taskflow-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/taskflow-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

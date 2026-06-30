@@ -17,6 +17,7 @@ interface BoardFiltersActionsProps {
   selectedSavedViewId: string;
   isSavingView: boolean;
   isDeletingView: boolean;
+  canManageSavedViews?: boolean;
   onPatchFilters: (patch: Partial<BoardFilters>) => void;
   onReset: () => void;
   onOpenSaveDialog: () => void;
@@ -31,6 +32,7 @@ const BoardFiltersActions = ({
   selectedSavedViewId,
   isSavingView,
   isDeletingView,
+  canManageSavedViews = true,
   onPatchFilters,
   onReset,
   onOpenSaveDialog,
@@ -82,7 +84,7 @@ const BoardFiltersActions = ({
           size="small"
           startIcon={<SaveOutlined />}
           onClick={onOpenSaveDialog}
-          disabled={isSavingView}
+          disabled={isSavingView || !canManageSavedViews}
         >
           {t('views.save')}
         </Button>
@@ -93,7 +95,7 @@ const BoardFiltersActions = ({
           color="error"
           startIcon={<DeleteOutlined />}
           onClick={() => onDeleteSavedView(selectedSavedViewId)}
-          disabled={isDeletingView}
+          disabled={isDeletingView || !canManageSavedViews}
         >
           {t('views.delete')}
         </Button>

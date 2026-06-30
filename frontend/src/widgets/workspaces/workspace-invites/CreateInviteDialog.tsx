@@ -20,6 +20,7 @@ interface CreateInviteDialogProps {
   createdLink: string;
   currentUserRole: 'owner' | 'admin';
   isCreating: boolean;
+  disabled?: boolean;
   onClose: () => void;
   onFormChange: <K extends keyof InviteForm>(
     key: K,
@@ -35,6 +36,7 @@ const CreateInviteDialog = ({
   createdLink,
   currentUserRole,
   isCreating,
+  disabled = false,
   onClose,
   onFormChange,
   onCreate,
@@ -83,6 +85,7 @@ const CreateInviteDialog = ({
               select
               label={t('defaultRole')}
               value={form.defaultRole}
+              disabled={disabled}
               onChange={(event) =>
                 onFormChange(
                   'defaultRole',
@@ -99,6 +102,7 @@ const CreateInviteDialog = ({
               label={t('expiresInDays')}
               type="number"
               value={form.expiresInDays}
+              disabled={disabled}
               onChange={(event) =>
                 onFormChange('expiresInDays', event.target.value)
               }
@@ -108,6 +112,7 @@ const CreateInviteDialog = ({
               label={t('maxUses')}
               type="number"
               value={form.maxUses}
+              disabled={disabled}
               onChange={(event) => onFormChange('maxUses', event.target.value)}
               helperText={t('maxUsesHint')}
               slotProps={{ htmlInput: { min: 1, max: 1000 } }}
@@ -116,6 +121,7 @@ const CreateInviteDialog = ({
               label={t('allowedEmail')}
               type="email"
               value={form.allowedEmail}
+              disabled={disabled}
               onChange={(event) =>
                 onFormChange('allowedEmail', event.target.value)
               }
@@ -125,6 +131,7 @@ const CreateInviteDialog = ({
               label={t('allowedDomain')}
               placeholder="example.com"
               value={form.allowedEmailDomain}
+              disabled={disabled}
               onChange={(event) =>
                 onFormChange('allowedEmailDomain', event.target.value)
               }
@@ -143,6 +150,7 @@ const CreateInviteDialog = ({
             onClick={onCreate}
             disabled={
               isCreating ||
+              disabled ||
               Number(form.expiresInDays) < 1 ||
               Number(form.expiresInDays) > 30
             }

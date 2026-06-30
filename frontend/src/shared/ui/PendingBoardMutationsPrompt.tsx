@@ -6,6 +6,7 @@ import {
 } from '@/shared/lib/boardSocketMutations';
 import { Board, boardsApi } from '@/shared/api/api';
 import { getSocket, isSocketReady } from '@/shared/lib/socket';
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { queryKeys } from '@/shared/queries/boards.queries';
 import { usePendingBoardMutationsStore } from '@/shared/store/root.store';
@@ -27,6 +28,7 @@ const PendingBoardMutationsPrompt = () => {
   const mutations = usePendingBoardMutationsStore((state) => state.mutations);
   const remove = usePendingBoardMutationsStore((state) => state.remove);
   const clear = usePendingBoardMutationsStore((state) => state.clear);
+  const isOnline = useOnlineStatus();
   const [isSocketAvailable, setIsSocketAvailable] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const qc = useQueryClient();
@@ -44,6 +46,11 @@ const PendingBoardMutationsPrompt = () => {
   useStableBodyScrollLock(canApplyPendingChanges);
 
   useEffect(() => {
+    if (!isOnline) {
+      setIsSocketAvailable(false);
+      return;
+    }
+
     const socket = getSocket();
     const syncConnection = () => setIsSocketAvailable(isSocketReady(socket));
 
@@ -61,7 +68,7 @@ const PendingBoardMutationsPrompt = () => {
       window.removeEventListener('online', syncConnection);
       window.removeEventListener('offline', syncConnection);
     };
-  }, []);
+  }, [isOnline]);
 
   const invalidateBoards = (boardIds: string[]) => {
     boardIds.forEach((boardId) => {

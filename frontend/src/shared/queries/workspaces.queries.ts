@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { demoApi, workspaceInvitesApi, workspacesApi } from '../api/api';
+import { clearPersistedQueryCache } from '../lib/query-persistence';
 import { ApiBody } from '../api/types';
 import { queryKeys } from './board-query-keys';
 
@@ -175,7 +176,8 @@ export const useRegisterFromDemoInvite = () => {
   return useMutation({
     mutationFn: (token: string) =>
       demoApi.registerFromInvite(token).then((response) => response.data),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await clearPersistedQueryCache();
       queryClient.clear();
     },
   });

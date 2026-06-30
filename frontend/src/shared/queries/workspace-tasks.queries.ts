@@ -1,6 +1,7 @@
 'use client';
 
 import { Board, boardsApi } from '@/shared/api/api';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import { useQueries } from '@tanstack/react-query';
 import { queryKeys } from './board-query-keys';
 
@@ -18,6 +19,7 @@ export const useWorkspaceBoardDetails = (
   workspaceId: string,
   boards: Board[] = [],
 ) => {
+  const isOffline = useIsOffline();
   const workspaceBoards = boards.filter(
     (board) => board.workspaceId === workspaceId,
   );
@@ -27,7 +29,7 @@ export const useWorkspaceBoardDetails = (
       queryKey: queryKeys.board(board.id),
       queryFn: () => boardsApi.getOne(board.id).then((response) => response.data),
       staleTime: 30_000,
-      enabled: Boolean(workspaceId),
+      enabled: Boolean(workspaceId) && !isOffline,
     })),
   });
 };

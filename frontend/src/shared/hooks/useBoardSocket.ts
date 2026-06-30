@@ -1,6 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { ensureSocketConnected, getSocket } from '../lib/socket';
+import { useOnlineStatus } from './useOnlineStatus';
+import {
+  disconnectSocket,
+  ensureSocketConnected,
+  getSocket,
+} from '../lib/socket';
 import { Board, BoardActivity, Task } from '../api/api';
 import {
   findTaskInBoard,
@@ -11,8 +16,14 @@ import {
 
 export const useBoardSocket = (boardId: string) => {
   const qc = useQueryClient();
+  const isOnline = useOnlineStatus();
 
   useEffect(() => {
+    if (!isOnline) {
+      disconnectSocket();
+      return;
+    }
+
     const socket = getSocket();
     let isActive = true;
     let isRefreshingAuth = false;
@@ -181,5 +192,5 @@ export const useBoardSocket = (boardId: string) => {
       socket.off('task:reordered');
       window.removeEventListener('online', onOnline);
     };
-  }, [boardId, qc]);
+  }, [boardId, isOnline, qc]);
 };

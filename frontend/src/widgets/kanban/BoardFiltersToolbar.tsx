@@ -41,6 +41,7 @@ interface Props {
   selectedViewId?: string | null;
   isSavingView?: boolean;
   isDeletingView?: boolean;
+  canManageSavedViews?: boolean;
   onApplySavedView: (viewId: string | null) => void;
   onSaveView: (title: string) => void;
   onDeleteSavedView: (viewId: string) => void;
@@ -60,6 +61,7 @@ const BoardFiltersToolbar = ({
   selectedViewId,
   isSavingView = false,
   isDeletingView = false,
+  canManageSavedViews = true,
   onApplySavedView,
   onSaveView,
   onDeleteSavedView,
@@ -121,6 +123,7 @@ const BoardFiltersToolbar = ({
   };
 
   const handleSaveView = () => {
+    if (!canManageSavedViews) return;
     const title = viewTitle.trim();
     if (!title) return;
     onSaveView(title);
@@ -222,6 +225,7 @@ const BoardFiltersToolbar = ({
       searchInput={searchInput}
       isSavingView={isSavingView}
       isDeletingView={isDeletingView}
+      canManageSavedViews={canManageSavedViews}
       onPatchFilters={patchFilters}
       onApplySavedView={onApplySavedView}
       onSearchInputChange={setSearchInput}
@@ -315,6 +319,7 @@ const BoardFiltersToolbar = ({
         open={isSaveDialogOpen}
         title={viewTitle}
         isSaving={isSavingView}
+        canSave={canManageSavedViews}
         onClose={() => setSaveDialogOpen(false)}
         onTitleChange={setViewTitle}
         onSave={handleSaveView}

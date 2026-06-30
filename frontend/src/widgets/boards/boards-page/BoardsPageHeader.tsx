@@ -12,6 +12,7 @@ interface BoardsPageHeaderProps {
   workspacesCount: number;
   onCreateBoard: () => void;
   onCreateWorkspace: () => void;
+  canCreate?: boolean;
 }
 
 const BoardsPageHeader = ({
@@ -21,6 +22,7 @@ const BoardsPageHeader = ({
   workspacesCount,
   onCreateBoard,
   onCreateWorkspace,
+  canCreate = true,
 }: BoardsPageHeaderProps) => {
   const t = useTranslations('Boards');
 
@@ -63,6 +65,7 @@ const BoardsPageHeader = ({
             variant="contained"
             startIcon={<Add />}
             onClick={onCreateWorkspace}
+            disabled={!canCreate}
           >
             {t('newWorkspace')}
           </Button>
@@ -71,6 +74,7 @@ const BoardsPageHeader = ({
           variant={isWorkspaceMode ? 'contained' : 'outlined'}
           startIcon={<Add />}
           onClick={onCreateBoard}
+          disabled={!canCreate}
         >
           {t('newBoard')}
         </Button>

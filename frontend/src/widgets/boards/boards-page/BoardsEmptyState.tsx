@@ -8,12 +8,14 @@ interface BoardsEmptyStateProps {
   titleKey: 'emptyWorkspaceTitle' | 'emptyTitle';
   actionKey: 'emptyAction' | 'newWorkspace';
   onAction: () => void;
+  disabled?: boolean;
 }
 
 const BoardsEmptyState = ({
   titleKey,
   actionKey,
   onAction,
+  disabled = false,
 }: BoardsEmptyStateProps) => {
   const t = useTranslations('Boards');
 
@@ -27,6 +29,7 @@ const BoardsEmptyState = ({
         variant="contained"
         startIcon={<Add />}
         onClick={onAction}
+        disabled={disabled}
         sx={{ mt: 1 }}
       >
         {t(actionKey)}

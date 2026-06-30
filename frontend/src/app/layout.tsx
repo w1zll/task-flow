@@ -27,6 +27,9 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
     <html lang={locale} suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="/icons/taskflow-icon.svg" />
+        <meta name="theme-color" content="#669266" />
       </head>
       <body className={dmSans.className}>
         <Providers

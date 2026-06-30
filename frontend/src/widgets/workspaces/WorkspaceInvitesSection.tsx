@@ -24,6 +24,7 @@ import WorkspaceInvitesList from './workspace-invites/WorkspaceInvitesList';
 interface Props {
   workspaceId: string;
   currentUserRole: 'owner' | 'admin';
+  canManage?: boolean;
 }
 
 const initialForm: InviteForm = {
@@ -37,6 +38,7 @@ const initialForm: InviteForm = {
 const WorkspaceInvitesSection = ({
   workspaceId,
   currentUserRole,
+  canManage = true,
 }: Props) => {
   const t = useTranslations('WorkspaceInvites');
   const { enqueueSnackbar } = useSnackbar();
@@ -55,6 +57,7 @@ const WorkspaceInvitesSection = ({
   ) => setForm((current) => ({ ...current, [key]: value }));
 
   const handleCreate = () => {
+    if (!canManage) return;
     createInvite.mutate(
       {
         defaultRole: form.defaultRole,
@@ -124,6 +127,7 @@ const WorkspaceInvitesSection = ({
             variant="contained"
             startIcon={<AddLink />}
             onClick={() => setCreateOpen(true)}
+            disabled={!canManage}
           >
             {t('create')}
           </Button>
@@ -135,12 +139,14 @@ const WorkspaceInvitesSection = ({
           isLoading={invites.isLoading}
           isError={invites.isError}
           isRevoking={revokeInvite.isPending}
-          onRevoke={(inviteId) =>
+          canRevoke={canManage}
+          onRevoke={(inviteId) => {
+            if (!canManage) return;
             revokeInvite.mutate(inviteId, {
               onError: () =>
                 enqueueSnackbar(t('revokeError'), { variant: 'error' }),
-            })
-          }
+            });
+          }}
         />
       </Paper>
 
@@ -150,6 +156,7 @@ const WorkspaceInvitesSection = ({
         createdLink={createdLink}
         currentUserRole={currentUserRole}
         isCreating={createInvite.isPending}
+        disabled={!canManage}
         onClose={closeDialog}
         onFormChange={updateForm}
         onCreate={handleCreate}

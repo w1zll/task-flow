@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { authApi } from '@/shared/api/api';
+import { clearPersistedQueryCache } from '@/shared/lib/query-persistence';
 import { useAuthStore } from '@/shared/store/root.store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
@@ -44,7 +45,8 @@ const Hero = ({
   const heading = t('heading');
   const demoLogin = useMutation({
     mutationFn: () => authApi.demoLogin().then((response) => response.data),
-    onSuccess: ({ user, workspaceId, boardId }) => {
+    onSuccess: async ({ user, workspaceId, boardId }) => {
+      await clearPersistedQueryCache();
       queryClient.clear();
       setUser(user);
       router.push(`/workspaces/${workspaceId}/boards/${boardId}`);

@@ -45,6 +45,12 @@ export const getSocket = (): Socket => {
   return socket;
 };
 
+export const disconnectSocket = () => {
+  socketConnectPromise = null;
+  if (!socket) return;
+  socket.disconnect();
+};
+
 export const refreshSocketAuth = async (
   targetSocket: Socket = getSocket(),
 ): Promise<void> => {

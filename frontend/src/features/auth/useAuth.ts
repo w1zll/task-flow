@@ -9,6 +9,8 @@ import {
   clearPendingWorkspaceInvite,
   getPendingWorkspaceInvite,
 } from '@/shared/lib/pending-workspace-invite';
+import { isBrowserOffline } from '@/shared/lib/offline';
+import { clearPersistedQueryCache } from '@/shared/lib/query-persistence';
 import { useAuthStore } from '@/shared/store/root.store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -26,6 +28,7 @@ export const useAuth = () => {
     workspaceId ? `/workspaces/${workspaceId}` : '/workspaces';
 
   const finishAuthentication = async (user: typeof authStore.user) => {
+    await clearPersistedQueryCache();
     queryClient.clear();
     authStore.setUser(user);
     const inviteToken = getPendingWorkspaceInvite();
@@ -51,6 +54,14 @@ export const useAuth = () => {
     } finally {
       setIsCompletingInvite(false);
     }
+  };
+
+  const clearClientSession = async () => {
+    queryClient.clear();
+    await clearPersistedQueryCache();
+    authStore.logout();
+    router.push('/auth/login');
+    router.refresh();
   };
 
   const loginMutation = useMutation({
@@ -81,10 +92,12 @@ export const useAuth = () => {
   const logoutMutation = useMutation({
     mutationFn: () => authApi.logout(),
     onSuccess: () => {
-      queryClient.clear();
-      authStore.logout();
-      router.push('/auth/login');
-      router.refresh();
+      void clearClientSession();
+    },
+    onError: () => {
+      if (isBrowserOffline()) {
+        void clearClientSession();
+      }
     },
   });
 

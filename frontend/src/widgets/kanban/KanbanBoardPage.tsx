@@ -6,6 +6,7 @@ import { getAvailableWorkspaceMembers } from '@/shared/lib/board-members';
 import { isBoardPermissionError } from '@/shared/lib/boardSocketMutations';
 import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import { queryKeys } from '@/shared/queries/board-query-keys';
 import {
   useBoard,
@@ -22,9 +23,9 @@ import {
 } from '@/shared/queries/teams.queries';
 import { useWorkspaceMembers } from '@/shared/queries/workspaces.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
-import { Box } from '@mui/material';
+import { Alert, Box } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -51,17 +52,20 @@ interface Props {
 
 const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const dayjsLocale = useDayjsLocale();
+  const locale = useLocale();
   const t = useTranslations('BoardPage');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
+  const isOffline = useIsOffline();
   const [isInitialBoardSynced, setInitialBoardSynced] = useState(!initialBoard);
   const {
     data: queriedBoard,
     isLoading,
     isError,
+    fetchStatus: boardFetchStatus,
   } = useBoard(boardId, initialBoard);
   const board = isInitialBoardSynced ? queriedBoard : initialBoard;
   const createColumn = useCreateColumn();
@@ -110,11 +114,29 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     removeSavedView,
   } = useBoardFiltersController(boardId);
   const boardAnalytics = useBoardAnalyticsController(boardId, dayjsLocale);
-  const canEditBoardContent =
+  const roleCanEditBoardContent =
     board?.capabilities.canEditBoardContent ?? false;
-  const canManageColumns = board?.capabilities.canManageColumns ?? false;
-  const canManageBoardMembers =
+  const roleCanManageColumns = board?.capabilities.canManageColumns ?? false;
+  const roleCanManageBoardMembers =
     board?.capabilities.canManageBoardMembers ?? false;
+  const canEditBoardContent = roleCanEditBoardContent && !isOffline;
+  const canManageColumns = roleCanManageColumns && !isOffline;
+  const canManageBoardMembers = roleCanManageBoardMembers && !isOffline;
+  const effectiveBoard = useMemo(
+    () =>
+      board
+        ? {
+            ...board,
+            capabilities: {
+              ...board.capabilities,
+              canEditBoardContent,
+              canManageBoardMembers,
+              canManageColumns,
+            },
+          }
+        : undefined,
+    [board, canEditBoardContent, canManageBoardMembers, canManageColumns],
+  );
   const workspaceMembers = useWorkspaceMembers(
     board?.workspaceId ?? '',
     isMembersOpen && canManageBoardMembers,
@@ -145,13 +167,13 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   );
   const filteredBoard = useMemo(
     () =>
-      board
-        ? filterBoard(board, boardFilters, {
+      effectiveBoard
+        ? filterBoard(effectiveBoard, boardFilters, {
             currentUserId: currentUser?.id,
             myTeamIds,
           })
         : undefined,
-    [board, boardFilters, currentUser?.id, myTeamIds],
+    [effectiveBoard, boardFilters, currentUser?.id, myTeamIds],
   );
   const totalTaskCount = useMemo(() => countBoardTasks(board), [board]);
   const filteredTaskCount = useMemo(
@@ -273,6 +295,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   };
 
   const handleShareBoard = () => {
+    if (!canManageBoardMembers) return;
     if (!shareUserId) return;
     shareBoard.mutate(
       { boardId, userId: shareUserId, role: shareRole },
@@ -317,8 +340,20 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     );
   };
 
-  if (isError) {
+  if (isError && !board) {
     return <BoardNotFoundState onBack={() => router.push('/workspaces')} />;
+  }
+
+  if (isOffline && !board && boardFetchStatus === 'paused') {
+    return (
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        <Alert severity="info">
+          {locale === 'ru'
+            ? 'Эта доска ещё не сохранена для офлайн-просмотра. Подключитесь к сети и откройте её один раз.'
+            : 'This board is not saved for offline viewing yet. Go online and open it once.'}
+        </Alert>
+      </Box>
+    );
   }
 
   return (
@@ -374,6 +409,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
           selectedViewId={selectedViewId}
           isSavingView={createBoardView.isPending}
           isDeletingView={deleteBoardView.isPending}
+          canManageSavedViews={!isOffline}
           onApplySavedView={applySavedView}
           onSaveView={saveCurrentView}
           onDeleteSavedView={removeSavedView}
@@ -457,7 +493,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
         }
       />
 
-      {board && <TaskDetailModal board={board} />}
+      {effectiveBoard && <TaskDetailModal board={effectiveBoard} />}
     </Box>
   );
 };
