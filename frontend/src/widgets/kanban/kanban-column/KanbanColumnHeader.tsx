@@ -69,7 +69,10 @@ const KanbanColumnHeader = ({
             minWidth: 0,
           }}
         >
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }} noWrap>
+          <Typography
+            variant="subtitle2"
+            sx={{ fontWeight: 600, overflowWrap: 'anywhere' }}
+          >
             {title}
           </Typography>
           <Typography

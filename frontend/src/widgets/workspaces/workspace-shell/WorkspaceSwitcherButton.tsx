@@ -55,8 +55,11 @@ const WorkspaceSwitcherButton = ({
           <Typography
             component="span"
             variant="body2"
-            sx={{ display: 'block', fontWeight: 700 }}
-            noWrap
+            sx={{
+              display: 'block',
+              fontWeight: 700,
+              overflowWrap: 'anywhere',
+            }}
           >
             {workspace?.name ?? t('workspaceFallback')}
           </Typography>
@@ -64,8 +67,7 @@ const WorkspaceSwitcherButton = ({
             component="span"
             variant="caption"
             color="text.secondary"
-            sx={{ display: 'block' }}
-            noWrap
+            sx={{ display: 'block', overflowWrap: 'anywhere' }}
           >
             {workspace
               ? workspace.isPersonal

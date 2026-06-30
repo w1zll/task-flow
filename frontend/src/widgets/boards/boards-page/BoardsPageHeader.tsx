@@ -30,14 +30,18 @@ const BoardsPageHeader = ({
     <Box
       sx={{
         display: 'flex',
-        alignItems: { xs: 'flex-start', sm: 'center' },
+        flexDirection: { xs: 'column', md: 'row' },
+        alignItems: { xs: 'stretch', md: 'center' },
         justifyContent: 'space-between',
         gap: 2,
         mb: 4,
       }}
     >
       <Box sx={{ minWidth: 0 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+        <Typography
+          variant="h4"
+          sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}
+        >
           {isWorkspaceMode
             ? t('workspaceBoardsTitle', {
                 name: currentWorkspace?.name ?? '',
@@ -58,7 +62,16 @@ const BoardsPageHeader = ({
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={1}
-        sx={{ flexShrink: 0 }}
+        sx={{
+          alignSelf: { xs: 'stretch', md: 'center' },
+          flexShrink: 0,
+          width: { xs: '100%', sm: 'auto' },
+          '& .MuiButton-root': {
+            justifyContent: 'center',
+            minHeight: 44,
+            whiteSpace: 'normal',
+          },
+        }}
       >
         {!isWorkspaceMode && (
           <Button

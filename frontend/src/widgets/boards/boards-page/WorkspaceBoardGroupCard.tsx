@@ -44,11 +44,7 @@ const WorkspaceBoardGroupCard = ({
   onOpenUnavailableWorkspace,
 }: WorkspaceBoardGroupCardProps) => {
   const t = useTranslations('Boards');
-  const hasCachedWorkspaceBoard = boards.some((board) =>
-    cachedBoardIds?.has(board.id),
-  );
-  const isWorkspaceOfflineUnavailable =
-    isOffline && !hasCachedWorkspaceBoard;
+  const isWorkspaceOfflineUnavailable = isOffline;
   const headerSx = {
     color: 'inherit',
     textDecoration: 'none',
@@ -56,8 +52,9 @@ const WorkspaceBoardGroupCard = ({
     py: 2,
     width: '100%',
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 2,
     border: 0,
     font: 'inherit',
@@ -73,11 +70,18 @@ const WorkspaceBoardGroupCard = ({
       <Stack
         direction="row"
         spacing={1.25}
-        sx={{ alignItems: 'center', minWidth: 0 }}
+        sx={{
+          alignItems: 'flex-start',
+          flex: '1 1 220px',
+          minWidth: 0,
+        }}
       >
         <Business color="action" />
         <Box sx={{ minWidth: 0 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }} noWrap>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}
+          >
             {workspace.name}
           </Typography>
           <Typography variant="caption" color="text.secondary">

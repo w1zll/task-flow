@@ -208,10 +208,16 @@ const WorkspaceSidebar = ({
                     secondary={boardRoleLabels[board.currentUserRole]}
                     slotProps={{
                       primary: {
-                        noWrap: true,
-                        sx: { fontWeight: isActive ? 700 : 500 },
+                        sx: {
+                          fontWeight: isActive ? 700 : 500,
+                          overflowWrap: 'anywhere',
+                        },
                       },
-                      secondary: { noWrap: true },
+                      secondary: {
+                        sx: {
+                          overflowWrap: 'anywhere',
+                        },
+                      },
                     }}
                   />
                 </>

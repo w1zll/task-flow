@@ -189,7 +189,7 @@ const BoardCanvasSection = ({
                     minHeight: 40,
                     px: 1,
                     textTransform: 'none',
-                    whiteSpace: 'nowrap',
+                    whiteSpace: 'normal',
                   },
                 }}
               >

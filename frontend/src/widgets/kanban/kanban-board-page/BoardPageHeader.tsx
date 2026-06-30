@@ -56,19 +56,28 @@ const BoardPageHeader = ({
     <Box
       sx={{
         px: { xs: 2, sm: 3 },
-        py: { xs: .5, sm: 2 },
+        py: { xs: 0.5, sm: 2 },
         borderBottom: '1px solid',
         borderColor: 'divider',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: { xs: 'flex-start', lg: 'center' },
         justifyContent: 'space-between',
-        flexWrap: { xs: 'wrap', sm: 'nowrap' },
+        flexWrap: 'wrap',
         gap: 2,
         bgcolor: 'background.paper',
         flexShrink: 0,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          flex: '1 1 320px',
+          flexWrap: 'wrap',
+          gap: 1.5,
+          minWidth: 0,
+        }}
+      >
         {board && (
           <Box
             sx={{
@@ -77,18 +86,33 @@ const BoardPageHeader = ({
               borderRadius: '50%',
               bgcolor: board.color,
               flexShrink: 0,
+              mt: 1,
             }}
           />
         )}
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ flex: '1 1 240px', minWidth: 0 }}>
           {isLoading ? (
             <Skeleton width={200} height={32} />
           ) : (
-            <Typography variant="h6" sx={{ fontWeight: 700 }} noWrap>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}
+            >
               {board?.title}
             </Typography>
           )}
-          <Breadcrumbs sx={{ fontSize: 12 }}>
+          <Breadcrumbs
+            sx={{
+              fontSize: 12,
+              '& .MuiBreadcrumbs-ol': {
+                alignItems: 'center',
+                flexWrap: 'wrap',
+              },
+              '& .MuiBreadcrumbs-li': {
+                minWidth: 0,
+              },
+            }}
+          >
             <Link
               component={NextLink}
               href={
@@ -98,11 +122,14 @@ const BoardPageHeader = ({
               }
               color="inherit"
               underline="hover"
-              sx={{ fontSize: 12 }}
+              sx={{ fontSize: 12, overflowWrap: 'anywhere' }}
             >
               {t('boardsLink')}
             </Link>
-            <Typography color="text.primary" sx={{ fontSize: 12 }}>
+            <Typography
+              color="text.primary"
+              sx={{ fontSize: 12, overflowWrap: 'anywhere' }}
+            >
               {board?.title}
             </Typography>
           </Breadcrumbs>
@@ -143,11 +170,26 @@ const BoardPageHeader = ({
             icon={<LockOutlined />}
             label={t('readOnly')}
             variant="outlined"
+            sx={{ mt: 0.5 }}
           />
         ) : null}
       </Box>
 
-      <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+      <Stack
+        direction="row"
+        spacing={1}
+        useFlexGap
+        sx={{
+          flex: '0 1 auto',
+          flexShrink: 0,
+          flexWrap: 'wrap',
+          justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+          maxWidth: '100%',
+          '& .MuiButton-root': {
+            whiteSpace: 'normal',
+          },
+        }}
+      >
         <Button
           variant={isStatsOpen ? 'contained' : 'outlined'}
           size="small"

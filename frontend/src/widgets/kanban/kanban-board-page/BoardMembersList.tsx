@@ -93,7 +93,10 @@ const BoardMembersList = ({
               >
                 <UserAvatar name={user.name} src={user.avatar} size={36} />
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="body2" noWrap>
+                  <Typography
+                    variant="body2"
+                    sx={{ overflowWrap: 'anywhere' }}
+                  >
                     {user.name}
                     {isCurrentUser && (
                       <Typography

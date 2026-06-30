@@ -53,7 +53,7 @@ const TaskMetaRow = ({
             <CheckCircleOutlined sx={{ fontSize: 13 }} />
             <Typography
               variant="caption"
-              sx={{ fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
+              sx={{ fontSize: 11, fontWeight: 600 }}
             >
               {t('completed')}
             </Typography>
@@ -77,7 +77,6 @@ const TaskMetaRow = ({
               color: priority.color,
               fontSize: 11,
               fontWeight: 600,
-              whiteSpace: 'nowrap',
             }}
           >
             {priorityLabel}
@@ -103,12 +102,11 @@ const TaskMetaRow = ({
             <CalendarTodayOutlined sx={{ fontSize: 12 }} />
             <Typography
               variant="caption"
-              sx={{
-                fontSize: 11,
-                fontWeight: isOverdue ? 600 : 400,
-                whiteSpace: 'nowrap',
-              }}
-            >
+            sx={{
+              fontSize: 11,
+              fontWeight: isOverdue ? 600 : 400,
+            }}
+          >
               {isOverdue ? `${t('overdue')} · ` : ''}
               {dayjs(task.dueDate).locale(dayjsLocale).format('D MMM')}
             </Typography>

@@ -83,7 +83,9 @@ const TaskMoveMenu = ({
               primary={column.title}
               slotProps={{
                 primary: {
-                  noWrap: true,
+                  sx: {
+                    overflowWrap: 'anywhere',
+                  },
                 },
               }}
             />
