@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../useAuth";
 import { alpha, Box, Button, Card, CardContent, Divider, IconButton, InputAdornment, Link, TextField, Typography } from "@mui/material";
-import { ViewKanban, Visibility, VisibilityOff } from "@mui/icons-material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useTranslations } from 'next-intl';
 import NextLink from 'next/link';
+import TaskFlowLogo from '@/shared/ui/TaskFlowLogo';
 import {
   capturePendingWorkspaceInviteFromLocation,
   getInviteAuthHref,
@@ -48,21 +49,7 @@ const LoginForm = () => {
           <Box
             sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 4 }}
           >
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '6px',
-                bgcolor: 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <ViewKanban
-                sx={{ color: 'primary.contrastText', fontSize: 22 }}
-              />
-            </Box>
+            <TaskFlowLogo size={40} />
             <Typography variant="h5">TaskFlow</Typography>
           </Box>
 

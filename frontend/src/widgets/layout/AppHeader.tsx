@@ -9,7 +9,6 @@ import {
   DarkMode,
   LightMode,
   Logout,
-  ViewKanban,
 } from '@mui/icons-material';
 import {
   AppBar,
@@ -31,6 +30,7 @@ import { useState } from 'react';
 import NextLink from 'next/link';
 import LocaleSwitcher from './LocaleSwitcher';
 import UserAvatar from '@/shared/ui/UserAvatar';
+import TaskFlowLogo from '@/shared/ui/TaskFlowLogo';
 
 const AppHeader = ({
   initialThemeMode,
@@ -78,21 +78,7 @@ const AppHeader = ({
               textDecoration: 'none',
             }}
           >
-            <Box
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: '6px',
-                bgcolor: 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <ViewKanban
-                sx={{ color: 'primary.contrastText', fontSize: 18 }}
-              />
-            </Box>
+            <TaskFlowLogo size={32} />
             <Typography
               variant="h6"
               sx={{

@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'taskflow-pwa-readonly-offline-v1';
+const CACHE_VERSION = 'taskflow-pwa-readonly-offline-v2';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 const NAVIGATION_CACHE = `${CACHE_VERSION}-pages`;
@@ -10,6 +10,11 @@ const APP_SHELL_URLS = [
   '/manifest.webmanifest',
   '/icons/taskflow-icon.svg',
   '/icons/taskflow-maskable.svg',
+  '/icons/taskflow-icon-192.png',
+  '/icons/taskflow-icon-512.png',
+  '/icons/taskflow-maskable-192.png',
+  '/icons/taskflow-maskable-512.png',
+  '/icons/apple-touch-icon.png',
   '/favicon.ico',
 ];
 
