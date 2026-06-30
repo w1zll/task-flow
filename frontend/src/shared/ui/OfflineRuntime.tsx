@@ -125,23 +125,26 @@ const OfflineRuntime = () => {
 
         const boards =
           queryClient.getQueryData<Board[]>(queryKeys.boards) ?? [];
-        const routes = boards.flatMap((board) => {
+        const routes = new Set<string>(['/workspaces']);
+
+        if (window.location.pathname.startsWith('/workspaces')) {
+          routes.add(window.location.pathname);
+        }
+
+        boards.forEach((board) => {
           const hasBoardDetails =
             queryClient.getQueryState(queryKeys.board(board.id))?.status ===
             'success';
 
-          return hasBoardDetails
-            ? [
-                '/workspaces',
-                `/workspaces/${board.workspaceId}`,
-                `/workspaces/${board.workspaceId}/boards`,
-                `/workspaces/${board.workspaceId}/boards/${board.id}`,
-              ]
-            : [];
+          if (!hasBoardDetails) return;
+
+          routes.add(`/workspaces/${board.workspaceId}`);
+          routes.add(`/workspaces/${board.workspaceId}/boards`);
+          routes.add(`/workspaces/${board.workspaceId}/boards/${board.id}`);
         });
 
-        if (routes.length) {
-          void warmOfflineNavigationRoutes(routes);
+        if (routes.size) {
+          void warmOfflineNavigationRoutes(Array.from(routes));
         }
       }, 1500);
     };
@@ -166,13 +169,7 @@ const OfflineRuntime = () => {
       });
     };
 
-    if (document.readyState === 'complete') {
-      register();
-      return;
-    }
-
-    window.addEventListener('load', register, { once: true });
-    return () => window.removeEventListener('load', register);
+    register();
   }, []);
 
   if (isOnline) return null;

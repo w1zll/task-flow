@@ -1,6 +1,6 @@
 'use client';
 
-const NAVIGATION_CACHE = 'taskflow-pwa-readonly-offline-v2-pages';
+const NAVIGATION_CACHE = 'taskflow-pwa-readonly-offline-v3-pages';
 export const OFFLINE_ROUTES_WARMED_EVENT = 'taskflow:offline-routes-warmed';
 
 const canUseNavigationCache = () =>

@@ -39,6 +39,7 @@ const RouteProgressBar = () => {
   const pathname = usePathname();
   const [isVisible, setVisible] = useState(false);
   const startedAtRef = useRef(0);
+  const routeRef = useRef(pathname);
   const fallbackTimerRef = useRef<number | undefined>(undefined);
   const finishTimerRef = useRef<number | undefined>(undefined);
 
@@ -65,6 +66,9 @@ const RouteProgressBar = () => {
   }, [finish]);
 
   useEffect(() => {
+    if (routeRef.current === pathname) return;
+
+    routeRef.current = pathname;
     if (isVisible) finish();
   }, [finish, isVisible, pathname]);
 
@@ -75,19 +79,16 @@ const RouteProgressBar = () => {
 
       const anchor = event.target.closest('a[href]');
       if (!(anchor instanceof HTMLAnchorElement)) return;
-
-      window.setTimeout(() => {
-        if (!event.defaultPrevented && shouldTrackAnchor(anchor)) start();
-      }, 0);
+      if (shouldTrackAnchor(anchor)) start();
     };
 
     const handlePopState = () => start();
 
-    document.addEventListener('click', handleClick);
+    document.addEventListener('click', handleClick, true);
     window.addEventListener('popstate', handlePopState);
 
     return () => {
-      document.removeEventListener('click', handleClick);
+      document.removeEventListener('click', handleClick, true);
       window.removeEventListener('popstate', handlePopState);
       clearTimer(fallbackTimerRef);
       clearTimer(finishTimerRef);
