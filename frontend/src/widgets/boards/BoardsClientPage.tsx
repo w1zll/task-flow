@@ -1,6 +1,8 @@
 'use client';
 
 import type { Workspace } from '@/shared/api/api';
+import { useCachedBoardDetailIds } from '@/shared/hooks/useCachedBoardDetailIds';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { useBoards, useDeleteBoard } from '@/shared/queries/boards.queries';
 import {
@@ -31,6 +33,8 @@ const BoardsClientPage = ({ initialWorkspaces = [], workspaceId }: Props) => {
   const t = useTranslations('Boards');
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
+  const isOffline = useIsOffline();
+  const cachedBoardDetailIds = useCachedBoardDetailIds();
   const { data: boards, isLoading: boardsLoading } = useBoards();
   const deleteBoard = useDeleteBoard();
   const workspaces = useWorkspaces();
@@ -81,6 +85,7 @@ const BoardsClientPage = ({ initialWorkspaces = [], workspaceId }: Props) => {
   );
 
   const handleDeleteBoard = (id: string) => {
+    if (isOffline) return;
     setMenuAnchor(null);
     deleteBoard.mutate(id, {
       onSuccess: () =>
@@ -88,7 +93,15 @@ const BoardsClientPage = ({ initialWorkspaces = [], workspaceId }: Props) => {
     });
   };
 
+  const notifyOfflineBoardUnavailable = () => {
+    enqueueSnackbar(t('offlineBoardUnavailable'), { variant: 'warning' });
+  };
+  const notifyOfflineWorkspaceUnavailable = () => {
+    enqueueSnackbar(t('offlineWorkspaceUnavailable'), { variant: 'warning' });
+  };
+
   const openBoardDialog = (targetWorkspaceId = workspaceId) => {
+    if (isOffline) return;
     setCreateBoardWorkspaceId(targetWorkspaceId);
     setCreateOpen(true);
   };
@@ -99,6 +112,7 @@ const BoardsClientPage = ({ initialWorkspaces = [], workspaceId }: Props) => {
   };
 
   const handleCreateWorkspace = () => {
+    if (isOffline) return;
     const name = workspaceName.trim();
     if (!name) return;
 
@@ -125,6 +139,7 @@ const BoardsClientPage = ({ initialWorkspaces = [], workspaceId }: Props) => {
   };
 
   const handleDeleteWorkspace = () => {
+    if (isOffline) return;
     if (!workspaceToDelete) return;
 
     const nextActiveWorkspace = workspaceToDelete.isActive
@@ -157,6 +172,7 @@ const BoardsClientPage = ({ initialWorkspaces = [], workspaceId }: Props) => {
           workspacesCount={workspaceData.length}
           onCreateBoard={() => openBoardDialog()}
           onCreateWorkspace={() => setCreateWorkspaceOpen(true)}
+          canCreate={!isOffline}
         />
 
         <BoardsContent
@@ -168,6 +184,11 @@ const BoardsClientPage = ({ initialWorkspaces = [], workspaceId }: Props) => {
           onCreateWorkspace={() => setCreateWorkspaceOpen(true)}
           onDeleteWorkspace={setWorkspaceToDeleteId}
           onOpenBoardMenu={(el, board) => setMenuAnchor({ el, board })}
+          canMutate={!isOffline}
+          isOffline={isOffline}
+          cachedBoardIds={cachedBoardDetailIds}
+          onOpenUnavailableBoard={notifyOfflineBoardUnavailable}
+          onOpenUnavailableWorkspace={notifyOfflineWorkspaceUnavailable}
         />
       </Box>
 
@@ -183,6 +204,7 @@ const BoardsClientPage = ({ initialWorkspaces = [], workspaceId }: Props) => {
         workspaces={workspaceData}
         defaultWorkspaceId={createBoardWorkspaceId ?? activeWorkspace?.id}
         lockWorkspace={isWorkspaceMode}
+        disabled={isOffline}
       />
 
       <CreateWorkspaceDialog

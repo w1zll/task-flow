@@ -9,6 +9,7 @@ import {
   PendingBoardMutation,
   usePendingBoardMutationsStore,
 } from '../store/pending-board-mutations.store';
+import { OfflineReadOnlyError, isBrowserOffline } from './offline';
 
 type SocketAckResponse = {
   ok: boolean;
@@ -103,6 +104,10 @@ export const emitBoardSocketMutation = async (
   payload: unknown,
   { boardId, queueOnFailure = true }: EmitBoardSocketMutationOptions,
 ) => {
+  if (isBrowserOffline()) {
+    throw new OfflineReadOnlyError();
+  }
+
   const socket = getSocket();
 
   if (!isSocketReady(socket)) {

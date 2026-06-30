@@ -7,6 +7,7 @@ import {
   useWorkspaceMembers,
   useWorkspaces,
 } from '@/shared/queries/workspaces.queries';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import { useAuthStore } from '@/shared/store/root.store';
 import { Alert, Box, Skeleton } from '@mui/material';
 import { useTranslations } from 'next-intl';
@@ -28,6 +29,7 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
   const t = useTranslations('WorkspaceSettings');
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
+  const isOffline = useIsOffline();
   const currentUser = useAuthStore((state) => state.user);
   const setActiveWorkspace = useAuthStore(
     (state) => state.setActiveWorkspace,
@@ -44,16 +46,27 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
     (member) => member.id === memberToRemoveId,
   );
   const inviteManagerRole =
-    workspace?.currentUserRole === 'owner' ||
-    workspace?.currentUserRole === 'admin'
+    !isOffline &&
+    (workspace?.currentUserRole === 'owner' ||
+      workspace?.currentUserRole === 'admin')
       ? workspace.currentUserRole
       : null;
-  const canDeleteWorkspace = workspace?.currentUserRole === 'owner';
+  const canDeleteWorkspace =
+    workspace?.currentUserRole === 'owner' && !isOffline;
+  const effectiveWorkspace = workspace
+    ? {
+        ...workspace,
+        currentUserRole: isOffline
+          ? ('member' as const)
+          : workspace.currentUserRole,
+      }
+    : undefined;
 
   const changeMemberRole = (
     memberId: string,
     role: 'admin' | 'member',
   ) => {
+    if (isOffline) return;
     updateMemberRole.mutate(
       { memberId, role },
       {
@@ -72,6 +85,7 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
   };
 
   const confirmRemoveMember = () => {
+    if (isOffline) return;
     if (!memberToRemove) return;
 
     removeMember.mutate(memberToRemove.id, {
@@ -91,6 +105,7 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
   };
 
   const handleDeleteWorkspace = () => {
+    if (isOffline) return;
     if (!workspace || !canDeleteWorkspace) return;
 
     const nextActiveWorkspace =
@@ -164,7 +179,7 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
       <WorkspaceSettingsHeader workspace={workspace} />
 
       <WorkspaceMembersSection
-        workspace={workspace}
+        workspace={effectiveWorkspace ?? workspace}
         members={members.data}
         isLoading={members.isLoading}
         isError={members.isError}
@@ -178,6 +193,7 @@ const WorkspaceSettingsPage = ({ workspaceId }: Props) => {
         <WorkspaceInvitesSection
           workspaceId={workspaceId}
           currentUserRole={inviteManagerRole}
+          canManage={!isOffline}
         />
       )}
 

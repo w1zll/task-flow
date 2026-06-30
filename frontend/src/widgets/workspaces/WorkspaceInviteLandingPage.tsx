@@ -6,6 +6,7 @@ import {
   getInviteAuthHref,
   savePendingWorkspaceInvite,
 } from '@/shared/lib/pending-workspace-invite';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import {
   useAcceptWorkspaceInvite,
   useRegisterFromDemoInvite,
@@ -43,6 +44,7 @@ interface Props {
 const WorkspaceInviteLandingPage = ({ token }: Props) => {
   const t = useTranslations('WorkspaceInvite');
   const router = useRouter();
+  const isOffline = useIsOffline();
   const { user, isLoading: isAuthLoading } = useAuth();
   const setUser = useAuthStore((state) => state.setUser);
   const setActiveWorkspace = useAuthStore(
@@ -77,6 +79,7 @@ const WorkspaceInviteLandingPage = ({ token }: Props) => {
   }, [isAuthLoading, token, user]);
 
   const handleAccept = () => {
+    if (isOffline && !isAlreadyMember) return;
     if (preview.data?.workspaceId && isAlreadyMember) {
       setActiveWorkspace(preview.data.workspaceId);
       clearPendingWorkspaceInvite();
@@ -96,6 +99,7 @@ const WorkspaceInviteLandingPage = ({ token }: Props) => {
   };
 
   const handleDemoRegistration = () => {
+    if (isOffline) return;
     registerFromDemoInvite.mutate(token, {
       onSuccess: (session) => {
         setUser(session.user);
@@ -197,7 +201,7 @@ const WorkspaceInviteLandingPage = ({ token }: Props) => {
                       variant="contained"
                       size="large"
                       onClick={handleAccept}
-                      disabled={acceptInvite.isPending}
+                      disabled={acceptInvite.isPending || (isOffline && !isAlreadyMember)}
                       startIcon={isAlreadyMember ? <OpenInNew /> : undefined}
                     >
                       {isAlreadyMember
@@ -216,7 +220,7 @@ const WorkspaceInviteLandingPage = ({ token }: Props) => {
                         size="large"
                         startIcon={<AutoAwesome />}
                         onClick={handleDemoRegistration}
-                        disabled={registerFromDemoInvite.isPending}
+                        disabled={registerFromDemoInvite.isPending || isOffline}
                         fullWidth
                       >
                         {registerFromDemoInvite.isPending

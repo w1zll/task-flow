@@ -1,6 +1,8 @@
 'use client';
 
 import { useBoards } from '@/shared/queries/boards.queries';
+import { useCachedBoardDetailIds } from '@/shared/hooks/useCachedBoardDetailIds';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import {
   useSwitchWorkspace,
   useWorkspaces,
@@ -9,6 +11,8 @@ import { useAuthStore } from '@/shared/store/root.store';
 import BoardCreateDialog from '@/widgets/boards/BoardCreateDialog';
 import { Box } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useSnackbar } from 'notistack';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import DemoWorkspaceBanner from './DemoWorkspaceBanner';
 import WorkspaceDesktopDrawer from './workspace-shell/WorkspaceDesktopDrawer';
@@ -26,6 +30,11 @@ interface Props {
 const WorkspaceShell = ({ workspaceId, children }: Props) => {
   const router = useRouter();
   const pathname = usePathname();
+  const isOffline = useIsOffline();
+  const cachedBoardDetailIds = useCachedBoardDetailIds();
+  const boardsT = useTranslations('Boards');
+  const shellT = useTranslations('WorkspaceShell');
+  const { enqueueSnackbar } = useSnackbar();
   const setActiveWorkspace = useAuthStore(
     (state) => state.setActiveWorkspace,
   );
@@ -61,7 +70,9 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
   )?.[1];
 
   useEffect(() => {
-    if (!workspace || workspace.isActive || isSwitchingWorkspace) return;
+    if (!workspace || workspace.isActive || isSwitchingWorkspace || isOffline) {
+      return;
+    }
 
     switchActiveWorkspace(workspaceId, {
       onSuccess: (updatedWorkspace) =>
@@ -73,6 +84,7 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
     switchActiveWorkspace,
     workspace,
     workspaceId,
+    isOffline,
   ]);
 
   const closeMobile = () => setMobileOpen(false);
@@ -83,6 +95,14 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
     closeMobile();
     router.push(`/workspaces/${nextWorkspaceId}`);
   };
+  const notifyOfflineBoardUnavailable = () => {
+    enqueueSnackbar(boardsT('offlineBoardUnavailable'), { variant: 'warning' });
+  };
+  const notifyOfflineSectionUnavailable = () => {
+    enqueueSnackbar(shellT('offlineSectionUnavailable'), {
+      variant: 'warning',
+    });
+  };
 
   const sidebarProps = {
     workspaceId,
@@ -91,8 +111,15 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
     activeNavKey,
     activeBoardId,
     onCloseNavigation: closeMobile,
-    onOpenCreateBoard: () => setCreateBoardOpen(true),
+    onOpenCreateBoard: () => {
+      if (!isOffline) setCreateBoardOpen(true);
+    },
     onOpenWorkspaceMenu: setWorkspaceMenuAnchor,
+    canCreateBoard: !isOffline,
+    isOffline,
+    cachedBoardIds: cachedBoardDetailIds,
+    onOpenUnavailableBoard: notifyOfflineBoardUnavailable,
+    onOpenUnavailableSection: notifyOfflineSectionUnavailable,
   };
 
   return (
@@ -156,6 +183,7 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
         workspaces={workspaces}
         defaultWorkspaceId={workspaceId}
         lockWorkspace
+        disabled={isOffline}
       />
     </>
   );

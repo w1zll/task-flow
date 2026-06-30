@@ -52,6 +52,7 @@ interface Props {
   workspaces: Workspace[];
   defaultWorkspaceId?: string;
   lockWorkspace?: boolean;
+  disabled?: boolean;
   onClose: () => void;
   onCreated?: (board: Board) => void;
 }
@@ -61,6 +62,7 @@ const BoardCreateDialog = ({
   workspaces,
   defaultWorkspaceId,
   lockWorkspace = false,
+  disabled = false,
   onClose,
   onCreated,
 }: Props) => {
@@ -96,6 +98,7 @@ const BoardCreateDialog = ({
   };
 
   const handleCreate = () => {
+    if (disabled) return;
     const title = form.title.trim();
     const workspaceId = form.workspaceId || fallbackWorkspaceId;
     if (!title || !workspaceId) return;
@@ -162,6 +165,7 @@ const BoardCreateDialog = ({
           fullWidth
           required
           value={form.title}
+          disabled={disabled}
           onChange={(event) =>
             setForm((previous) => ({
               ...previous,
@@ -178,6 +182,7 @@ const BoardCreateDialog = ({
             <Select
               label={t('workspace')}
               value={form.workspaceId}
+              disabled={disabled}
               onChange={(event) =>
                 setForm((previous) => ({
                   ...previous,
@@ -199,6 +204,7 @@ const BoardCreateDialog = ({
           multiline
           rows={2}
           value={form.description}
+          disabled={disabled}
           onChange={(event) =>
             setForm((previous) => ({
               ...previous,
@@ -219,6 +225,7 @@ const BoardCreateDialog = ({
             fullWidth
             size="small"
             value={form.template}
+            disabled={disabled}
             onChange={(_, template: BoardTemplate | null) => {
               if (template) {
                 setForm((previous) => ({ ...previous, template }));
@@ -247,6 +254,7 @@ const BoardCreateDialog = ({
                 onClick={() =>
                   setForm((previous) => ({ ...previous, color }))
                 }
+                disabled={disabled}
                 sx={{
                   width: 28,
                   height: 28,
@@ -280,6 +288,7 @@ const BoardCreateDialog = ({
           disabled={
             createBoard.isPending ||
             switchWorkspace.isPending ||
+            disabled ||
             !form.title.trim() ||
             !(form.workspaceId || fallbackWorkspaceId)
           }

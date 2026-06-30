@@ -41,6 +41,7 @@ interface BoardFiltersFormProps {
   searchInput: string;
   isSavingView: boolean;
   isDeletingView: boolean;
+  canManageSavedViews?: boolean;
   onPatchFilters: (patch: Partial<BoardFilters>) => void;
   onApplySavedView: (viewId: string | null) => void;
   onSearchInputChange: (value: string) => void;
@@ -65,6 +66,7 @@ const BoardFiltersForm = ({
   searchInput,
   isSavingView,
   isDeletingView,
+  canManageSavedViews = true,
   onPatchFilters,
   onApplySavedView,
   onSearchInputChange,
@@ -258,6 +260,7 @@ const BoardFiltersForm = ({
         selectedSavedViewId={selectedSavedViewId}
         isSavingView={isSavingView}
         isDeletingView={isDeletingView}
+        canManageSavedViews={canManageSavedViews}
         onPatchFilters={onPatchFilters}
         onReset={onReset}
         onOpenSaveDialog={onOpenSaveDialog}

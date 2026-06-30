@@ -1,4 +1,10 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
+import {
+  OfflineReadOnlyError,
+  isBrowserOffline,
+  markNetworkOffline,
+  markNetworkOnline,
+} from '../lib/offline';
 
 const AUTH_ENDPOINTS = [
   '/api/auth/login',
@@ -12,6 +18,19 @@ export const apiClient: AxiosInstance = axios.create({
   baseURL: '',
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
+});
+
+apiClient.interceptors.request.use((config) => {
+  const method = (config.method ?? 'get').toUpperCase();
+  const url = String(config.url ?? '');
+  const isWriteRequest = !['GET', 'HEAD', 'OPTIONS'].includes(method);
+  const isLogout = url.includes('/api/auth/logout');
+
+  if (isWriteRequest && !isLogout && isBrowserOffline()) {
+    return Promise.reject(new OfflineReadOnlyError());
+  }
+
+  return config;
 });
 
 let isRefreshing = false;
@@ -29,8 +48,15 @@ const processQueue = (error: AxiosError | null) => {
 };
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    markNetworkOnline();
+    return response;
+  },
   async (error: AxiosError) => {
+    if (!error.response) {
+      markNetworkOffline();
+    }
+
     const originalRequest = error.config as any;
     const url: string = originalRequest?.url ?? '';
 

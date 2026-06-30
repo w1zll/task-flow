@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/features/auth/useAuth';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import { useThemeStore } from '@/shared/store/root.store';
 import type { ThemeMode } from '@/shared/store/theme.store';
 import {
@@ -25,6 +26,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
+import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import NextLink from 'next/link';
 import LocaleSwitcher from './LocaleSwitcher';
@@ -37,6 +39,8 @@ const AppHeader = ({
 }) => {
   const t = useTranslations('Header');
   const { user, logout, isLoading } = useAuth();
+  const isOffline = useIsOffline();
+  const { enqueueSnackbar } = useSnackbar();
   const themeStore = useThemeStore();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const themeMode = themeStore.hasHydrated
@@ -109,7 +113,7 @@ const AppHeader = ({
               fontSize: 18,
               ':hover': { textDecoration: 'underline' },
             }}
-            component={NextLink}
+            component={isOffline ? 'a' : NextLink}
             href="/workspaces"
           >
             {t('myBoards')}
@@ -120,7 +124,7 @@ const AppHeader = ({
           {user && (
             <Tooltip title={t('myBoards')}>
               <IconButton
-                component={NextLink}
+                component={isOffline ? 'a' : NextLink}
                 href="/workspaces"
                 aria-label={t('myBoards')}
                 sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
@@ -201,9 +205,16 @@ const AppHeader = ({
             </Box>
             <Divider />
             <MenuItem
-              component={NextLink}
-              href="/profile"
-              onClick={() => setAnchorEl(null)}
+              {...(!isOffline ? { component: NextLink, href: '/profile' } : {})}
+              onClick={(event) => {
+                setAnchorEl(null);
+                if (isOffline) {
+                  event.preventDefault();
+                  enqueueSnackbar(t('profileOfflineUnavailable'), {
+                    variant: 'warning',
+                  });
+                }
+              }}
               sx={{ gap: 1 }}
             >
               {t('profile')}
