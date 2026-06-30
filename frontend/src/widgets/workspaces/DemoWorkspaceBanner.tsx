@@ -1,6 +1,7 @@
 'use client';
 
 import { demoApi } from '@/shared/api/api';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import { queryKeys } from '@/shared/queries/board-query-keys';
 import { useAuthStore } from '@/shared/store/root.store';
 import {
@@ -33,6 +34,7 @@ const DemoWorkspaceBanner = () => {
   const queryClient = useQueryClient();
   const setUser = useAuthStore((state) => state.setUser);
   const { enqueueSnackbar } = useSnackbar();
+  const isOffline = useIsOffline();
   const [isConfirmOpen, setConfirmOpen] = useState(false);
   const resetDialogTitleId = 'demo-reset-dialog-title';
   const resetDialogDescriptionId = 'demo-reset-dialog-description';
@@ -108,14 +110,15 @@ const DemoWorkspaceBanner = () => {
               flexShrink: 0,
             }}
           >
-            <Button
-              size="small"
-              color="warning"
-              variant="outlined"
-              startIcon={<RefreshOutlined />}
-              onClick={() => setConfirmOpen(true)}
-              sx={{ minWidth: 'max-content', px: { xs: 1, sm: 1.25 } }}
-            >
+          <Button
+            size="small"
+            color="warning"
+            variant="outlined"
+            startIcon={<RefreshOutlined />}
+            onClick={() => setConfirmOpen(true)}
+            disabled={isOffline}
+            sx={{ minWidth: 'max-content', px: { xs: 1, sm: 1.25 } }}
+          >
               {t('reset')}
             </Button>
           </Stack>
@@ -148,7 +151,7 @@ const DemoWorkspaceBanner = () => {
             color="warning"
             variant="contained"
             onClick={() => resetDemo.mutate()}
-            disabled={resetDemo.isPending}
+            disabled={resetDemo.isPending || isOffline}
           >
             {resetDemo.isPending ? t('resetting') : t('resetConfirm')}
           </Button>

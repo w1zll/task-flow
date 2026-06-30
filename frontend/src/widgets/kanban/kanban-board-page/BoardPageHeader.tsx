@@ -55,40 +55,70 @@ const BoardPageHeader = ({
   return (
     <Box
       sx={{
-        px: { xs: 2, sm: 3 },
-        py: { xs: .5, sm: 2 },
+        px: { xs: 1.5, sm: 3 },
+        py: { xs: 0.5, sm: 2 },
         borderBottom: '1px solid',
         borderColor: 'divider',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: { xs: 'center', lg: 'center' },
         justifyContent: 'space-between',
-        flexWrap: { xs: 'wrap', sm: 'nowrap' },
-        gap: 2,
+        flexWrap: { xs: 'nowrap', sm: 'wrap' },
+        gap: { xs: 1, sm: 2 },
         bgcolor: 'background.paper',
         flexShrink: 0,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: { xs: 'center', sm: 'flex-start' },
+          flex: { xs: '1 1 auto', sm: '1 1 320px' },
+          flexWrap: { xs: 'nowrap', sm: 'wrap' },
+          gap: { xs: 1, sm: 1.5 },
+          minWidth: 0,
+        }}
+      >
         {board && (
           <Box
             sx={{
-              width: 14,
-              height: 14,
+              width: { xs: 10, sm: 14 },
+              height: { xs: 10, sm: 14 },
               borderRadius: '50%',
               bgcolor: board.color,
               flexShrink: 0,
+              mt: { xs: 0, sm: 1 },
             }}
           />
         )}
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ flex: { xs: '1 1 auto', sm: '1 1 240px' }, minWidth: 0 }}>
           {isLoading ? (
             <Skeleton width={200} height={32} />
           ) : (
-            <Typography variant="h6" sx={{ fontWeight: 700 }} noWrap>
+            <Typography
+              variant="h6"
+              sx={{
+                fontSize: { xs: '1.05rem', sm: '1.25rem' },
+                fontWeight: 700,
+                lineHeight: { xs: 1.15, sm: 1.25 },
+                overflowWrap: 'anywhere',
+              }}
+            >
               {board?.title}
             </Typography>
           )}
-          <Breadcrumbs sx={{ fontSize: 12 }}>
+          <Breadcrumbs
+            sx={{
+              display: { xs: 'none', sm: 'flex' },
+              fontSize: 12,
+              '& .MuiBreadcrumbs-ol': {
+                alignItems: 'center',
+                flexWrap: 'wrap',
+              },
+              '& .MuiBreadcrumbs-li': {
+                minWidth: 0,
+              },
+            }}
+          >
             <Link
               component={NextLink}
               href={
@@ -98,11 +128,14 @@ const BoardPageHeader = ({
               }
               color="inherit"
               underline="hover"
-              sx={{ fontSize: 12 }}
+              sx={{ fontSize: 12, overflowWrap: 'anywhere' }}
             >
               {t('boardsLink')}
             </Link>
-            <Typography color="text.primary" sx={{ fontSize: 12 }}>
+            <Typography
+              color="text.primary"
+              sx={{ fontSize: 12, overflowWrap: 'anywhere' }}
+            >
               {board?.title}
             </Typography>
           </Breadcrumbs>
@@ -128,8 +161,8 @@ const BoardPageHeader = ({
                 aria-label={t('addColumn')}
                 sx={{
                   display: { xs: 'inline-flex', sm: 'none' },
-                  width: 44,
-                  height: 44,
+                  width: 36,
+                  height: 36,
                   flexShrink: 0,
                 }}
               >
@@ -143,11 +176,48 @@ const BoardPageHeader = ({
             icon={<LockOutlined />}
             label={t('readOnly')}
             variant="outlined"
+            sx={{ display: { xs: 'none', sm: 'inline-flex' }, mt: 0.5 }}
           />
         ) : null}
+        {board && !canManageColumns && !canEditBoardContent && (
+          <Tooltip title={t('readOnly')}>
+            <Box
+              component="span"
+              aria-label={t('readOnly')}
+              sx={{
+                display: { xs: 'inline-flex', sm: 'none' },
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 30,
+                height: 30,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: '6px',
+                color: 'text.secondary',
+                flexShrink: 0,
+              }}
+            >
+              <LockOutlined sx={{ fontSize: 18 }} />
+            </Box>
+          </Tooltip>
+        )}
       </Box>
 
-      <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+      <Stack
+        direction="row"
+        spacing={{ xs: 0.25, sm: 1 }}
+        useFlexGap
+        sx={{
+          flex: '0 1 auto',
+          flexShrink: 0,
+          flexWrap: { xs: 'nowrap', sm: 'wrap' },
+          justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+          maxWidth: '100%',
+          '& .MuiButton-root': {
+            whiteSpace: 'normal',
+          },
+        }}
+      >
         <Button
           variant={isStatsOpen ? 'contained' : 'outlined'}
           size="small"
@@ -165,8 +235,8 @@ const BoardPageHeader = ({
             aria-label={t('stats')}
             sx={{
               display: { xs: 'inline-flex', sm: 'none' },
-              width: 44,
-              height: 44,
+              width: 36,
+              height: 36,
             }}
           >
             <QueryStats fontSize="small" />
@@ -189,8 +259,8 @@ const BoardPageHeader = ({
             aria-label={t('activity')}
             sx={{
               display: { xs: 'inline-flex', sm: 'none' },
-              width: 44,
-              height: 44,
+              width: 36,
+              height: 36,
             }}
           >
             <HistoryOutlined fontSize="small" />
@@ -213,8 +283,8 @@ const BoardPageHeader = ({
             aria-label={t('members')}
             sx={{
               display: { xs: 'inline-flex', sm: 'none' },
-              width: 44,
-              height: 44,
+              width: 36,
+              height: 36,
             }}
           >
             <GroupOutlined fontSize="small" />

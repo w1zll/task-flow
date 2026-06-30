@@ -7,6 +7,7 @@ import {
   isBoardSocketMutationQueuedError,
 } from '@/shared/lib/boardSocketMutations';
 import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { getSocket } from '@/shared/lib/socket';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import {
@@ -80,6 +81,7 @@ const TaskDetailModal = ({ board }: Props) => {
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const dayjsLocale = useDayjsLocale();
+  const isOnline = useOnlineStatus();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'), {
     defaultMatches: false,
@@ -116,6 +118,8 @@ const TaskDetailModal = ({ board }: Props) => {
   }, [task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (!isOnline) return;
+
     const handleTaskUpdate = ({
       boardId,
       task: updatedTask,
@@ -135,7 +139,7 @@ const TaskDetailModal = ({ board }: Props) => {
     return () => {
       socket.off('task:update', handleTaskUpdate);
     };
-  }, [board.id, task?.id]);
+  }, [board.id, isOnline, task?.id]);
 
   const patch = <K extends keyof Task,>(key: K, value: Task[K]) => {
     if (!canEdit) return;

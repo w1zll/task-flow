@@ -1,6 +1,7 @@
 import { getLocale, getMessages } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { DM_Sans } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
 import Providers from './Providers';
 
 const dmSans = DM_Sans({
@@ -10,6 +11,29 @@ const dmSans = DM_Sans({
 });
 
 type ThemeMode = 'light' | 'dark';
+
+export const metadata: Metadata = {
+  title: {
+    default: 'TaskFlow',
+    template: '%s | TaskFlow',
+  },
+  description: 'Workspace task tracking for teams.',
+  applicationName: 'TaskFlow',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/icons/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'TaskFlow',
+    statusBarStyle: 'default',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#669266',
+};
 
 const getInitialThemeMode = async (): Promise<ThemeMode> => {
   const cookieStore = await cookies();
@@ -25,9 +49,6 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <head>
-        <link rel="icon" href="/favicon.ico" />
-      </head>
       <body className={dmSans.className}>
         <Providers
           messages={messages}

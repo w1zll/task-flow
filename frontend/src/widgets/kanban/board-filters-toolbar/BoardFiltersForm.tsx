@@ -41,6 +41,7 @@ interface BoardFiltersFormProps {
   searchInput: string;
   isSavingView: boolean;
   isDeletingView: boolean;
+  canManageSavedViews?: boolean;
   onPatchFilters: (patch: Partial<BoardFilters>) => void;
   onApplySavedView: (viewId: string | null) => void;
   onSearchInputChange: (value: string) => void;
@@ -65,6 +66,7 @@ const BoardFiltersForm = ({
   searchInput,
   isSavingView,
   isDeletingView,
+  canManageSavedViews = true,
   onPatchFilters,
   onApplySavedView,
   onSearchInputChange,
@@ -103,19 +105,20 @@ const BoardFiltersForm = ({
     <Stack spacing={1.5}>
       <Box
         sx={{
-          alignItems: { xs: 'stretch', md: 'center' },
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          flexWrap: { md: 'wrap' },
-          columnGap: 1,
+          alignItems: 'center',
+          display: 'grid',
+          gap: { xs: 1.5, md: 1 },
+          gridTemplateColumns: {
+            xs: '1fr',
+            md: 'repeat(auto-fit, minmax(150px, 1fr))',
+          },
           minWidth: 0,
-          rowGap: { xs: 2, md: 3 },
-          '& > *': {
-            flexShrink: 0,
+          '& .MuiFormControl-root, & .MuiTextField-root': {
+            minWidth: 0,
           },
         }}
       >
-        <FormControl size="small" sx={{ minWidth: { md: 190 } }}>
+        <FormControl size="small">
           <InputLabel>{t('views.label')}</InputLabel>
           <Select
             label={t('views.label')}
@@ -136,10 +139,9 @@ const BoardFiltersForm = ({
           label={t('search')}
           value={searchInput}
           onChange={(event) => onSearchInputChange(event.target.value)}
-          sx={{ minWidth: { md: 220 } }}
         />
 
-        <FormControl size="small" sx={{ minWidth: { md: 170 } }}>
+        <FormControl size="small">
           <InputLabel>{t('assignee')}</InputLabel>
           <Select
             label={t('assignee')}
@@ -160,7 +162,7 @@ const BoardFiltersForm = ({
           </Select>
         </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: { md: 170 } }}>
+        <FormControl size="small">
           <InputLabel>{t('team')}</InputLabel>
           <Select
             label={t('team')}
@@ -178,7 +180,7 @@ const BoardFiltersForm = ({
           </Select>
         </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: { md: 140 } }}>
+        <FormControl size="small">
           <InputLabel>{t('priority')}</InputLabel>
           <Select
             label={t('priority')}
@@ -202,7 +204,7 @@ const BoardFiltersForm = ({
           </Select>
         </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: { md: 150 } }}>
+        <FormControl size="small">
           <InputLabel>{t('statusLabel')}</InputLabel>
           <Select
             label={t('statusLabel')}
@@ -222,7 +224,7 @@ const BoardFiltersForm = ({
           </Select>
         </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: { md: 150 } }}>
+        <FormControl size="small">
           <InputLabel>{t('sortLabel')}</InputLabel>
           <Select
             label={t('sortLabel')}
@@ -246,7 +248,6 @@ const BoardFiltersForm = ({
           onChange={(event) => onLabelsInputChange(event.target.value)}
           onBlur={onApplyLabelsInput}
           onKeyDown={onLabelsKeyDown}
-          sx={{ minWidth: { md: 160 } }}
         />
       </Box>
 
@@ -258,6 +259,7 @@ const BoardFiltersForm = ({
         selectedSavedViewId={selectedSavedViewId}
         isSavingView={isSavingView}
         isDeletingView={isDeletingView}
+        canManageSavedViews={canManageSavedViews}
         onPatchFilters={onPatchFilters}
         onReset={onReset}
         onOpenSaveDialog={onOpenSaveDialog}

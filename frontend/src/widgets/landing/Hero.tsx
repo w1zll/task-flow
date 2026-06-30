@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { authApi } from '@/shared/api/api';
+import { clearPersistedQueryCache } from '@/shared/lib/query-persistence';
 import { useAuthStore } from '@/shared/store/root.store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
@@ -42,9 +43,11 @@ const Hero = ({
   const setUser = useAuthStore((state) => state.setUser);
   const { enqueueSnackbar } = useSnackbar();
   const heading = t('heading');
+  const headingTokens = heading.match(/\S+|\s+/g) ?? [];
   const demoLogin = useMutation({
     mutationFn: () => authApi.demoLogin().then((response) => response.data),
-    onSuccess: ({ user, workspaceId, boardId }) => {
+    onSuccess: async ({ user, workspaceId, boardId }) => {
+      await clearPersistedQueryCache();
       queryClient.clear();
       setUser(user);
       router.push(`/workspaces/${workspaceId}/boards/${boardId}`);
@@ -91,28 +94,55 @@ const Hero = ({
             lineHeight: 1,
             mb: 2.5,
             color: 'text.primary',
+            overflowWrap: 'normal',
+            wordBreak: 'normal',
           }}
         >
           <span
             ref={titleRef}
             aria-label={heading}
-            style={{ display: 'inline-block', opacity: 0 }}
+            style={{
+              display: 'inline-block',
+              opacity: 0,
+              overflowWrap: 'normal',
+              wordBreak: 'normal',
+            }}
           >
-            {Array.from(heading).map((char, index) => (
-              <span
-                key={`${char}-${index}`}
-                aria-hidden="true"
-                style={{
-                  display: 'inline-block',
-                  overflow: 'hidden',
-                  verticalAlign: 'top',
-                }}
-              >
-                <span data-hero-char style={{ display: 'inline-block' }}>
-                  {char === ' ' ? '\u00a0' : char}
+            {headingTokens.map((token, tokenIndex) =>
+              /^\s+$/.test(token) ? (
+                <span
+                  key={`space-${tokenIndex}`}
+                  aria-hidden="true"
+                  style={{ whiteSpace: 'pre-wrap' }}
+                >
+                  {token}
                 </span>
-              </span>
-            ))}
+              ) : (
+                <span
+                  key={`${token}-${tokenIndex}`}
+                  aria-hidden="true"
+                  style={{ display: 'inline-block' }}
+                >
+                  {Array.from(token).map((char, charIndex) => (
+                    <span
+                      key={`${char}-${tokenIndex}-${charIndex}`}
+                      style={{
+                        display: 'inline-block',
+                        overflow: 'hidden',
+                        verticalAlign: 'top',
+                      }}
+                    >
+                      <span
+                        data-hero-char
+                        style={{ display: 'inline-block' }}
+                      >
+                        {char}
+                      </span>
+                    </span>
+                  ))}
+                </span>
+              ),
+            )}
           </span>
           <Box
             ref={accentRef}

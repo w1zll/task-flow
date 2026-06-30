@@ -3,13 +3,23 @@
 import AuthHydrator from '@/features/auth/AuthHydrator';
 import { defaultTimeZone } from '@/i18n/config';
 import PendingBoardMutationsPrompt from '@/shared/ui/PendingBoardMutationsPrompt';
+import OfflineRuntime from '@/shared/ui/OfflineRuntime';
+import RouteProgressBar from '@/shared/ui/RouteProgressBar';
+import {
+  installQueryCachePersistence,
+  restorePersistedQueryCache,
+} from '@/shared/lib/query-persistence';
 import { useThemeStore } from '@/shared/store/root.store';
 import type { ThemeMode } from '@/shared/store/theme.store';
 import { createAppTheme } from '@/shared/theme/theme';
 import AppHeader from '@/widgets/layout/AppHeader';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import { Box, CssBaseline, ThemeProvider } from '@mui/material';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  onlineManager,
+} from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Locale, NextIntlClientProvider } from 'next-intl';
 import { SnackbarProvider } from 'notistack';
@@ -19,6 +29,7 @@ const createQueryClient = () =>
   new QueryClient({
     defaultOptions: {
       queries: {
+        gcTime: 1000 * 60 * 60 * 24 * 3,
         retry: 1,
         refetchOnWindowFocus: false,
       },
@@ -32,6 +43,7 @@ const getQueryClient = () => {
     return createQueryClient();
   }
 
+  onlineManager.setOnline(window.navigator.onLine);
   browserQueryClient ??= createQueryClient();
   return browserQueryClient;
 };
@@ -92,6 +104,7 @@ const Providers = ({
           messages={messages}
           timeZone={defaultTimeZone}
         >
+          <QueryPersistenceBootstrap queryClient={queryClient} />
           <ThemedApp initialThemeMode={initialThemeMode}>
             <Box
               sx={{
@@ -101,6 +114,8 @@ const Providers = ({
               }}
             >
               <AppHeader initialThemeMode={initialThemeMode} />
+              <RouteProgressBar />
+              <OfflineRuntime />
               {children}
             </Box>
           </ThemedApp>
@@ -109,6 +124,29 @@ const Providers = ({
       </QueryClientProvider>
     </AppRouterCacheProvider>
   );
+};
+
+const QueryPersistenceBootstrap = ({
+  queryClient,
+}: {
+  queryClient: QueryClient;
+}) => {
+  useEffect(() => {
+    let isActive = true;
+    let cleanup: () => void = () => undefined;
+
+    void restorePersistedQueryCache(queryClient).finally(() => {
+      if (!isActive) return;
+      cleanup = installQueryCachePersistence(queryClient);
+    });
+
+    return () => {
+      isActive = false;
+      cleanup();
+    };
+  }, [queryClient]);
+
+  return null;
 };
 
 export default Providers;

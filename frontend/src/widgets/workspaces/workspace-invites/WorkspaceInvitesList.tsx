@@ -19,6 +19,7 @@ interface WorkspaceInvitesListProps {
   isLoading: boolean;
   isError: boolean;
   isRevoking: boolean;
+  canRevoke?: boolean;
   onRevoke: (inviteId: string) => void;
 }
 
@@ -27,6 +28,7 @@ const WorkspaceInvitesList = ({
   isLoading,
   isError,
   isRevoking,
+  canRevoke = true,
   onRevoke,
 }: WorkspaceInvitesListProps) => {
   const t = useTranslations('WorkspaceInvites');
@@ -119,7 +121,7 @@ const WorkspaceInvitesList = ({
             <IconButton
               color="error"
               onClick={() => onRevoke(invite.id)}
-              disabled={isRevoking}
+              disabled={isRevoking || !canRevoke}
               aria-label={t('revoke')}
             >
               <LinkOff />

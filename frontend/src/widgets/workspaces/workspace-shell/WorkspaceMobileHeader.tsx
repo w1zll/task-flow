@@ -51,10 +51,17 @@ const WorkspaceMobileHeader = ({
         <MenuIcon />
       </IconButton>
       <Box sx={{ minWidth: 0 }}>
-        <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}
+        >
           {workspace?.name ?? t('workspaceFallback')}
         </Typography>
-        <Typography variant="caption" color="text.secondary" noWrap>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ overflowWrap: 'anywhere' }}
+        >
           {navLabels[activeNavKey]}
         </Typography>
       </Box>

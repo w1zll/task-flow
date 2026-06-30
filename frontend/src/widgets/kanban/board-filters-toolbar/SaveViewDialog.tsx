@@ -14,6 +14,7 @@ interface SaveViewDialogProps {
   open: boolean;
   title: string;
   isSaving: boolean;
+  canSave?: boolean;
   onClose: () => void;
   onTitleChange: (title: string) => void;
   onSave: () => void;
@@ -23,6 +24,7 @@ const SaveViewDialog = ({
   open,
   title,
   isSaving,
+  canSave = true,
   onClose,
   onTitleChange,
   onSave,
@@ -61,7 +63,7 @@ const SaveViewDialog = ({
         <Button
           variant="contained"
           onClick={onSave}
-          disabled={!title.trim() || isSaving}
+          disabled={!title.trim() || isSaving || !canSave}
         >
           {t('views.save')}
         </Button>

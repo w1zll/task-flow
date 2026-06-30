@@ -1,12 +1,17 @@
-import type { Response } from 'express';
+import type { CookieOptions, Response } from 'express';
 
 export const REFRESH_COOKIE = 'refresh_token';
 export const ACCESS_COOKIE = 'access_token';
 
-export const AUTH_COOKIE_OPTIONS = {
+const useSecureCookies =
+  process.env.AUTH_COOKIE_SECURE !== undefined
+    ? process.env.AUTH_COOKIE_SECURE === 'true'
+    : process.env.NODE_ENV === 'production';
+
+export const AUTH_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true,
-  secure: true,
-  sameSite: 'none' as const,
+  secure: useSecureCookies,
+  sameSite: useSecureCookies ? 'none' : 'lax',
   path: '/',
 };
 

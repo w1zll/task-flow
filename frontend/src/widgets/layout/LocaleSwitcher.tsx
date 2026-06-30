@@ -1,17 +1,27 @@
 'use client';
 
 import { setLocaleAction } from '@/shared/actions/locale.action';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import { Button, ButtonGroup } from '@mui/material';
-import { Locale, useLocale } from 'next-intl';
+import { Locale, useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useSnackbar } from 'notistack';
 import { useTransition } from 'react';
 
 const LocaleSwitcher = () => {
   const locale = useLocale();
+  const t = useTranslations('Header');
   const router = useRouter();
+  const isOffline = useIsOffline();
+  const { enqueueSnackbar } = useSnackbar();
   const [isPending, startTransition] = useTransition();
 
   const handleChange = (newLocale: Locale) => {
+    if (isOffline) {
+      enqueueSnackbar(t('localeOfflineUnavailable'), { variant: 'warning' });
+      return;
+    }
+
     startTransition(async () => {
       await setLocaleAction(newLocale);
       router.refresh();

@@ -14,11 +14,16 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
-  useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { type RefObject, useState } from 'react';
+import {
+  type RefObject,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react';
 import KanbanBoard from '../KanbanBoard';
 import MobileKanbanBoard from '../MobileKanbanBoard';
 import AddColumnComposer from './AddColumnComposer';
@@ -49,6 +54,34 @@ interface BoardCanvasSectionProps {
 
 type MobileBoardMode = 'single' | 'board';
 
+const useBrowserLayoutEffect =
+  typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
+const useResolvedMediaQuery = (mediaQuery: string) => {
+  const query = useMemo(
+    () => mediaQuery.replace(/^@media\s*/, ''),
+    [mediaQuery],
+  );
+  const [matches, setMatches] = useState<boolean | null>(null);
+
+  useBrowserLayoutEffect(() => {
+    const media = window.matchMedia(query);
+    const handleChange = () => setMatches(media.matches);
+
+    handleChange();
+
+    if (media.addEventListener) {
+      media.addEventListener('change', handleChange);
+      return () => media.removeEventListener('change', handleChange);
+    }
+
+    media.addListener(handleChange);
+    return () => media.removeListener(handleChange);
+  }, [query]);
+
+  return matches;
+};
+
 const BoardCanvasSection = ({
   boardId,
   isLoading,
@@ -74,13 +107,12 @@ const BoardCanvasSection = ({
   const tFilters = useTranslations('BoardPage.filters');
   const tMobile = useTranslations('BoardPage.mobile');
   const theme = useTheme();
-  const isMobileBoard = useMediaQuery(theme.breakpoints.down('md'), {
-    defaultMatches: false,
-  });
+  const isMobileBoard = useResolvedMediaQuery(theme.breakpoints.down('md'));
   const [mobileBoardMode, setMobileBoardMode] =
     useState<MobileBoardMode>('single');
   const isSingleColumnMode =
-    isMobileBoard && mobileBoardMode === 'single';
+    isMobileBoard === true && mobileBoardMode === 'single';
+  const isViewportResolved = isMobileBoard !== null;
 
   return (
     <Box
@@ -93,7 +125,7 @@ const BoardCanvasSection = ({
         flexDirection: 'column',
       }}
     >
-      {isLoading ? (
+      {isLoading || !isViewportResolved ? (
         <Box
           sx={{
             display: 'flex',
@@ -104,9 +136,16 @@ const BoardCanvasSection = ({
             pt: 2,
           }}
         >
-          {Array.from({ length: isMobileBoard ? 1 : 3 }).map((_, index) => (
-            <Skeleton key={index} variant="rounded" width={280} height={400} />
-          ))}
+          {Array.from({ length: isMobileBoard === false ? 3 : 1 }).map(
+            (_, index) => (
+              <Skeleton
+                key={index}
+                variant="rounded"
+                width={280}
+                height={400}
+              />
+            ),
+          )}
         </Box>
       ) : filteredBoard ? (
         <Box
@@ -189,7 +228,7 @@ const BoardCanvasSection = ({
                     minHeight: 40,
                     px: 1,
                     textTransform: 'none',
-                    whiteSpace: 'nowrap',
+                    whiteSpace: 'normal',
                   },
                 }}
               >

@@ -1,6 +1,7 @@
 'use client';
 
 import type { Team } from '@/shared/api/api';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import {
   useAddTeamMember,
   useCreateTeam,
@@ -35,6 +36,8 @@ const initialForm: TeamForm = {
 const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
   const t = useTranslations('WorkspaceTeams');
   const { enqueueSnackbar } = useSnackbar();
+  const isOffline = useIsOffline();
+  const canManageOnline = canManage && !isOffline;
   const teams = useWorkspaceTeams(workspaceId);
   const workspaceMembers = useWorkspaceMembers(workspaceId);
   const createTeam = useCreateTeam(workspaceId);
@@ -63,6 +66,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
   }, [managedTeam?.members, workspaceMembers.data]);
 
   const openCreate = () => {
+    if (!canManageOnline) return;
     setEditingTeam(null);
     colorValueRef.current = initialForm.color;
     setForm(initialForm);
@@ -70,6 +74,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
   };
 
   const openEdit = (team: Team) => {
+    if (!canManageOnline) return;
     setEditingTeam(team);
     colorValueRef.current = team.color;
     setForm({
@@ -93,6 +98,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
   };
 
   const saveTeam = () => {
+    if (!canManageOnline) return;
     const name = form.name.trim();
     if (!name) return;
 
@@ -143,6 +149,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
   };
 
   const addSelectedMember = () => {
+    if (!canManageOnline) return;
     if (!managedTeam || !selectedUserId) return;
 
     addMember.mutate(
@@ -159,6 +166,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
   };
 
   const removeSelectedMember = (memberId: string) => {
+    if (!canManageOnline) return;
     if (!managedTeam) return;
 
     removeMember.mutate(
@@ -177,6 +185,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
   };
 
   const confirmDeleteTeam = () => {
+    if (!canManageOnline) return;
     if (!teamToDelete) return;
 
     deleteTeam.mutate(teamToDelete.id, {
@@ -218,7 +227,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
               {t('description')}
             </Typography>
           </Box>
-          {canManage && (
+          {canManageOnline && (
             <Button
               variant="contained"
               startIcon={<Add />}
@@ -235,7 +244,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
           teams={teams.data}
           isLoading={teams.isLoading}
           isError={teams.isError}
-          canManage={canManage}
+          canManage={canManageOnline}
           onEdit={openEdit}
           onDelete={setTeamToDelete}
           onManageMembers={openMembers}
@@ -256,7 +265,7 @@ const WorkspaceTeamsSection = ({ workspaceId, canManage }: Props) => {
 
       <TeamMembersDialog
         team={managedTeam}
-        canManage={canManage}
+        canManage={canManageOnline}
         availableMembers={availableMembers}
         selectedUserId={selectedUserId}
         isAdding={addMember.isPending}

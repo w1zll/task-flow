@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { writeStoredAuthUser } from '@/shared/lib/auth-session';
 
 export interface AuthUser {
   id: string;
@@ -25,17 +26,27 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isLoading: true,
   isAuthenticated: false,
-  setUser: (user) => set({ user, isAuthenticated: user !== null }),
+  setUser: (user) => {
+    writeStoredAuthUser(user);
+    set({ user, isAuthenticated: user !== null });
+  },
   setLoading: (loading) => set({ isLoading: loading }),
-  hydrate: (user) =>
+  hydrate: (user) => {
+    writeStoredAuthUser(user);
     set({
       user,
       isLoading: false,
       isAuthenticated: user !== null,
-    }),
-  logout: () => set({ user: null, isAuthenticated: false }),
+    });
+  },
+  logout: () => {
+    writeStoredAuthUser(null);
+    set({ user: null, isAuthenticated: false });
+  },
   setActiveWorkspace: (activeWorkspaceId) =>
-    set((state) => ({
-      user: state.user ? { ...state.user, activeWorkspaceId } : null,
-    })),
+    set((state) => {
+      const user = state.user ? { ...state.user, activeWorkspaceId } : null;
+      writeStoredAuthUser(user);
+      return { user };
+    }),
 }));

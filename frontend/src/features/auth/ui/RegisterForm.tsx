@@ -15,8 +15,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { PhotoCamera, ViewKanban } from '@mui/icons-material';
+import { PhotoCamera } from '@mui/icons-material';
 import UserAvatar from '@/shared/ui/UserAvatar';
+import TaskFlowLogo from '@/shared/ui/TaskFlowLogo';
 import {
   AVATAR_ACCEPT,
   AvatarValidationError,
@@ -96,21 +97,7 @@ const RegisterForm = () => {
       <Card sx={{ width: '100%', maxWidth: 420, p: 1 }}>
         <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4 }}>
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '6px',
-                bgcolor: 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <ViewKanban
-                sx={{ color: 'primary.contrastText', fontSize: 22 }}
-              />
-            </Box>
+            <TaskFlowLogo size={40} />
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
               TaskFlow
             </Typography>

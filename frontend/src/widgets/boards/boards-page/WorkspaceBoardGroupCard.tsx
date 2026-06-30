@@ -24,6 +24,11 @@ interface WorkspaceBoardGroupCardProps {
   onCreateBoard: (workspaceId: string) => void;
   onDeleteWorkspace: (workspaceId: string) => void;
   onOpenBoardMenu: (anchor: HTMLElement, board: Board) => void;
+  canMutate?: boolean;
+  isOffline?: boolean;
+  cachedBoardIds?: ReadonlySet<string>;
+  onOpenUnavailableBoard?: (board: Board) => void;
+  onOpenUnavailableWorkspace?: (workspace: Workspace) => void;
 }
 
 const WorkspaceBoardGroupCard = ({
@@ -32,61 +37,112 @@ const WorkspaceBoardGroupCard = ({
   onCreateBoard,
   onDeleteWorkspace,
   onOpenBoardMenu,
+  canMutate = true,
+  isOffline = false,
+  cachedBoardIds,
+  onOpenUnavailableBoard,
+  onOpenUnavailableWorkspace,
 }: WorkspaceBoardGroupCardProps) => {
   const t = useTranslations('Boards');
+  const isWorkspaceOfflineUnavailable = isOffline;
+  const headerSx = {
+    color: 'inherit',
+    textDecoration: 'none',
+    px: { xs: 2, sm: 3 },
+    py: 2,
+    width: '100%',
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 2,
+    border: 0,
+    font: 'inherit',
+    textAlign: 'left',
+    bgcolor: 'transparent',
+    transition: 'background-color 0.2s ease',
+    cursor: isWorkspaceOfflineUnavailable ? 'not-allowed' : 'pointer',
+    opacity: isWorkspaceOfflineUnavailable ? 0.62 : 1,
+    ':hover': { bgcolor: 'action.hover' },
+  } as const;
+  const headerContent = (
+    <>
+      <Stack
+        direction="row"
+        spacing={1.25}
+        sx={{
+          alignItems: 'flex-start',
+          flex: '1 1 220px',
+          minWidth: 0,
+        }}
+      >
+        <Business color="action" />
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}
+          >
+            {workspace.name}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {workspace.isPersonal
+              ? t('personalWorkspace')
+              : t(`role.${workspace.currentUserRole}`)}
+          </Typography>
+        </Box>
+      </Stack>
+      <Chip size="small" label={t('boardsCount', { count: boards.length })} />
+      {workspace.currentUserRole === 'owner' && canMutate && (
+        <Tooltip title={t('deleteWorkspace')}>
+          <IconButton
+            color="error"
+            aria-label={t('deleteWorkspace')}
+            onClick={(event) => {
+              event.stopPropagation();
+              event.preventDefault();
+              onDeleteWorkspace(workspace.id);
+            }}
+          >
+            <Delete fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
+    </>
+  );
 
   return (
     <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-      <Box
-        sx={{
-          color: 'inherit',
-          textDecoration: 'none',
-          px: { xs: 2, sm: 3 },
-          py: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 2,
-          transition: 'background-color 0.2s ease',
-          ':hover': { bgcolor: 'action.hover' },
-        }}
-        component={Link}
-        href={`/workspaces/${workspace.id}`}
+      <Tooltip
+        title={
+          isWorkspaceOfflineUnavailable
+            ? t('offlineWorkspaceUnavailable')
+            : ''
+        }
+        disableHoverListener={!isWorkspaceOfflineUnavailable}
       >
-        <Stack
-          direction="row"
-          spacing={1.25}
-          sx={{ alignItems: 'center', minWidth: 0 }}
-        >
-          <Business color="action" />
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700 }} noWrap>
-              {workspace.name}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {workspace.isPersonal
-                ? t('personalWorkspace')
-                : t(`role.${workspace.currentUserRole}`)}
-            </Typography>
+        {isWorkspaceOfflineUnavailable ? (
+          <Box
+            component="button"
+            type="button"
+            aria-disabled
+            sx={headerSx}
+            onClick={(event) => {
+              event.preventDefault();
+              onOpenUnavailableWorkspace?.(workspace);
+            }}
+          >
+            {headerContent}
           </Box>
-        </Stack>
-        <Chip size="small" label={t('boardsCount', { count: boards.length })} />
-        {workspace.currentUserRole === 'owner' && (
-          <Tooltip title={t('deleteWorkspace')}>
-            <IconButton
-              color="error"
-              aria-label={t('deleteWorkspace')}
-              onClick={(event) => {
-                event.stopPropagation();
-                event.preventDefault();
-                onDeleteWorkspace(workspace.id);
-              }}
-            >
-              <Delete fontSize="small" />
-            </IconButton>
-          </Tooltip>
+        ) : (
+          <Box
+            component={isOffline ? 'a' : Link}
+            href={`/workspaces/${workspace.id}`}
+            sx={headerSx}
+          >
+            {headerContent}
+          </Box>
         )}
-      </Box>
+      </Tooltip>
       <Divider />
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         {boards.length ? (
@@ -96,6 +152,12 @@ const WorkspaceBoardGroupCard = ({
                 key={board.id}
                 board={board}
                 onOpenMenu={onOpenBoardMenu}
+                canOpenMenu={canMutate}
+                isOffline={isOffline}
+                isOfflineUnavailable={
+                  isOffline && !cachedBoardIds?.has(board.id)
+                }
+                onOfflineUnavailable={onOpenUnavailableBoard}
               />
             ))}
           </Grid>
@@ -109,6 +171,7 @@ const WorkspaceBoardGroupCard = ({
               variant="outlined"
               startIcon={<Add />}
               onClick={() => onCreateBoard(workspace.id)}
+              disabled={!canMutate}
             >
               {t('emptyAction')}
             </Button>

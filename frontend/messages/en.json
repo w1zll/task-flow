@@ -123,6 +123,8 @@
     "workspaceDeleteSuccess": "Space deleted",
     "workspaceDeleteError": "Failed to delete space",
     "deleteSuccess": "Board deleted",
+    "offlineBoardUnavailable": "This board has not been saved for offline viewing yet. Connect to the internet and open it once.",
+    "offlineWorkspaceUnavailable": "The workspace overview is unavailable without an internet connection. Open a saved board from the list.",
     "dialogTitle": "New board",
     "boardTitle": "Board title",
     "boardDescription": "Description (optional)",
@@ -375,7 +377,9 @@
     "accountMenu": "Account menu",
     "signIn": "Sign in",
     "profile": "Profile",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "profileOfflineUnavailable": "Profile is unavailable without an internet connection.",
+    "localeOfflineUnavailable": "You can change language after reconnecting."
   },
   "WorkspaceSwitcher": {
     "title": "Workspaces",
@@ -404,6 +408,7 @@
     "emptyBoards": "No boards yet",
     "boardsCount": "{count} boards",
     "openNavigation": "Open workspace navigation",
+    "offlineSectionUnavailable": "This workspace section is unavailable without an internet connection.",
     "nav": {
       "overview": "Overview",
       "myTasks": "My tasks",

@@ -42,9 +42,12 @@ const BoardFiltersHeader = ({
 
   return (
     <Stack
-      direction="row"
+      direction={{ xs: 'column', sm: 'row' }}
       spacing={1}
-      sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+      sx={{
+        alignItems: { xs: 'stretch', sm: 'center' },
+        justifyContent: 'space-between',
+      }}
     >
       <Stack
         direction="row"
@@ -64,7 +67,14 @@ const BoardFiltersHeader = ({
         </Typography>
       </Stack>
 
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          alignItems: 'center',
+          justifyContent: { xs: 'space-between', sm: 'flex-end' },
+        }}
+      >
         {isFiltering && (
           <CircularProgress
             size={16}

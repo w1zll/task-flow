@@ -17,6 +17,13 @@ interface BoardsContentProps {
   onCreateWorkspace: () => void;
   onDeleteWorkspace: (workspaceId: string) => void;
   onOpenBoardMenu: (anchor: HTMLElement, board: Board) => void;
+  canMutate?: boolean;
+  isOffline?: boolean;
+  cachedBoardIds?: ReadonlySet<string>;
+  onOpenUnavailableBoard?: (board: Board) => void;
+  onOpenUnavailableWorkspace?: (
+    workspace: WorkspaceBoardGroup['workspace'],
+  ) => void;
 }
 
 const BoardsContent = ({
@@ -28,6 +35,11 @@ const BoardsContent = ({
   onCreateWorkspace,
   onDeleteWorkspace,
   onOpenBoardMenu,
+  canMutate = true,
+  isOffline = false,
+  cachedBoardIds,
+  onOpenUnavailableBoard,
+  onOpenUnavailableWorkspace,
 }: BoardsContentProps) => {
   if (isLoading) {
     return <BoardsLoadingGrid />;
@@ -41,6 +53,12 @@ const BoardsContent = ({
             key={board.id}
             board={board}
             onOpenMenu={onOpenBoardMenu}
+            canOpenMenu={canMutate}
+            isOffline={isOffline}
+            isOfflineUnavailable={
+              isOffline && !cachedBoardIds?.has(board.id)
+            }
+            onOfflineUnavailable={onOpenUnavailableBoard}
           />
         ))}
       </Grid>
@@ -49,6 +67,7 @@ const BoardsContent = ({
         titleKey="emptyWorkspaceTitle"
         actionKey="emptyAction"
         onAction={() => onCreateBoard()}
+        disabled={!canMutate}
       />
     );
   }
@@ -63,6 +82,11 @@ const BoardsContent = ({
           onCreateBoard={onCreateBoard}
           onDeleteWorkspace={onDeleteWorkspace}
           onOpenBoardMenu={onOpenBoardMenu}
+          canMutate={canMutate}
+          isOffline={isOffline}
+          cachedBoardIds={cachedBoardIds}
+          onOpenUnavailableBoard={onOpenUnavailableBoard}
+          onOpenUnavailableWorkspace={onOpenUnavailableWorkspace}
         />
       ))}
     </Stack>
@@ -71,6 +95,7 @@ const BoardsContent = ({
       titleKey="emptyTitle"
       actionKey="newWorkspace"
       onAction={onCreateWorkspace}
+      disabled={!canMutate}
     />
   );
 };

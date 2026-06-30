@@ -33,6 +33,11 @@ interface WorkspaceSidebarProps {
   onCloseNavigation: () => void;
   onOpenCreateBoard: () => void;
   onOpenWorkspaceMenu: (anchor: HTMLElement) => void;
+  canCreateBoard?: boolean;
+  isOffline?: boolean;
+  cachedBoardIds?: ReadonlySet<string>;
+  onOpenUnavailableBoard?: (board: Board) => void;
+  onOpenUnavailableSection?: () => void;
 }
 
 const WorkspaceSidebar = ({
@@ -44,6 +49,11 @@ const WorkspaceSidebar = ({
   onCloseNavigation,
   onOpenCreateBoard,
   onOpenWorkspaceMenu,
+  canCreateBoard = true,
+  isOffline = false,
+  cachedBoardIds,
+  onOpenUnavailableBoard,
+  onOpenUnavailableSection,
 }: WorkspaceSidebarProps) => {
   const t = useTranslations('WorkspaceShell');
   const theme = useTheme();
@@ -81,30 +91,51 @@ const WorkspaceSidebar = ({
           {workspaceNavItems.map((item) => {
             const href = item.href(workspaceId);
             const isActive = activeNavKey === item.key;
+            const navItemSx = {
+              borderRadius: '6px',
+              mb: 0.25,
+              cursor: isOffline ? 'not-allowed' : 'pointer',
+              opacity: isOffline ? 0.58 : 1,
+              '&.Mui-selected': {
+                bgcolor: alpha(theme.palette.primary.main, 0.12),
+                color: 'primary.main',
+                '& .MuiListItemIcon-root': {
+                  color: 'primary.main',
+                },
+              },
+            } as const;
+            const navItemContent = (
+              <>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={navLabels[item.key]} />
+              </>
+            );
 
-            return (
+            return isOffline ? (
+              <ListItemButton
+                key={item.key}
+                selected={isActive}
+                aria-disabled
+                onClick={(event) => {
+                  event.preventDefault();
+                  onOpenUnavailableSection?.();
+                }}
+                sx={navItemSx}
+              >
+                {navItemContent}
+              </ListItemButton>
+            ) : (
               <ListItemButton
                 key={item.key}
                 component={NextLink}
                 href={href}
                 selected={isActive}
                 onClick={onCloseNavigation}
-                sx={{
-                  borderRadius: '6px',
-                  mb: 0.25,
-                  '&.Mui-selected': {
-                    bgcolor: alpha(theme.palette.primary.main, 0.12),
-                    color: 'primary.main',
-                    '& .MuiListItemIcon-root': {
-                      color: 'primary.main',
-                    },
-                  },
-                }}
+                sx={navItemSx}
               >
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={navLabels[item.key]} />
+                {navItemContent}
               </ListItemButton>
             );
           })}
@@ -135,6 +166,7 @@ const WorkspaceSidebar = ({
             size="small"
             onClick={onOpenCreateBoard}
             aria-label={t('createBoard')}
+            disabled={!canCreateBoard}
           >
             <Add fontSize="small" />
           </IconButton>
@@ -146,23 +178,20 @@ const WorkspaceSidebar = ({
           <List dense disablePadding>
             {boards.map((board) => {
               const isActive = board.id === activeBoardId;
-
-              return (
-                <ListItemButton
-                  key={board.id}
-                  component={NextLink}
-                  href={`/workspaces/${workspaceId}/boards/${board.id}`}
-                  selected={isActive}
-                  onClick={onCloseNavigation}
-                  sx={{
-                    borderRadius: '6px',
-                    mb: 0.25,
-                    alignItems: 'flex-start',
-                    '&.Mui-selected': {
-                      bgcolor: alpha(board.color ?? '#669266', 0.14),
-                    },
-                  }}
-                >
+              const isOfflineUnavailable =
+                isOffline && !cachedBoardIds?.has(board.id);
+              const itemSx = {
+                borderRadius: '6px',
+                mb: 0.25,
+                alignItems: 'flex-start',
+                cursor: isOfflineUnavailable ? 'not-allowed' : 'pointer',
+                opacity: isOfflineUnavailable ? 0.56 : 1,
+                '&.Mui-selected': {
+                  bgcolor: alpha(board.color ?? '#669266', 0.14),
+                },
+              } as const;
+              const itemContent = (
+                <>
                   <Box
                     sx={{
                       width: 8,
@@ -179,12 +208,44 @@ const WorkspaceSidebar = ({
                     secondary={boardRoleLabels[board.currentUserRole]}
                     slotProps={{
                       primary: {
-                        noWrap: true,
-                        sx: { fontWeight: isActive ? 700 : 500 },
+                        sx: {
+                          fontWeight: isActive ? 700 : 500,
+                          overflowWrap: 'anywhere',
+                        },
                       },
-                      secondary: { noWrap: true },
+                      secondary: {
+                        sx: {
+                          overflowWrap: 'anywhere',
+                        },
+                      },
                     }}
                   />
+                </>
+              );
+
+              return isOfflineUnavailable ? (
+                <ListItemButton
+                  key={board.id}
+                  selected={isActive}
+                  aria-disabled
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onOpenUnavailableBoard?.(board);
+                  }}
+                  sx={itemSx}
+                >
+                  {itemContent}
+                </ListItemButton>
+              ) : (
+                <ListItemButton
+                  key={board.id}
+                  component={isOffline ? 'a' : NextLink}
+                  href={`/workspaces/${workspaceId}/boards/${board.id}`}
+                  selected={isActive}
+                  onClick={onCloseNavigation}
+                  sx={itemSx}
+                >
+                  {itemContent}
                 </ListItemButton>
               );
             })}
