@@ -4,6 +4,7 @@ import AuthHydrator from '@/features/auth/AuthHydrator';
 import { defaultTimeZone } from '@/i18n/config';
 import PendingBoardMutationsPrompt from '@/shared/ui/PendingBoardMutationsPrompt';
 import OfflineRuntime from '@/shared/ui/OfflineRuntime';
+import RouteProgressBar from '@/shared/ui/RouteProgressBar';
 import {
   installQueryCachePersistence,
   restorePersistedQueryCache,
@@ -113,6 +114,7 @@ const Providers = ({
               }}
             >
               <AppHeader initialThemeMode={initialThemeMode} />
+              <RouteProgressBar />
               <OfflineRuntime />
               {children}
             </Box>

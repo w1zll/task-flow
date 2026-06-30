@@ -85,7 +85,10 @@ const BoardShareMemberForm = ({
                     src={selectedMember.user.avatar}
                     size={24}
                   />
-                  <Typography variant="body2" noWrap>
+                  <Typography
+                    variant="body2"
+                    sx={{ overflowWrap: 'anywhere' }}
+                  >
                     {selectedMember.user.name}
                   </Typography>
                 </Stack>
@@ -105,10 +108,17 @@ const BoardShareMemberForm = ({
                     size={30}
                   />
                   <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" noWrap>
+                    <Typography
+                      variant="body2"
+                      sx={{ overflowWrap: 'anywhere' }}
+                    >
                       {member.user.name}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" noWrap>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ overflowWrap: 'anywhere' }}
+                    >
                       {member.user.email}
                     </Typography>
                   </Box>

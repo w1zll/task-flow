@@ -123,7 +123,14 @@ const WorkspaceSwitcher = () => {
           },
         }}
       >
-        <Typography component="span" noWrap sx={{ fontWeight: 600 }}>
+        <Typography
+          component="span"
+          sx={{
+            fontWeight: 600,
+            lineHeight: 1.2,
+            overflowWrap: 'anywhere',
+          }}
+        >
           {activeWorkspace.name}
         </Typography>
       </Button>
@@ -150,7 +157,10 @@ const WorkspaceSwitcher = () => {
               {workspace.isActive ? <Check fontSize="small" /> : <Business fontSize="small" />}
             </ListItemIcon>
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="body2" noWrap>
+              <Typography
+                variant="body2"
+                sx={{ overflowWrap: 'anywhere' }}
+              >
                 {workspace.name}
               </Typography>
               <Typography variant="caption" color="text.secondary">

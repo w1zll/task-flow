@@ -71,9 +71,7 @@ const TeamMembersDialog = ({
         variant="body2"
         sx={{
           minWidth: 0,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
+          overflowWrap: 'anywhere',
         }}
       >
         {member.user.name}
@@ -153,10 +151,17 @@ const TeamMembersDialog = ({
                   size={34}
                 />
                 <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, overflowWrap: 'anywhere' }}
+                  >
                     {member.user.name}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" noWrap>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ overflowWrap: 'anywhere' }}
+                  >
                     {member.user.email}
                   </Typography>
                 </Box>

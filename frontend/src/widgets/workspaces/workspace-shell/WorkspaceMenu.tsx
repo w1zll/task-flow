@@ -35,7 +35,7 @@ const WorkspaceMenu = ({
           onClick={() => onSelectWorkspace(item.id)}
         >
           <Stack sx={{ minWidth: 0 }}>
-            <Typography variant="body2" noWrap>
+            <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
               {item.name}
             </Typography>
             <Typography variant="caption" color="text.secondary">

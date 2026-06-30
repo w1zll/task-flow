@@ -162,7 +162,10 @@ const MobileKanbanBoard = ({
           }}
         >
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }} noWrap>
+            <Typography
+              variant="subtitle2"
+              sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}
+            >
               {activeColumn?.title}
             </Typography>
             <Typography variant="caption" color="text.secondary">

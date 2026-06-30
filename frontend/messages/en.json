@@ -124,7 +124,7 @@
     "workspaceDeleteError": "Failed to delete space",
     "deleteSuccess": "Board deleted",
     "offlineBoardUnavailable": "This board has not been saved for offline viewing yet. Connect to the internet and open it once.",
-    "offlineWorkspaceUnavailable": "This space has not been saved for offline viewing yet. Connect to the internet and open at least one board inside it.",
+    "offlineWorkspaceUnavailable": "The workspace overview is unavailable without an internet connection. Open a saved board from the list.",
     "dialogTitle": "New board",
     "boardTitle": "Board title",
     "boardDescription": "Description (optional)",

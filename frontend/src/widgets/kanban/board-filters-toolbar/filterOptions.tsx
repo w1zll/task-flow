@@ -77,9 +77,7 @@ export const renderMemberOption = (member: BoardMember) => (
       variant="body2"
       sx={{
         minWidth: 0,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
+        overflowWrap: 'anywhere',
       }}
     >
       {member.user.name}
@@ -111,9 +109,7 @@ export const renderTeamOption = (team: Team) => (
       variant="body2"
       sx={{
         minWidth: 0,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
+        overflowWrap: 'anywhere',
       }}
     >
       {team.name}
@@ -146,9 +142,7 @@ export const renderPriorityOption = (
       variant="body2"
       sx={{
         minWidth: 0,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
+        overflowWrap: 'anywhere',
       }}
     >
       {label}
