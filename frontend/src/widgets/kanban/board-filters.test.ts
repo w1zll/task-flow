@@ -138,9 +138,24 @@ describe('board filters', () => {
     ]);
   });
 
+  it('filters tasks with unread notifications', () => {
+    const result = filterBoard(
+      board,
+      {
+        ...DEFAULT_BOARD_FILTERS,
+        unread: true,
+      },
+      { unreadTaskIds: ['task-2'] },
+    );
+
+    expect(result.columns?.[0].tasks?.map((task) => task.id)).toEqual([
+      'task-2',
+    ]);
+  });
+
   it('parses and writes URL search params without dropping unrelated params', () => {
     const initial = new URLSearchParams(
-      'taskId=task-1&q=bug&priority=urgent&labels=bug,backend',
+      'taskId=task-1&q=bug&priority=urgent&labels=bug,backend&unread=1',
     );
     const parsed = parseBoardFiltersFromSearchParams(initial);
     const next = writeBoardFiltersToSearchParams(
@@ -150,6 +165,7 @@ describe('board filters', () => {
 
     expect(parsed.search).toBe('bug');
     expect(parsed.labels).toEqual(['bug', 'backend']);
+    expect(parsed.unread).toBe(true);
     expect(next.get('taskId')).toBe('task-1');
     expect(next.get('priority')).toBeNull();
   });

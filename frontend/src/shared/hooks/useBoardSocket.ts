@@ -6,11 +6,13 @@ import {
   ensureSocketConnected,
   getSocket,
 } from '../lib/socket';
-import { Board, BoardActivity, Task } from '../api/api';
+import { Board, BoardActivity, Task, TaskComment } from '../api/api';
 import {
+  addTaskToBoard,
   findTaskInBoard,
   moveTaskToColumnEndInBoard,
   queryKeys,
+  removeTaskFromBoard,
   updateTaskInBoard,
 } from '../queries/boards.queries';
 
@@ -90,6 +92,13 @@ export const useBoardSocket = (boardId: string) => {
       qc.setQueryData(queryKeys.board(boardId), board);
     });
 
+    socket.on('task:created', (payload: { boardId: string; task: Task }) => {
+      if (payload.boardId !== boardId) return;
+      qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) =>
+        addTaskToBoard(prev, payload.task),
+      );
+    });
+
     socket.on(
       'task:update',
       (
@@ -141,6 +150,13 @@ export const useBoardSocket = (boardId: string) => {
       });
     });
 
+    socket.on('task:deleted', (payload: { boardId: string; taskId: string }) => {
+      if (payload.boardId !== boardId) return;
+      qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) =>
+        removeTaskFromBoard(prev, payload.taskId),
+      );
+    });
+
     socket.on('board:activity', (payload: { boardId: string; activity: BoardActivity }) => {
       if (payload.boardId !== boardId) return;
       qc.setQueryData(
@@ -178,6 +194,52 @@ export const useBoardSocket = (boardId: string) => {
       },
     );
 
+    socket.on(
+      'task:comment:created',
+      (payload: { boardId: string; taskId: string; comment: TaskComment }) => {
+        if (payload.boardId !== boardId) return;
+        qc.setQueryData(
+          queryKeys.taskComments(payload.taskId),
+          (prev: TaskComment[] | undefined) => {
+            const withoutDuplicate = (prev ?? []).filter(
+              (comment) => comment.id !== payload.comment.id,
+            );
+            return [...withoutDuplicate, payload.comment].sort(
+              (a, b) =>
+                new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime(),
+            );
+          },
+        );
+      },
+    );
+
+    socket.on(
+      'task:comment:updated',
+      (payload: { boardId: string; taskId: string; comment: TaskComment }) => {
+        if (payload.boardId !== boardId) return;
+        qc.setQueryData(
+          queryKeys.taskComments(payload.taskId),
+          (prev: TaskComment[] | undefined) =>
+            prev?.map((comment) =>
+              comment.id === payload.comment.id ? payload.comment : comment,
+            ) ?? [payload.comment],
+        );
+      },
+    );
+
+    socket.on(
+      'task:comment:deleted',
+      (payload: { boardId: string; taskId: string; commentId: string }) => {
+        if (payload.boardId !== boardId) return;
+        qc.setQueryData(
+          queryKeys.taskComments(payload.taskId),
+          (prev: TaskComment[] | undefined) =>
+            prev?.filter((comment) => comment.id !== payload.commentId) ?? [],
+        );
+      },
+    );
+
     return () => {
       isActive = false;
       if (reconnectTimer) clearTimeout(reconnectTimer);
@@ -186,10 +248,15 @@ export const useBoardSocket = (boardId: string) => {
       socket.off('connect_error', onConnectError);
       socket.off('disconnect', onDisconnect);
       socket.off('board:state');
+      socket.off('task:created');
       socket.off('task:update');
       socket.off('task:moved');
+      socket.off('task:deleted');
       socket.off('board:activity');
       socket.off('task:reordered');
+      socket.off('task:comment:created');
+      socket.off('task:comment:updated');
+      socket.off('task:comment:deleted');
       window.removeEventListener('online', onOnline);
     };
   }, [boardId, isOnline, qc]);

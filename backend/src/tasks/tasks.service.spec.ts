@@ -13,6 +13,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
 import { Team } from '@/teams/entities/team.entity';
 import { BoardActivityEventsService } from '@/boards/board-activity-events.service';
+import { NotificationsService } from '@/notifications/notifications.service';
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -24,6 +25,7 @@ describe('TasksService', () => {
   let boardPermissions: jest.Mocked<Partial<BoardPermissionsService>>;
   let workspacesService: jest.Mocked<Partial<WorkspacesService>>;
   let boardActivityEvents: jest.Mocked<Partial<BoardActivityEventsService>>;
+  let notificationsService: jest.Mocked<Partial<NotificationsService>>;
   let mockQueryBuilder: {
     update: jest.Mock;
     set: jest.Mock;
@@ -135,6 +137,12 @@ describe('TasksService', () => {
       logTaskReordered: jest.fn(),
       logTaskDeleted: jest.fn(),
     };
+    notificationsService = {
+      emitTaskCreated: jest.fn(),
+      emitTaskDeleted: jest.fn(),
+      notifyTaskAssigned: jest.fn(),
+      notifyTeamTaskChanged: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -178,6 +186,10 @@ describe('TasksService', () => {
         {
           provide: BoardActivityEventsService,
           useValue: boardActivityEvents,
+        },
+        {
+          provide: NotificationsService,
+          useValue: notificationsService,
         },
       ],
     }).compile();

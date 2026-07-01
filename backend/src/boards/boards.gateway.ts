@@ -16,6 +16,8 @@ import { TasksService } from '@/tasks/tasks.service';
 import { UpdateTaskDto } from '@/tasks/dto/task.dto';
 import { corsOrigin } from '@/common/cors/cors-origin';
 import { BoardActivityPublisher } from './board-activity.publisher';
+import { NotificationsPublisher } from '@/notifications/notifications.publisher';
+import { NotificationsService } from '@/notifications/notifications.service';
 
 type SocketAck = (response: { ok: boolean; message?: string }) => void;
 
@@ -34,10 +36,13 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly boardService: BoardsService,
     private readonly tasksService: TasksService,
     private readonly boardActivityPublisher: BoardActivityPublisher,
+    private readonly notificationsService: NotificationsService,
+    private readonly notificationsPublisher: NotificationsPublisher,
   ) {}
 
   handleConnection(client: Socket) {
     this.boardActivityPublisher.setServer(this.server);
+    this.notificationsPublisher.setServer(this.server);
   }
 
   handleDisconnect(client: Socket) {
@@ -53,7 +58,18 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = (client as any).user.sub;
     const board = await this.boardService.findOne(payload.boardId, userId);
     await client.join(`board-${payload.boardId}`);
+    await client.join(`user-${userId}`);
     client.emit('board:state', board);
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('notification:subscribe')
+  async handleNotificationSubscribe(@ConnectedSocket() client: Socket) {
+    const userId = (client as any).user.sub;
+    await client.join(`user-${userId}`);
+    client.emit('notification:unread-count', {
+      count: await this.notificationsService.countUnread(userId),
+    });
   }
 
   @UseGuards(WsJwtGuard)

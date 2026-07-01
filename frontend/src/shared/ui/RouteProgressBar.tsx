@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, LinearProgress } from '@mui/material';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import type { MutableRefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -37,9 +37,11 @@ const clearTimer = (timerRef: MutableRefObject<number | undefined>) => {
 
 const RouteProgressBar = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const route = `${pathname}?${searchParams.toString()}`;
   const [isVisible, setVisible] = useState(false);
   const startedAtRef = useRef(0);
-  const routeRef = useRef(pathname);
+  const routeRef = useRef(route);
   const fallbackTimerRef = useRef<number | undefined>(undefined);
   const finishTimerRef = useRef<number | undefined>(undefined);
 
@@ -66,11 +68,11 @@ const RouteProgressBar = () => {
   }, [finish]);
 
   useEffect(() => {
-    if (routeRef.current === pathname) return;
+    if (routeRef.current === route) return;
 
-    routeRef.current = pathname;
+    routeRef.current = route;
     if (isVisible) finish();
-  }, [finish, isVisible, pathname]);
+  }, [finish, isVisible, route]);
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {

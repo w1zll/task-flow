@@ -21,6 +21,7 @@ import {
   useMyWorkspaceTeams,
   useWorkspaceTeams,
 } from '@/shared/queries/teams.queries';
+import { useNotifications } from '@/shared/queries/notifications.queries';
 import { useWorkspaceMembers } from '@/shared/queries/workspaces.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
 import { Alert, Box } from '@mui/material';
@@ -71,6 +72,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const createColumn = useCreateColumn();
   const isAddingColumn = useBoardUIStore((state) => state.isAddingColumn);
   const closeTask = useBoardUIStore((state) => state.closeTask);
+  const openTaskId = useBoardUIStore((state) => state.openTaskId);
   const openTask = useBoardUIStore((state) => state.openTask);
   const setAddingColumn = useBoardUIStore((state) => state.setAddingColumn);
   const setAddingTaskInColumn = useBoardUIStore(
@@ -149,6 +151,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     board?.workspaceId ?? '',
     Boolean(board?.workspaceId),
   );
+  const unreadNotifications = useNotifications(true, boardFilters.unread);
   const availableWorkspaceMembers = useMemo(
     () =>
       getAvailableWorkspaceMembers(
@@ -165,15 +168,26 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     () => myWorkspaceTeams.data?.map((team) => team.id) ?? [],
     [myWorkspaceTeams.data],
   );
+  const unreadTaskIds = useMemo(
+    () =>
+      unreadNotifications.data
+        ?.filter(
+          (notification) =>
+            notification.boardId === boardId && Boolean(notification.taskId),
+        )
+        .map((notification) => notification.taskId as string) ?? [],
+    [boardId, unreadNotifications.data],
+  );
   const filteredBoard = useMemo(
     () =>
       effectiveBoard
         ? filterBoard(effectiveBoard, boardFilters, {
             currentUserId: currentUser?.id,
             myTeamIds,
+            unreadTaskIds,
           })
         : undefined,
-    [effectiveBoard, boardFilters, currentUser?.id, myTeamIds],
+    [effectiveBoard, boardFilters, currentUser?.id, myTeamIds, unreadTaskIds],
   );
   const totalTaskCount = useMemo(() => countBoardTasks(board), [board]);
   const filteredTaskCount = useMemo(
@@ -283,6 +297,26 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     },
     [openTask, pathname, router, searchParams],
   );
+
+  const handleCloseTask = useCallback(() => {
+    closeTask();
+
+    const nextSearchParams = new URLSearchParams(searchParams.toString());
+    if (!nextSearchParams.has('taskId')) return;
+
+    nextSearchParams.delete('taskId');
+    const nextQuery = nextSearchParams.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+      scroll: false,
+    });
+  }, [closeTask, pathname, router, searchParams]);
+
+  useEffect(() => {
+    if (!board || !openTaskId) return;
+    if (existingTaskIds.has(openTaskId)) return;
+
+    handleCloseTask();
+  }, [board, existingTaskIds, handleCloseTask, openTaskId]);
 
   const syncBoardScroll = () => {
     if (!boardScrollRef.current || !boardTopScrollRef.current) return;
@@ -493,7 +527,9 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
         }
       />
 
-      {effectiveBoard && <TaskDetailModal board={effectiveBoard} />}
+      {effectiveBoard && (
+        <TaskDetailModal board={effectiveBoard} onClose={handleCloseTask} />
+      )}
     </Box>
   );
 };

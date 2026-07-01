@@ -35,6 +35,7 @@ import { BoardRole } from './entities/board-role.enum';
 import { BoardView } from './entities/board-view.entity';
 import { Board } from './entities/board.entity';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
+import { NotificationsService } from '@/notifications/notifications.service';
 
 type ActivityChange = {
   field: string;
@@ -64,6 +65,7 @@ export class BoardsService {
     private readonly boardPermissions: BoardPermissionsService,
     private readonly workspacesService: WorkspacesService,
     private readonly boardActivityEvents: BoardActivityEventsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findAll(userId: string): Promise<Board[]> {
@@ -258,7 +260,7 @@ export class BoardsService {
     await this.boardPermissions.assertCanManageBoardMembers(boardId, userId);
     const board = await this.boardRepo.findOne({
       where: { id: boardId },
-      select: { id: true, workspaceId: true },
+      select: { id: true, title: true, workspaceId: true },
     });
     if (!board) throw new NotFoundException('Board not found');
 
@@ -311,6 +313,12 @@ export class BoardsService {
       memberUserId: saved.userId,
       memberName: boardMember.user?.name ?? null,
       role: saved.role,
+    });
+    await this.notificationsService.notifyBoardMemberAdded({
+      actorId: userId,
+      boardId,
+      recipientId: saved.userId,
+      boardTitle: board.title,
     });
     return boardMember;
   }

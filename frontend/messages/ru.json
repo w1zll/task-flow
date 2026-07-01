@@ -283,6 +283,7 @@
       "statusLabel": "Статус",
       "sortLabel": "Сортировка",
       "labels": "Метки через запятую",
+      "unread": "Есть непрочитанные",
       "allAssignees": "Все исполнители",
       "allTeams": "Все команды",
       "allPriorities": "Все приоритеты",
@@ -324,6 +325,7 @@
         "team": "Команда: {value}",
         "priority": "Приоритет: {value}",
         "labels": "Метки: {value}",
+        "unread": "Есть непрочитанные",
         "sort": "Сортировка: {value}"
       },
       "views": {
@@ -664,6 +666,35 @@
     "cancel": "Отмена",
     "save": "Сохранить",
     "saving": "Сохранение…"
+  },
+  "TaskComments": {
+    "title": "Комментарии",
+    "loading": "Загрузка комментариев...",
+    "empty": "Комментариев пока нет.",
+    "newComment": "Комментарий",
+    "placeholder": "Напишите комментарий...",
+    "mentions": "Упомянуть участников",
+    "send": "Отправить",
+    "sending": "Отправка...",
+    "readOnly": "Вы можете читать комментарии, но ваша роль не позволяет добавлять их.",
+    "createError": "Не удалось добавить комментарий."
+  },
+  "NotificationCenter": {
+    "title": "Уведомления",
+    "empty": "Уведомлений пока нет.",
+    "close": "Закрыть",
+    "markAllRead": "Отметить все прочитанными",
+    "unreadCount": "{count, plural, one {# непрочитанное} few {# непрочитанных} many {# непрочитанных} other {# непрочитанных}}",
+    "system": "TaskFlow",
+    "taskFallback": "задача",
+    "boardFallback": "доска",
+    "type": {
+      "mention": "{actor} упомянул вас в задаче \"{task}\"",
+      "taskAssigned": "{actor} назначил вам задачу \"{task}\"",
+      "teamTaskChanged": "{actor} изменил задачу вашей команды \"{task}\"",
+      "boardMemberAdded": "{actor} добавил вас на доску \"{board}\"",
+      "default": "Новое уведомление"
+    }
   },
   "Notifications": {
     "columnMoveError": "Ошибка перемещения колонок",

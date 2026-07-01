@@ -10,6 +10,7 @@ import { BoardPermissionsModule } from '@/boards/board-permissions.module';
 import { WorkspacesModule } from '@/workspaces/workspaces.module';
 import { Team } from '@/teams/entities/team.entity';
 import { BoardActivityModule } from '@/boards/board-activity.module';
+import { NotificationsModule } from '@/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { BoardActivityModule } from '@/boards/board-activity.module';
     BoardPermissionsModule,
     WorkspacesModule,
     BoardActivityModule,
+    NotificationsModule,
   ],
   providers: [TasksService],
   controllers: [TasksController],
