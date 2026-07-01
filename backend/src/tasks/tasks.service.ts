@@ -828,7 +828,7 @@ export class TasksService {
   private validateTaskAttachment(file: TaskAttachmentUploadFile) {
     if (file.size > MAX_TASK_ATTACHMENT_SIZE_BYTES) {
       throw new BadRequestException(
-        'Attachment file must not exceed 50 MB',
+        'Attachment file must not exceed 10 MB',
       );
     }
     if (!isAllowedTaskAttachmentMimeType(file.mimetype)) {

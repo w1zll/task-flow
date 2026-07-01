@@ -60,7 +60,7 @@ export const refreshSocketAuth = async (
 
 export const ensureSocketConnected = async (
   targetSocket: Socket = getSocket(),
-  timeoutMs = 5000,
+  timeoutMs = 10_000,
 ): Promise<Socket> => {
   if (isSocketReady(targetSocket)) return targetSocket;
   if (isBrowserOffline()) {

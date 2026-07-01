@@ -69,6 +69,31 @@ export const updateTaskInBoard = (
   };
 };
 
+export const removeTaskAttachmentFromBoard = (
+  board: Board | undefined,
+  taskId: string,
+  attachmentId: string,
+): Board | undefined => {
+  if (!board) return board;
+
+  return {
+    ...board,
+    columns: board.columns?.map((column) => ({
+      ...column,
+      tasks: column.tasks?.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              attachments: task.attachments?.filter(
+                (attachment) => attachment.id !== attachmentId,
+              ),
+            }
+          : task,
+      ),
+    })),
+  };
+};
+
 export const addTaskToBoard = (
   board: Board | undefined,
   taskToAdd: Task,
@@ -448,8 +473,25 @@ export const useDeleteTaskAttachment = () => {
       attachmentId: string;
       boardId: string;
     }) => taskApi.removeAttachment(taskId, attachmentId),
+    onMutate: async ({ boardId, taskId, attachmentId }) => {
+      await qc.cancelQueries({
+        queryKey: queryKeys.board(boardId),
+        exact: true,
+      });
+      const previousBoard = qc.getQueryData<Board>(queryKeys.board(boardId));
+
+      qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) =>
+        removeTaskAttachmentFromBoard(prev, taskId, attachmentId),
+      );
+
+      return { previousBoard };
+    },
+    onError: (_error, { boardId }, context) => {
+      if (context?.previousBoard) {
+        qc.setQueryData(queryKeys.board(boardId), context.previousBoard);
+      }
+    },
     onSuccess: (_, { boardId }) => {
-      invalidateBoard(qc, boardId);
       invalidateBoardActivities(qc, boardId);
     },
   });
