@@ -31,6 +31,7 @@ import NextLink from 'next/link';
 import LocaleSwitcher from './LocaleSwitcher';
 import UserAvatar from '@/shared/ui/UserAvatar';
 import TaskFlowLogo from '@/shared/ui/TaskFlowLogo';
+import NotificationBell from './notifications/NotificationBell';
 
 const AppHeader = ({
   initialThemeMode,
@@ -119,6 +120,7 @@ const AppHeader = ({
               </IconButton>
             </Tooltip>
           )}
+          {user && <NotificationBell enabled={!isOffline} />}
           <LocaleSwitcher />
           <Tooltip title={isDark ? t('lightTheme') : t('darkTheme')}>
             <IconButton

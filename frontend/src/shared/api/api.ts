@@ -65,6 +65,14 @@ export type BoardColumn = Omit<
   'createdAt' | 'updatedAt'
 >;
 export type Task = ApiResponse<'/api/tasks/{id}', 'put'>;
+export type TaskComment =
+  ApiResponse<'/api/tasks/{taskId}/comments', 'get'>[number];
+export type TaskMention = TaskComment['mentions'][number];
+export type AppNotification =
+  ApiResponse<'/api/notifications', 'get'>[number] & {
+    metadata: Record<string, unknown> | null;
+  };
+export type NotificationType = AppNotification['type'];
 
 export interface RegisterPayload {
   email: string;
@@ -456,4 +464,54 @@ export const taskApi = {
     apiClient.delete<ApiResponse<'/api/tasks/{id}', 'delete'>>(
       `/api/tasks/${id}`,
     ),
+};
+
+export const taskCommentsApi = {
+  getAll: (taskId: string) =>
+    apiClient.get<ApiResponse<'/api/tasks/{taskId}/comments', 'get'>>(
+      `/api/tasks/${taskId}/comments`,
+    ),
+
+  create: (
+    taskId: string,
+    data: { body: string; mentionedUserIds?: string[] },
+  ) =>
+    apiClient.post<ApiResponse<'/api/tasks/{taskId}/comments', 'post'>>(
+      `/api/tasks/${taskId}/comments`,
+      data,
+    ),
+
+  update: (
+    taskId: string,
+    commentId: string,
+    data: { body?: string; mentionedUserIds?: string[] },
+  ) =>
+    apiClient.patch<
+      ApiResponse<'/api/tasks/{taskId}/comments/{commentId}', 'patch'>
+    >(
+      `/api/tasks/${taskId}/comments/${commentId}`,
+      data,
+    ),
+
+  remove: (taskId: string, commentId: string) =>
+    apiClient.delete<void>(`/api/tasks/${taskId}/comments/${commentId}`),
+};
+
+export const notificationsApi = {
+  getAll: (params?: { unreadOnly?: boolean }) =>
+    apiClient.get<ApiResponse<'/api/notifications', 'get'>>('/api/notifications', {
+      params: params?.unreadOnly ? { unreadOnly: 'true' } : undefined,
+    }),
+
+  unreadCount: () =>
+    apiClient.get<ApiResponse<'/api/notifications/unread-count', 'get'>>(
+      '/api/notifications/unread-count',
+    ),
+
+  markRead: (id: string) =>
+    apiClient.patch<ApiResponse<'/api/notifications/{id}/read', 'patch'>>(
+      `/api/notifications/${id}/read`,
+    ),
+
+  markAllRead: () => apiClient.patch<void>('/api/notifications/read-all'),
 };

@@ -65,6 +65,51 @@ export const updateTaskInBoard = (
   };
 };
 
+export const addTaskToBoard = (
+  board: Board | undefined,
+  taskToAdd: Task,
+): Board | undefined => {
+  if (!board) return board;
+
+  return {
+    ...board,
+    columns: board.columns?.map((column) => {
+      const tasksWithoutDuplicate = (column.tasks ?? []).filter(
+        (task) => task.id !== taskToAdd.id,
+      );
+
+      if (column.id !== taskToAdd.columnId) {
+        return {
+          ...column,
+          tasks: tasksWithoutDuplicate,
+        };
+      }
+
+      return {
+        ...column,
+        tasks: [...tasksWithoutDuplicate, taskToAdd].sort(
+          (a, b) => a.order - b.order,
+        ),
+      };
+    }),
+  };
+};
+
+export const removeTaskFromBoard = (
+  board: Board | undefined,
+  taskId: string,
+): Board | undefined => {
+  if (!board) return board;
+
+  return {
+    ...board,
+    columns: board.columns?.map((column) => ({
+      ...column,
+      tasks: (column.tasks ?? []).filter((task) => task.id !== taskId),
+    })),
+  };
+};
+
 export const moveTaskToColumnEndInBoard = (
   board: Board | undefined,
   updatedTask: Task,

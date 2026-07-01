@@ -538,6 +538,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tasks/{taskId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List task comments */
+        get: operations["NotificationsController_listTaskComments"];
+        put?: never;
+        /** Create a task comment */
+        post: operations["NotificationsController_createTaskComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{taskId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a task comment */
+        delete: operations["NotificationsController_deleteTaskComment"];
+        options?: never;
+        head?: never;
+        /** Update a task comment */
+        patch: operations["NotificationsController_updateTaskComment"];
+        trace?: never;
+    };
+    "/api/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List current user notifications */
+        get: operations["NotificationsController_listNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get unread notification count */
+        get: operations["NotificationsController_unreadCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mark one notification as read */
+        patch: operations["NotificationsController_markRead"];
+        trace?: never;
+    };
+    "/api/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mark all notifications as read */
+        patch: operations["NotificationsController_markAllRead"];
+        trace?: never;
+    };
     "/api/tasks": {
         parameters: {
             query?: never;
@@ -1297,6 +1401,90 @@ export interface components {
             } | null;
             /** @example 2026-06-01T00:00:00.000Z */
             createdAt: string;
+        };
+        MentionResponseDto: {
+            /** @example mention-uuid */
+            id: string;
+            /** @example comment-uuid */
+            commentId: string;
+            /** @example task-uuid */
+            taskId: string;
+            /** @example board-uuid */
+            boardId: string;
+            /** @example user-uuid */
+            mentionedUserId: string;
+            mentionedUser: components["schemas"]["UserResponseDto"];
+            /** @example 2026-05-05T12:00:00.000Z */
+            createdAt: string;
+        };
+        TaskCommentResponseDto: {
+            /** @example comment-uuid */
+            id: string;
+            /** @example task-uuid */
+            taskId: string;
+            /** @example board-uuid */
+            boardId: string;
+            /** @example user-uuid */
+            authorId: string;
+            author: components["schemas"]["UserResponseDto"];
+            /** @example Looks good to me. */
+            body: string;
+            mentions: components["schemas"]["MentionResponseDto"][];
+            /** @example 2026-05-05T12:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-05-05T12:00:00.000Z */
+            updatedAt: string;
+        };
+        CreateTaskCommentDto: {
+            /** @example I checked this. @Alice can confirm. */
+            body: string;
+            /**
+             * @example [
+             *       "user-uuid"
+             *     ]
+             */
+            mentionedUserIds?: string[];
+        };
+        UpdateTaskCommentDto: {
+            /** @example I checked this. @Alice can confirm. */
+            body?: string;
+            /**
+             * @example [
+             *       "user-uuid"
+             *     ]
+             */
+            mentionedUserIds?: string[];
+        };
+        NotificationResponseDto: {
+            /** @example notification-uuid */
+            id: string;
+            /** @example user-uuid */
+            recipientId: string;
+            /** @example user-uuid */
+            actorId: string | null;
+            actor: components["schemas"]["UserResponseDto"] | null;
+            /** @enum {string} */
+            type: "mention" | "task_assigned" | "team_task_changed" | "board_member_added";
+            /** @example board-uuid */
+            boardId: string | null;
+            /** @example task-uuid */
+            taskId: string | null;
+            /** @example comment-uuid */
+            commentId: string | null;
+            /**
+             * @example {
+             *       "taskTitle": "Prepare release notes"
+             *     }
+             */
+            metadata: Record<string, never> | null;
+            /** @example 2026-05-05T12:00:00.000Z */
+            readAt: string | null;
+            /** @example 2026-05-05T12:00:00.000Z */
+            createdAt: string;
+        };
+        UnreadCountResponseDto: {
+            /** @example 3 */
+            count: number;
         };
         CreateTaskDto: {
             /** @example Task 1 */
@@ -2297,6 +2485,176 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BoardActivityResponseDto"][];
                 };
+            };
+        };
+    };
+    NotificationsController_listTaskComments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskCommentResponseDto"][];
+                };
+            };
+        };
+    };
+    NotificationsController_createTaskComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskCommentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskCommentResponseDto"];
+                };
+            };
+        };
+    };
+    NotificationsController_deleteTaskComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NotificationsController_updateTaskComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaskCommentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskCommentResponseDto"];
+                };
+            };
+        };
+    };
+    NotificationsController_listNotifications: {
+        parameters: {
+            query?: {
+                unreadOnly?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationResponseDto"][];
+                };
+            };
+        };
+    };
+    NotificationsController_unreadCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadCountResponseDto"];
+                };
+            };
+        };
+    };
+    NotificationsController_markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationResponseDto"];
+                };
+            };
+        };
+    };
+    NotificationsController_markAllRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

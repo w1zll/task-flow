@@ -23,6 +23,7 @@ import { Task, TaskPriority } from './entities/task.entity';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
 import { Team } from '@/teams/entities/team.entity';
 import { BoardActivityEventsService } from '@/boards/board-activity-events.service';
+import { NotificationsService } from '@/notifications/notifications.service';
 
 type ActivityChange = {
   field: string;
@@ -69,6 +70,7 @@ export class TasksService {
     private readonly boardPermissions: BoardPermissionsService,
     private readonly workspacesService: WorkspacesService,
     private readonly boardActivityEvents: BoardActivityEventsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private async verifyColumnWriteAccess(
@@ -188,6 +190,7 @@ export class TasksService {
     });
     const saved = await this.taskRepo.save(task);
     await this.frontendCache.revalidateBoard(column.boardId);
+    this.notificationsService.emitTaskCreated(column.boardId, saved);
     await this.boardActivityEvents.logTaskCreated(column.boardId, userId, {
       taskId: saved.id,
       title: saved.title,
@@ -197,6 +200,20 @@ export class TasksService {
       assigneeName: saved.assignee?.name ?? saved.assigneeName ?? null,
       teamId: saved.team?.id ?? saved.teamId ?? null,
       teamName: saved.team?.name ?? null,
+    });
+    await this.notificationsService.notifyTaskAssigned({
+      actorId: userId,
+      boardId: column.boardId,
+      taskId: saved.id,
+      taskTitle: saved.title,
+      assigneeId: saved.assignee?.id ?? saved.assigneeId ?? null,
+    });
+    await this.notificationsService.notifyTeamTaskChanged({
+      actorId: userId,
+      boardId: column.boardId,
+      taskId: saved.id,
+      taskTitle: saved.title,
+      teamId: saved.team?.id ?? saved.teamId ?? null,
     });
     return this.withPublicAssignee(saved);
   }
@@ -271,9 +288,10 @@ export class TasksService {
 
     const saved = await this.taskRepo.save(task);
     await this.frontendCache.revalidateBoard(task.column.boardId);
+    const afterActivity = this.snapshotTaskActivity(saved);
     const changes = this.buildTaskActivityChanges(
       beforeActivity,
-      this.snapshotTaskActivity(saved),
+      afterActivity,
       dto,
     );
 
@@ -299,6 +317,22 @@ export class TasksService {
           activityPayload,
         );
       }
+      if (beforeActivity.assigneeId !== afterActivity.assigneeId) {
+        await this.notificationsService.notifyTaskAssigned({
+          actorId: userId,
+          boardId: task.column.boardId,
+          taskId: saved.id,
+          taskTitle: saved.title,
+          assigneeId: saved.assignee?.id ?? saved.assigneeId ?? null,
+        });
+      }
+      await this.notificationsService.notifyTeamTaskChanged({
+        actorId: userId,
+        boardId: task.column.boardId,
+        taskId: saved.id,
+        taskTitle: saved.title,
+        teamId: saved.team?.id ?? saved.teamId ?? null,
+      });
     }
     return this.withPublicAssignee(saved);
   }
@@ -306,14 +340,20 @@ export class TasksService {
   async remove(id: string, userId: string): Promise<void> {
     const task = await this.verifyTaskWriteAccess(id, userId);
     const boardId = task.column.boardId;
-    await this.taskRepo.remove(task);
-    await this.frontendCache.revalidateBoard(boardId);
-    await this.boardActivityEvents.logTaskDeleted(boardId, userId, {
+    const activityPayload = {
       taskId: task.id,
       title: task.title,
       columnId: task.columnId,
       columnTitle: task.column?.title ?? null,
-    });
+    };
+    await this.taskRepo.remove(task);
+    await this.frontendCache.revalidateBoard(boardId);
+    this.notificationsService.emitTaskDeleted(boardId, activityPayload.taskId);
+    await this.boardActivityEvents.logTaskDeleted(
+      boardId,
+      userId,
+      activityPayload,
+    );
   }
 
   async move(
@@ -408,6 +448,13 @@ export class TasksService {
       toColumnId: dto.columnId,
       toColumnTitle: targetColumn.title,
       order: dto.order,
+    });
+    await this.notificationsService.notifyTeamTaskChanged({
+      actorId: userId,
+      boardId: updated.column.boardId,
+      taskId: updated.id,
+      taskTitle: updated.title,
+      teamId: updated.team?.id ?? updated.teamId ?? null,
     });
     return this.withPublicAssignee(updated);
   }

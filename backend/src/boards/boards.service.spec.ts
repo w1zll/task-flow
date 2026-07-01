@@ -21,6 +21,7 @@ import { BoardRole } from './entities/board-role.enum';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
 import { BoardView } from './entities/board-view.entity';
 import { BoardActivityEventsService } from './board-activity-events.service';
+import { NotificationsService } from '@/notifications/notifications.service';
 
 describe('BoardsService', () => {
   let service: BoardsService;
@@ -33,6 +34,7 @@ describe('BoardsService', () => {
   let boardPermissions: jest.Mocked<Partial<BoardPermissionsService>>;
   let workspacesService: jest.Mocked<Partial<WorkspacesService>>;
   let boardActivityEvents: jest.Mocked<Partial<BoardActivityEventsService>>;
+  let notificationsService: jest.Mocked<Partial<NotificationsService>>;
   let boardQueryBuilder: {
     leftJoin: jest.Mock;
     where: jest.Mock;
@@ -152,6 +154,9 @@ describe('BoardsService', () => {
       logBoardMemberRemoved: jest.fn(),
       logBoardMemberRoleChanged: jest.fn(),
     };
+    notificationsService = {
+      notifyBoardMemberAdded: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -195,6 +200,10 @@ describe('BoardsService', () => {
         {
           provide: BoardActivityEventsService,
           useValue: boardActivityEvents,
+        },
+        {
+          provide: NotificationsService,
+          useValue: notificationsService,
         },
       ],
     }).compile();

@@ -9,6 +9,7 @@ export const BOARD_FILTER_QUERY_KEYS = [
   'status',
   'labels',
   'sort',
+  'unread',
 ] as const;
 
 export type BoardTaskPriority = Task['priority'];
@@ -38,11 +39,13 @@ export interface BoardFilters {
   status: BoardTaskStatusFilter;
   labels: string[];
   sort: BoardTaskSort;
+  unread: boolean;
 }
 
 export interface BoardFilterContext {
   currentUserId?: string;
   myTeamIds?: string[];
+  unreadTaskIds?: string[];
 }
 
 export const DEFAULT_BOARD_FILTERS: BoardFilters = {
@@ -53,6 +56,7 @@ export const DEFAULT_BOARD_FILTERS: BoardFilters = {
   status: 'all',
   labels: [],
   sort: 'manual',
+  unread: false,
 };
 
 const PRIORITY_WEIGHT: Record<BoardTaskPriority, number> = {
@@ -104,7 +108,8 @@ export const areBoardFiltersActive = (filters: BoardFilters) =>
   filters.priority !== DEFAULT_BOARD_FILTERS.priority ||
   filters.status !== DEFAULT_BOARD_FILTERS.status ||
   filters.labels.length > 0 ||
-  filters.sort !== DEFAULT_BOARD_FILTERS.sort;
+  filters.sort !== DEFAULT_BOARD_FILTERS.sort ||
+  filters.unread !== DEFAULT_BOARD_FILTERS.unread;
 
 export const isBoardReorderDisabledByView = (filters: BoardFilters) =>
   areBoardFiltersActive(filters);
@@ -135,6 +140,7 @@ export const parseBoardFiltersFromSearchParams = (
       .map(normalizeLabel)
       .filter(Boolean),
     sort: sort && VALID_SORTS.has(sort) ? sort : DEFAULT_BOARD_FILTERS.sort,
+    unread: searchParams.get('unread') === '1',
   };
 };
 
@@ -165,6 +171,9 @@ export const writeBoardFiltersToSearchParams = (
   if (filters.sort !== DEFAULT_BOARD_FILTERS.sort) {
     next.set('sort', filters.sort);
   }
+  if (filters.unread) {
+    next.set('unread', '1');
+  }
 
   return next;
 };
@@ -177,6 +186,7 @@ export const boardFiltersToSavedView = (filters: BoardFilters) => ({
     priority: filters.priority,
     status: filters.status,
     labels: filters.labels,
+    unread: filters.unread,
   },
   sort: {
     sort: filters.sort,
@@ -206,6 +216,7 @@ export const boardFiltersFromSavedView = (
         (label): label is string => typeof label === 'string',
       )
     : [],
+  unread: filters.unread === true,
   sort:
     typeof sort.sort === 'string' && VALID_SORTS.has(sort.sort as BoardTaskSort)
       ? (sort.sort as BoardTaskSort)
@@ -287,6 +298,11 @@ const matchesLabels = (task: Task, labels: string[]) => {
   return labels.every((label) => taskLabels.has(normalizeLabel(label)));
 };
 
+const matchesUnread = (task: Task, unread: boolean, unreadTaskIds: string[]) => {
+  if (!unread) return true;
+  return unreadTaskIds.includes(task.id);
+};
+
 const compareTasks = (a: Task, b: Task, sort: BoardTaskSort) => {
   switch (sort) {
     case 'dueDate':
@@ -321,7 +337,8 @@ export const filterBoard = (
           matchesTeam(task, filters.team, context.myTeamIds) &&
           (filters.priority === 'all' || task.priority === filters.priority) &&
           matchesStatus(task, filters.status) &&
-          matchesLabels(task, filters.labels),
+          matchesLabels(task, filters.labels) &&
+          matchesUnread(task, filters.unread, context.unreadTaskIds ?? []),
       )
       .sort((a, b) => compareTasks(a, b, filters.sort)),
   })),

@@ -5,7 +5,11 @@ export const queryKeys = {
   boardActivities: (id: string) => ['boards', id, 'activities'] as const,
   boardViews: (id: string) => ['boards', id, 'views'] as const,
   tasks: (columnId: string) => ['tasks', columnId] as const,
+  taskComments: (taskId: string) => ['tasks', taskId, 'comments'] as const,
   boardAnalytics: (id?: string) => ['boards', id, 'analytics'] as const,
+  notifications: (unreadOnly = false) =>
+    ['notifications', { unreadOnly }] as const,
+  notificationUnreadCount: ['notifications', 'unread-count'] as const,
   workspaces: ['workspaces'] as const,
   workspaceMembers: (id: string) => ['workspaces', id, 'members'] as const,
   workspaceInvites: (id: string) => ['workspaces', id, 'invites'] as const,
