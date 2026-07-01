@@ -24,7 +24,7 @@ import {
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
 
 interface TaskAttachmentsSectionProps {
@@ -33,7 +33,7 @@ interface TaskAttachmentsSectionProps {
   canEdit: boolean;
 }
 
-const MAX_ATTACHMENT_SIZE_BYTES = 50 * 1024 * 1024;
+const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_ATTACHMENT_TYPES = new Set([
   'image/png',
   'image/jpeg',
@@ -67,6 +67,7 @@ const TaskAttachmentsSection = ({
   const { enqueueSnackbar } = useSnackbar();
   const uploadAttachment = useUploadTaskAttachment();
   const deleteAttachment = useDeleteTaskAttachment();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] =
     useState<UploadProgressState>(null);
@@ -74,7 +75,7 @@ const TaskAttachmentsSection = ({
     () => sortAttachments(task.attachments),
     [task.attachments],
   );
-  const isPending = uploadAttachment.isPending || deleteAttachment.isPending;
+  const isUploadPending = uploadAttachment.isPending;
 
   const validateFile = (file: File) => {
     if (!ALLOWED_ATTACHMENT_TYPES.has(file.type)) {
@@ -91,7 +92,7 @@ const TaskAttachmentsSection = ({
   };
 
   const uploadFiles = async (files: FileList | File[]) => {
-    if (!canEdit || isPending) return;
+    if (!canEdit || isUploadPending) return;
 
     const selectedFiles = Array.from(files);
     if (!selectedFiles.length) return;
@@ -117,14 +118,19 @@ const TaskAttachmentsSection = ({
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
+    const files = event.target.files ? Array.from(event.target.files) : [];
     event.target.value = '';
-    if (!files) return;
+    if (!files.length) return;
     void uploadFiles(files);
   };
 
+  const handlePickFiles = () => {
+    if (!canEdit || isUploadPending) return;
+    fileInputRef.current?.click();
+  };
+
   const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
-    if (!canEdit || isPending) return;
+    if (!canEdit || isUploadPending) return;
     event.preventDefault();
     event.dataTransfer.dropEffect = 'copy';
     setIsDragging(true);
@@ -142,7 +148,7 @@ const TaskAttachmentsSection = ({
   };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-    if (!canEdit || isPending) return;
+    if (!canEdit || isUploadPending) return;
     event.preventDefault();
     setIsDragging(false);
     void uploadFiles(event.dataTransfer.files);
@@ -202,23 +208,26 @@ const TaskAttachmentsSection = ({
             </Stack>
 
             <Button
-              component="label"
+              type="button"
               variant="outlined"
               size="small"
               startIcon={<UploadFileRounded fontSize="small" />}
-              disabled={isPending}
+              disabled={isUploadPending}
+              onClick={handlePickFiles}
               sx={{ alignSelf: { xs: 'stretch', sm: 'center' } }}
             >
-              {uploadAttachment.isPending ? t('uploading') : t('upload')}
-              <input
-                hidden
-                type="file"
-                multiple
-                accept="image/png,image/jpeg,image/webp,image/gif,application/pdf"
-                onChange={handleFileChange}
-              />
+              {isUploadPending ? t('uploading') : t('upload')}
             </Button>
           </Stack>
+
+          <input
+            ref={fileInputRef}
+            hidden
+            type="file"
+            multiple
+            accept="image/png,image/jpeg,image/webp,image/gif,application/pdf"
+            onChange={handleFileChange}
+          />
 
           {uploadProgress && (
             <Box sx={{ mt: 1.25 }}>
@@ -325,7 +334,6 @@ const TaskAttachmentsSection = ({
                     <span>
                       <IconButton
                         size="small"
-                        disabled={deleteAttachment.isPending}
                         onClick={() =>
                           deleteAttachment.mutate(
                             {
