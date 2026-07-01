@@ -150,6 +150,7 @@ const BoardPageHeader = ({
               sx={{
                 display: { xs: 'none', sm: 'inline-flex' },
                 flexShrink: 0,
+                alignSelf: 'center',
               }}
             >
               {t('addColumn')}

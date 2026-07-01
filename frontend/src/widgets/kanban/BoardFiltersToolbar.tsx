@@ -202,6 +202,13 @@ const BoardFiltersToolbar = ({
           onDelete: () => patchFilters({ labels: [] }),
         }
       : null,
+    filters.unread
+      ? {
+          key: 'unread',
+          label: t('chip.unread'),
+          onDelete: () => patchFilters({ unread: false }),
+        }
+      : null,
     filters.sort !== 'manual'
       ? {
           key: 'sort',

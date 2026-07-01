@@ -4,10 +4,12 @@ import type { BoardMember, BoardView, Team } from '@/shared/api/api';
 import {
   Box,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  Switch,
   TextField,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
@@ -248,6 +250,26 @@ const BoardFiltersForm = ({
           onChange={(event) => onLabelsInputChange(event.target.value)}
           onBlur={onApplyLabelsInput}
           onKeyDown={onLabelsKeyDown}
+        />
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={filters.unread}
+              onChange={(event) =>
+                onPatchFilters({ unread: event.target.checked })
+              }
+            />
+          }
+          label={t('unread')}
+          sx={{
+            alignSelf: 'center',
+            minWidth: 0,
+            '& .MuiFormControlLabel-label': {
+              fontSize: 14,
+              overflowWrap: 'anywhere',
+            },
+          }}
         />
       </Box>
 

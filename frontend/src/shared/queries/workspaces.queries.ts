@@ -63,7 +63,7 @@ export const useWorkspaceMembers = (
         .getMembers(workspaceId)
         .then((response) => response.data),
     enabled: enabled && !!workspaceId,
-    staleTime: 60_000,
+    staleTime: 0,
   });
 
 export const useUpdateWorkspaceMemberRole = (workspaceId: string) => {

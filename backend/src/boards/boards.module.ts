@@ -19,6 +19,7 @@ import { BoardActivity } from './entities/board-activity.entity';
 import { BoardActivityModule } from './board-activity.module';
 import { BoardActivityController } from './board-activity.controller';
 import { TasksModule } from '@/tasks/tasks.module';
+import { NotificationsModule } from '@/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { TasksModule } from '@/tasks/tasks.module';
     BoardPermissionsModule,
     WorkspacesModule,
     BoardActivityModule,
+    NotificationsModule,
     TasksModule,
   ],
   providers: [BoardsService, BoardGateway, WsJwtGuard],

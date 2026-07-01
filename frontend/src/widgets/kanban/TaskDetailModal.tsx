@@ -38,10 +38,12 @@ import TaskLabelsEditor from './task-detail/TaskLabelsEditor';
 import TaskPriorityDateFields from './task-detail/TaskPriorityDateFields';
 import TaskTimestamps from './task-detail/TaskTimestamps';
 import TaskTitleDescriptionFields from './task-detail/TaskTitleDescriptionFields';
+import TaskCommentsSection from './task-comments/TaskCommentsSection';
 import type { TaskDraft } from './task-detail/types';
 
 interface Props {
   board: Board;
+  onClose?: () => void;
 }
 
 const normalizeDateInput = (value?: string | Date | null) =>
@@ -73,7 +75,7 @@ const isTaskDraftChanged = (task: Task | null, form: TaskDraft) => {
   );
 };
 
-const TaskDetailModal = ({ board }: Props) => {
+const TaskDetailModal = ({ board, onClose }: Props) => {
   const t = useTranslations('TaskDetail');
   const tNotifications = useTranslations('Notifications');
   const boardUI = useBoardUIStore();
@@ -99,6 +101,7 @@ const TaskDetailModal = ({ board }: Props) => {
   const canEdit = board.capabilities.canEditBoardContent;
   const teams = useWorkspaceTeams(board.workspaceId, !!boardUI.openTaskId);
   const isDirty = useMemo(() => isTaskDraftChanged(task, form), [form, task]);
+  const handleClose = onClose ?? boardUI.closeTask;
 
   useEffect(() => {
     if (task) {
@@ -186,7 +189,7 @@ const TaskDetailModal = ({ board }: Props) => {
           queryKey: queryKeys.boardAnalytics(board.id),
         });
       }
-      boardUI.closeTask();
+      handleClose();
     } catch (error) {
       qc.setQueryData(queryKeys.board(board.id), previousBoard);
       if (isBoardPermissionError(error)) {
@@ -222,7 +225,7 @@ const TaskDetailModal = ({ board }: Props) => {
     deleteTask.mutate(
       { id: task.id, boardId: board.id },
       {
-        onSuccess: () => boardUI.closeTask(),
+        onSuccess: handleClose,
         onError: (error) => {
           if (isBoardPermissionError(error)) {
             void qc.invalidateQueries({
@@ -268,7 +271,7 @@ const TaskDetailModal = ({ board }: Props) => {
   return (
     <Dialog
       open={!!boardUI.openTaskId}
-      onClose={() => boardUI.closeTask()}
+      onClose={handleClose}
       onKeyDown={(event) => {
         if (
           (event.ctrlKey || event.metaKey) &&
@@ -295,7 +298,7 @@ const TaskDetailModal = ({ board }: Props) => {
     >
       <TaskDetailHeader
         columnTitle={columnTitle}
-        onClose={() => boardUI.closeTask()}
+        onClose={handleClose}
       />
 
       <DialogContent
@@ -347,6 +350,12 @@ const TaskDetailModal = ({ board }: Props) => {
           onRemoveLabel={removeLabel}
         />
 
+        <TaskCommentsSection
+          taskId={task.id}
+          board={board}
+          canEdit={canEdit}
+        />
+
         <TaskTimestamps task={task} dayjsLocale={dayjsLocale} />
       </DialogContent>
 
@@ -356,7 +365,7 @@ const TaskDetailModal = ({ board }: Props) => {
         canEdit={canEdit}
         isDirty={isDirty}
         isUpdating={isUpdating}
-        onClose={() => boardUI.closeTask()}
+        onClose={handleClose}
         onDelete={handleDelete}
         onSave={handleSave}
       />

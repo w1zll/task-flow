@@ -27,6 +27,10 @@ import { Team } from './teams/entities/team.entity';
 import { TeamMember } from './teams/entities/team-member.entity';
 import { TeamsModule } from './teams/teams.module';
 import { DemoModule } from './demo/demo.module';
+import { Mention } from './notifications/entities/mention.entity';
+import { Notification } from './notifications/entities/notification.entity';
+import { TaskComment } from './notifications/entities/task-comment.entity';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -63,6 +67,9 @@ import { DemoModule } from './demo/demo.module';
             BoardActivity,
             Column,
             Task,
+            TaskComment,
+            Mention,
+            Notification,
             RefreshToken,
           ],
           synchronize: false,
@@ -79,6 +86,7 @@ import { DemoModule } from './demo/demo.module';
     WorkspacesModule,
     TeamsModule,
     DemoModule,
+    NotificationsModule,
     BoardsModule,
     ColumnsModule,
     TasksModule,
