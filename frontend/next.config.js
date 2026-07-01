@@ -7,7 +7,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    proxyClientMaxBodySize: 60 * 1024 * 1024,
+    proxyClientMaxBodySize: 12 * 1024 * 1024,
     proxyTimeout: 300_000,
   },
 

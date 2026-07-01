@@ -21,7 +21,7 @@ type EmitBoardSocketMutationOptions = {
   queueOnFailure?: boolean;
 };
 
-const SOCKET_ACK_TIMEOUT_MS = 5000;
+const SOCKET_ACK_TIMEOUT_MS = 15_000;
 
 export class BoardSocketMutationQueuedError extends Error {
   constructor(readonly mutation: PendingBoardMutation) {
@@ -75,7 +75,7 @@ const emitLiveBoardSocketMutation = async (
   }
 
   await new Promise<void>((resolve, reject) => {
-    socket.volatile.timeout(SOCKET_ACK_TIMEOUT_MS).emit(
+    socket.timeout(SOCKET_ACK_TIMEOUT_MS).emit(
       event,
       payload,
       (error: Error | null, response?: SocketAckResponse) => {
@@ -110,19 +110,13 @@ export const emitBoardSocketMutation = async (
 
   const socket = getSocket();
 
-  if (!isSocketReady(socket)) {
-    const mutation = queueMutation(event, payload, boardId);
-    throw new BoardSocketMutationQueuedError(mutation);
-  }
-
   try {
     await emitLiveBoardSocketMutation(event, payload);
   } catch (error) {
     if (error instanceof BoardSocketAckError) throw error;
-    if (!queueOnFailure) throw error;
+    if (!queueOnFailure || isSocketReady(socket)) throw error;
 
     discardBufferedSocketWrites(socket);
-
     const mutation = queueMutation(event, payload, boardId);
     throw new BoardSocketMutationQueuedError(mutation);
   }
