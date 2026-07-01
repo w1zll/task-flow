@@ -6,6 +6,8 @@ import { BoardMember } from '@/boards/entities/board-member.entity';
 import { Column } from '@/columns/entities/column.entity';
 import { User } from '@/users/entities/user.entity';
 import { Task, TaskPriority } from './entities/task.entity';
+import { TaskAttachment } from './entities/task-attachment.entity';
+import { TaskChecklistItem } from './entities/task-checklist-item.entity';
 import { TasksService } from './tasks.service';
 import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
 import { BoardPermissionsService } from '@/boards/board-permissions.service';
@@ -14,10 +16,14 @@ import { WorkspacesService } from '@/workspaces/workspaces.service';
 import { Team } from '@/teams/entities/team.entity';
 import { BoardActivityEventsService } from '@/boards/board-activity-events.service';
 import { NotificationsService } from '@/notifications/notifications.service';
+import { STORAGE_ADAPTER } from '@/storage/storage.types';
+import { LocalStorageAdapter } from '@/storage/local-storage.adapter';
 
 describe('TasksService', () => {
   let service: TasksService;
   let taskRepo: jest.Mocked<Partial<Repository<Task>>>;
+  let checklistRepo: jest.Mocked<Partial<Repository<TaskChecklistItem>>>;
+  let attachmentRepo: jest.Mocked<Partial<Repository<TaskAttachment>>>;
   let columnRepo: jest.Mocked<Partial<Repository<Column>>>;
   let boardRepo: jest.Mocked<Partial<Repository<Board>>>;
   let userRepo: jest.Mocked<Partial<Repository<User>>>;
@@ -26,6 +32,17 @@ describe('TasksService', () => {
   let workspacesService: jest.Mocked<Partial<WorkspacesService>>;
   let boardActivityEvents: jest.Mocked<Partial<BoardActivityEventsService>>;
   let notificationsService: jest.Mocked<Partial<NotificationsService>>;
+  let storageAdapter: {
+    provider: 'local';
+    uploadAvatar: jest.Mock;
+    deleteAvatar: jest.Mock;
+    uploadAttachment: jest.Mock;
+    deleteAttachment: jest.Mock;
+  };
+  let localStorage: {
+    readAttachment: jest.Mock;
+    deleteAttachment: jest.Mock;
+  };
   let mockQueryBuilder: {
     update: jest.Mock;
     set: jest.Mock;
@@ -97,6 +114,22 @@ describe('TasksService', () => {
       createQueryBuilder: jest.fn(() => mockQueryBuilder as any),
       save: jest.fn(async (task: Task) => task),
     };
+    checklistRepo = {
+      findOne: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+      create: jest.fn((data) => data as TaskChecklistItem),
+      save: jest.fn(async (item: TaskChecklistItem) => item),
+      update: jest.fn().mockResolvedValue({}),
+      remove: jest.fn().mockResolvedValue({}),
+    };
+    attachmentRepo = {
+      findOne: jest.fn(),
+      create: jest.fn((data) => data as TaskAttachment),
+      createQueryBuilder: jest.fn(() => mockQueryBuilder as any),
+      save: jest.fn(async (attachment: TaskAttachment) => attachment),
+      remove: jest.fn().mockResolvedValue({}),
+    };
     columnRepo = {
       findOne: jest.fn(),
     };
@@ -143,6 +176,17 @@ describe('TasksService', () => {
       notifyTaskAssigned: jest.fn(),
       notifyTeamTaskChanged: jest.fn(),
     };
+    storageAdapter = {
+      provider: 'local',
+      uploadAvatar: jest.fn(),
+      deleteAvatar: jest.fn(),
+      uploadAttachment: jest.fn(),
+      deleteAttachment: jest.fn(),
+    };
+    localStorage = {
+      readAttachment: jest.fn(),
+      deleteAttachment: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -150,6 +194,14 @@ describe('TasksService', () => {
         {
           provide: getRepositoryToken(Task),
           useValue: taskRepo,
+        },
+        {
+          provide: getRepositoryToken(TaskChecklistItem),
+          useValue: checklistRepo,
+        },
+        {
+          provide: getRepositoryToken(TaskAttachment),
+          useValue: attachmentRepo,
         },
         {
           provide: getRepositoryToken(Column),
@@ -190,6 +242,14 @@ describe('TasksService', () => {
         {
           provide: NotificationsService,
           useValue: notificationsService,
+        },
+        {
+          provide: STORAGE_ADAPTER,
+          useValue: storageAdapter,
+        },
+        {
+          provide: LocalStorageAdapter,
+          useValue: localStorage,
         },
       ],
     }).compile();

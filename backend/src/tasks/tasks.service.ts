@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -15,15 +16,33 @@ import { toPublicUser } from '@/users/public-user';
 import {
   AnalyticsQueryDto,
   CreateTaskDto,
+  CreateTaskChecklistItemDto,
   MoveTaskDto,
+  ReorderTaskChecklistItemsDto,
   ReorderTasksDto,
+  UpdateTaskChecklistItemDto,
   UpdateTaskDto,
 } from './dto/task.dto';
 import { Task, TaskPriority } from './entities/task.entity';
+import { TaskAttachment } from './entities/task-attachment.entity';
+import { TaskChecklistItem } from './entities/task-checklist-item.entity';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
 import { Team } from '@/teams/entities/team.entity';
 import { BoardActivityEventsService } from '@/boards/board-activity-events.service';
 import { NotificationsService } from '@/notifications/notifications.service';
+import {
+  MAX_TASK_ATTACHMENT_SIZE_BYTES,
+  MAX_WORKSPACE_ATTACHMENT_STORAGE_BYTES,
+  TASK_ATTACHMENT_MIME_TYPES,
+  isAllowedTaskAttachmentMimeType,
+  isImageAttachmentMimeType,
+} from '@/storage/task-attachment.constants';
+import {
+  STORAGE_ADAPTER,
+  TaskAttachmentUploadFile,
+} from '@/storage/storage.types';
+import type { StorageAdapter } from '@/storage/storage.types';
+import { LocalStorageAdapter } from '@/storage/local-storage.adapter';
 
 type ActivityChange = {
   field: string;
@@ -43,6 +62,8 @@ type TaskActivitySnapshot = {
   teamName: string | null;
   isCompleted: boolean;
   completedAt: string | null;
+  estimateMinutes: number | null;
+  storyPoints: number | null;
   columnId: string;
   columnTitle: string | null;
 };
@@ -53,11 +74,18 @@ const hasOwn = (value: object, key: string) =>
 const toIsoStringOrNull = (value: Date | string | null | undefined) =>
   value ? new Date(value).toISOString() : null;
 
+const MAX_TASK_ESTIMATE_MINUTES = 100_000;
+const MAX_TASK_STORY_POINTS = 1_000;
+
 @Injectable()
 export class TasksService {
   constructor(
     @InjectRepository(Task)
     private readonly taskRepo: Repository<Task>,
+    @InjectRepository(TaskChecklistItem)
+    private readonly checklistRepo: Repository<TaskChecklistItem>,
+    @InjectRepository(TaskAttachment)
+    private readonly attachmentRepo: Repository<TaskAttachment>,
     @InjectRepository(Column)
     private readonly columnRepo: Repository<Column>,
     @InjectRepository(Board)
@@ -71,6 +99,9 @@ export class TasksService {
     private readonly workspacesService: WorkspacesService,
     private readonly boardActivityEvents: BoardActivityEventsService,
     private readonly notificationsService: NotificationsService,
+    @Inject(STORAGE_ADAPTER)
+    private readonly storage: StorageAdapter,
+    private readonly localStorage: LocalStorageAdapter,
   ) {}
 
   private async verifyColumnWriteAccess(
@@ -93,7 +124,16 @@ export class TasksService {
   ): Promise<Task> {
     const task = await this.taskRepo.findOne({
       where: { id },
-      relations: ['column', 'column.board', 'assignee', 'team'],
+      relations: [
+        'column',
+        'column.board',
+        'assignee',
+        'team',
+        'checklistItems',
+        'checklistItems.assignee',
+        'attachments',
+        'attachments.uploadedBy',
+      ],
     });
     if (!task) throw new NotFoundException('Task not found');
 
@@ -101,6 +141,17 @@ export class TasksService {
       task.column.boardId,
       userId,
     );
+    return task;
+  }
+
+  private async verifyTaskReadAccess(id: string, userId: string): Promise<Task> {
+    const task = await this.taskRepo.findOne({
+      where: { id },
+      relations: ['column', 'column.board'],
+    });
+    if (!task) throw new NotFoundException('Task not found');
+
+    await this.boardPermissions.assertCanRead(task.column.boardId, userId);
     return task;
   }
 
@@ -159,6 +210,7 @@ export class TasksService {
   }
 
   async create(dto: CreateTaskDto, userId: string): Promise<Task> {
+    this.validateTaskNumericFields(dto);
     const column = await this.verifyColumnWriteAccess(dto.columnId, userId);
     let assignee: User | undefined;
     let team: Team | undefined;
@@ -224,6 +276,7 @@ export class TasksService {
     userId: string,
     expectedBoardId?: string,
   ): Promise<Task> {
+    this.validateTaskNumericFields(dto);
     const task = await this.verifyTaskWriteAccess(id, userId);
     this.assertExpectedBoard(task.column.boardId, expectedBoardId);
     const beforeActivity = this.snapshotTaskActivity(task);
@@ -480,6 +533,399 @@ export class TasksService {
     return column.boardId;
   }
 
+  async createChecklistItem(
+    taskId: string,
+    dto: CreateTaskChecklistItemDto,
+    userId: string,
+  ): Promise<TaskChecklistItem> {
+    const task = await this.verifyTaskWriteAccess(taskId, userId);
+    let assignee: User | undefined;
+
+    if (dto.assigneeId) {
+      assignee = await this.validateAssignee(task.column.boardId, dto.assigneeId);
+    }
+
+    const order =
+      dto.order ??
+      (await this.checklistRepo.count({
+        where: { taskId },
+      }));
+    const item = this.checklistRepo.create({
+      taskId,
+      title: dto.title.trim(),
+      isDone: dto.isDone ?? false,
+      order,
+      assigneeId: assignee?.id ?? dto.assigneeId ?? null,
+      assigneeName: assignee?.name ?? null,
+      assignee,
+    });
+    const saved = await this.checklistRepo.save(item);
+    await this.frontendCache.revalidateBoard(task.column.boardId);
+    await this.logTaskDetailChange(task, userId, 'checklist', null, {
+      id: saved.id,
+      title: saved.title,
+      isDone: saved.isDone,
+    });
+
+    return this.withPublicChecklistItem(saved);
+  }
+
+  async updateChecklistItem(
+    taskId: string,
+    itemId: string,
+    dto: UpdateTaskChecklistItemDto,
+    userId: string,
+  ): Promise<TaskChecklistItem> {
+    const task = await this.verifyTaskWriteAccess(taskId, userId);
+    const item = await this.findChecklistItem(taskId, itemId);
+    const before = this.snapshotChecklistItem(item);
+
+    if (hasOwn(dto, 'assigneeId')) {
+      if (dto.assigneeId) {
+        const assignee = await this.validateAssignee(
+          task.column.boardId,
+          dto.assigneeId,
+        );
+        item.assigneeId = assignee.id;
+        item.assigneeName = assignee.name;
+        item.assignee = assignee;
+      } else {
+        item.assigneeId = null;
+        item.assigneeName = null;
+        item.assignee = null;
+      }
+    }
+    if (hasOwn(dto, 'title') && dto.title !== undefined) {
+      item.title = dto.title.trim();
+    }
+    if (hasOwn(dto, 'isDone') && dto.isDone !== undefined) {
+      item.isDone = dto.isDone;
+    }
+    if (hasOwn(dto, 'order') && dto.order !== undefined) {
+      item.order = dto.order;
+    }
+
+    const saved = await this.checklistRepo.save(item);
+    await this.frontendCache.revalidateBoard(task.column.boardId);
+    await this.logTaskDetailChange(
+      task,
+      userId,
+      'checklist',
+      before,
+      this.snapshotChecklistItem(saved),
+    );
+
+    return this.withPublicChecklistItem(saved);
+  }
+
+  async reorderChecklistItems(
+    taskId: string,
+    dto: ReorderTaskChecklistItemsDto,
+    userId: string,
+  ): Promise<TaskChecklistItem[]> {
+    const task = await this.verifyTaskWriteAccess(taskId, userId);
+    const items = await this.checklistRepo.find({
+      where: { taskId },
+      relations: ['assignee'],
+    });
+    const itemIds = new Set(items.map((item) => item.id));
+
+    if (dto.itemIds.some((itemId) => !itemIds.has(itemId))) {
+      throw new BadRequestException(
+        'Checklist items must belong to the task',
+      );
+    }
+
+    await Promise.all(
+      dto.itemIds.map((itemId, order) =>
+        this.checklistRepo.update({ id: itemId, taskId }, { order }),
+      ),
+    );
+    await this.frontendCache.revalidateBoard(task.column.boardId);
+    await this.logTaskDetailChange(task, userId, 'checklistOrder', null, {
+      itemIds: dto.itemIds,
+    });
+
+    const reordered = await this.checklistRepo.find({
+      where: { taskId },
+      relations: ['assignee'],
+      order: { order: 'ASC' },
+    });
+
+    return reordered.map((item) => this.withPublicChecklistItem(item));
+  }
+
+  async removeChecklistItem(
+    taskId: string,
+    itemId: string,
+    userId: string,
+  ): Promise<void> {
+    const task = await this.verifyTaskWriteAccess(taskId, userId);
+    const item = await this.findChecklistItem(taskId, itemId);
+    const before = this.snapshotChecklistItem(item);
+
+    await this.checklistRepo.remove(item);
+    await this.frontendCache.revalidateBoard(task.column.boardId);
+    await this.logTaskDetailChange(task, userId, 'checklist', before, null);
+  }
+
+  async uploadAttachment(
+    taskId: string,
+    file: TaskAttachmentUploadFile | undefined,
+    userId: string,
+  ): Promise<TaskAttachment> {
+    if (!file) {
+      throw new BadRequestException('Attachment file is required');
+    }
+    this.validateTaskAttachment(file);
+
+    const task = await this.verifyTaskWriteAccess(taskId, userId);
+    const workspaceId = task.column.board.workspaceId;
+    const usedStorage = await this.getWorkspaceAttachmentUsage(workspaceId);
+
+    if (usedStorage + file.size > MAX_WORKSPACE_ATTACHMENT_STORAGE_BYTES) {
+      throw new BadRequestException(
+        'Workspace attachment storage limit exceeded',
+      );
+    }
+
+    const stored = await this.storage.uploadAttachment(file, {
+      workspaceId,
+      boardId: task.column.boardId,
+      taskId,
+      userId,
+    });
+
+    try {
+      let attachment = this.attachmentRepo.create({
+        taskId,
+        fileName: this.normalizeFileName(file.originalname),
+        mimeType: file.mimetype,
+        size: file.size,
+        url: stored.url,
+        storageKey: stored.key,
+        storageProvider: stored.provider,
+        isImage: isImageAttachmentMimeType(file.mimetype),
+        uploadedById: userId,
+      });
+
+      attachment = await this.attachmentRepo.save(attachment);
+
+      if (attachment.storageProvider === 'local') {
+        attachment.url = this.localAttachmentUrl(taskId, attachment.id);
+        attachment = await this.attachmentRepo.save(attachment);
+      }
+
+      const saved = await this.findAttachment(taskId, attachment.id);
+      await this.frontendCache.revalidateBoard(task.column.boardId);
+      await this.logTaskDetailChange(task, userId, 'attachment', null, {
+        id: saved.id,
+        fileName: saved.fileName,
+        size: saved.size,
+      });
+
+      return this.withPublicAttachment(saved);
+    } catch (error) {
+      await this.storage.deleteAttachment(stored.key).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  async removeAttachment(
+    taskId: string,
+    attachmentId: string,
+    userId: string,
+  ): Promise<void> {
+    const task = await this.verifyTaskWriteAccess(taskId, userId);
+    const attachment = await this.findAttachment(taskId, attachmentId);
+
+    await this.attachmentRepo.remove(attachment);
+    await this.deleteStoredAttachment(attachment);
+    await this.frontendCache.revalidateBoard(task.column.boardId);
+    await this.logTaskDetailChange(
+      task,
+      userId,
+      'attachment',
+      {
+        id: attachment.id,
+        fileName: attachment.fileName,
+        size: attachment.size,
+      },
+      null,
+    );
+  }
+
+  async getAttachmentFile(
+    taskId: string,
+    attachmentId: string,
+    userId: string,
+  ): Promise<{ buffer: Buffer; contentType: string; fileName: string }> {
+    await this.verifyTaskReadAccess(taskId, userId);
+    const attachment = await this.findAttachment(taskId, attachmentId);
+
+    if (attachment.storageProvider !== 'local') {
+      throw new NotFoundException('Attachment file is not stored locally');
+    }
+
+    const file = await this.localStorage.readAttachment(attachment.storageKey);
+    return {
+      ...file,
+      fileName: attachment.fileName,
+    };
+  }
+
+  private async findChecklistItem(
+    taskId: string,
+    itemId: string,
+  ): Promise<TaskChecklistItem> {
+    const item = await this.checklistRepo.findOne({
+      where: { id: itemId, taskId },
+      relations: ['assignee'],
+    });
+    if (!item) throw new NotFoundException('Checklist item not found');
+    return item;
+  }
+
+  private async findAttachment(
+    taskId: string,
+    attachmentId: string,
+  ): Promise<TaskAttachment> {
+    const attachment = await this.attachmentRepo.findOne({
+      where: { id: attachmentId, taskId },
+      relations: ['uploadedBy'],
+    });
+    if (!attachment) throw new NotFoundException('Attachment not found');
+    return attachment;
+  }
+
+  private snapshotChecklistItem(item: TaskChecklistItem) {
+    return {
+      id: item.id,
+      title: item.title,
+      isDone: item.isDone,
+      order: item.order,
+      assigneeId: item.assignee?.id ?? item.assigneeId ?? null,
+      assigneeName: item.assignee?.name ?? item.assigneeName ?? null,
+    };
+  }
+
+  private async logTaskDetailChange(
+    task: Task,
+    userId: string,
+    field: string,
+    from: unknown,
+    to: unknown,
+  ) {
+    await this.boardActivityEvents.logTaskUpdated(task.column.boardId, userId, {
+      taskId: task.id,
+      title: task.title,
+      columnId: task.columnId,
+      columnTitle: task.column?.title ?? null,
+      changes: [{ field, from, to }],
+    });
+  }
+
+  private validateTaskAttachment(file: TaskAttachmentUploadFile) {
+    if (file.size > MAX_TASK_ATTACHMENT_SIZE_BYTES) {
+      throw new BadRequestException(
+        'Attachment file must not exceed 50 MB',
+      );
+    }
+    if (!isAllowedTaskAttachmentMimeType(file.mimetype)) {
+      throw new BadRequestException(
+        `Attachments must use one of these MIME types: ${TASK_ATTACHMENT_MIME_TYPES.join(', ')}`,
+      );
+    }
+  }
+
+  private validateTaskNumericFields(dto: CreateTaskDto | UpdateTaskDto) {
+    if (hasOwn(dto, 'estimateMinutes')) {
+      this.validateTaskIntegerRange(
+        dto.estimateMinutes,
+        'Estimate',
+        MAX_TASK_ESTIMATE_MINUTES,
+      );
+    }
+    if (hasOwn(dto, 'storyPoints')) {
+      this.validateTaskIntegerRange(
+        dto.storyPoints,
+        'Story points',
+        MAX_TASK_STORY_POINTS,
+      );
+    }
+  }
+
+  private validateTaskIntegerRange(
+    value: unknown,
+    label: string,
+    max: number,
+  ) {
+    if (value === undefined || value === null) return;
+    if (
+      typeof value !== 'number' ||
+      !Number.isFinite(value) ||
+      !Number.isInteger(value)
+    ) {
+      throw new BadRequestException(`${label} must be an integer`);
+    }
+    if (value < 0 || value > max) {
+      throw new BadRequestException(`${label} must be between 0 and ${max}`);
+    }
+  }
+
+  private async getWorkspaceAttachmentUsage(
+    workspaceId: string,
+  ): Promise<number> {
+    const result = await this.attachmentRepo
+      .createQueryBuilder('attachment')
+      .innerJoin('attachment.task', 'task')
+      .innerJoin('task.column', 'column')
+      .innerJoin('column.board', 'board')
+      .where('board.workspaceId = :workspaceId', { workspaceId })
+      .select('COALESCE(SUM(attachment.size), 0)', 'total')
+      .getRawOne<{ total: string | number | null }>();
+
+    return Number(result?.total ?? 0);
+  }
+
+  private async deleteStoredAttachment(attachment: TaskAttachment) {
+    if (attachment.storageProvider === this.storage.provider) {
+      await this.storage
+        .deleteAttachment(attachment.storageKey)
+        .catch(() => undefined);
+      return;
+    }
+
+    if (attachment.storageProvider === 'local') {
+      await this.localStorage
+        .deleteAttachment(attachment.storageKey)
+        .catch(() => undefined);
+    }
+  }
+
+  private normalizeFileName(fileName: string) {
+    const normalized = fileName.split(/[\\/]/).pop()?.trim() || 'attachment';
+    return normalized.slice(0, 255);
+  }
+
+  private localAttachmentUrl(taskId: string, attachmentId: string) {
+    return `/api/tasks/${taskId}/attachments/${attachmentId}/file`;
+  }
+
+  private withPublicChecklistItem(
+    item: TaskChecklistItem,
+  ): TaskChecklistItem {
+    if (item.assignee) item.assignee = toPublicUser(item.assignee);
+    return item;
+  }
+
+  private withPublicAttachment(attachment: TaskAttachment): TaskAttachment {
+    if (attachment.uploadedBy) {
+      attachment.uploadedBy = toPublicUser(attachment.uploadedBy);
+    }
+    return attachment;
+  }
+
   private snapshotTaskActivity(task: Task): TaskActivitySnapshot {
     return {
       title: task.title,
@@ -493,6 +939,8 @@ export class TasksService {
       teamName: task.team?.name ?? null,
       isCompleted: task.isCompleted,
       completedAt: toIsoStringOrNull(task.completedAt),
+      estimateMinutes: task.estimateMinutes ?? null,
+      storyPoints: task.storyPoints ?? null,
       columnId: task.columnId,
       columnTitle: task.column?.title ?? null,
     };
@@ -562,6 +1010,22 @@ export class TasksService {
         after.completedAt,
       );
     }
+    if (hasOwn(dto, 'estimateMinutes')) {
+      this.addActivityChange(
+        changes,
+        'estimateMinutes',
+        before.estimateMinutes,
+        after.estimateMinutes,
+      );
+    }
+    if (hasOwn(dto, 'storyPoints')) {
+      this.addActivityChange(
+        changes,
+        'storyPoints',
+        before.storyPoints,
+        after.storyPoints,
+      );
+    }
 
     return changes;
   }
@@ -614,6 +1078,19 @@ export class TasksService {
     if (task?.assignee) {
       task.assignee = toPublicUser(task.assignee);
     }
+    task?.checklistItems?.forEach((item) => {
+      if (item.assignee) item.assignee = toPublicUser(item.assignee);
+    });
+    task?.checklistItems?.sort((a, b) => a.order - b.order);
+    task?.attachments?.forEach((attachment) => {
+      if (attachment.uploadedBy) {
+        attachment.uploadedBy = toPublicUser(attachment.uploadedBy);
+      }
+    });
+    task?.attachments?.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
     return task;
   }
 

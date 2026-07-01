@@ -6,6 +6,10 @@ const isDev = process.env.NODE_ENV !== 'production';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    proxyClientMaxBodySize: 60 * 1024 * 1024,
+    proxyTimeout: 300_000,
+  },
 
   // Proxy API requests to backend in development
   async rewrites() {

@@ -30,6 +30,11 @@ const getPublicBaseUrl = (port: string | number) => {
   return `http://localhost:${port}`;
 };
 
+const getPositiveNumberEnv = (name: string, fallback: number) => {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+};
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -78,7 +83,14 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT ?? 3001;
-  await app.listen(port, '0.0.0.0');
+  const server = await app.listen(port, '0.0.0.0');
+  const requestTimeoutMs = getPositiveNumberEnv(
+    'HTTP_REQUEST_TIMEOUT_MS',
+    300_000,
+  );
+  server.setTimeout(requestTimeoutMs);
+  server.requestTimeout = requestTimeoutMs;
+  server.headersTimeout = Math.max(requestTimeoutMs + 5_000, 65_000);
   const publicBaseUrl = getPublicBaseUrl(port);
   console.log(`TaskFlow API running on ${publicBaseUrl}`);
   console.log(`Swagger docs at ${publicBaseUrl}/api/docs`);

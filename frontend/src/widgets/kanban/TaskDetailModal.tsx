@@ -30,11 +30,19 @@ import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import TaskAssignmentFields from './task-detail/TaskAssignmentFields';
+import TaskAttachmentsSection from './task-detail/TaskAttachmentsSection';
+import TaskChecklistSection from './task-detail/TaskChecklistSection';
+import TaskCustomFieldsSection, {
+  MAX_ESTIMATE_HOURS,
+  MAX_ESTIMATE_MINUTES,
+  MAX_STORY_POINTS,
+} from './task-detail/TaskCustomFieldsSection';
 import TaskDetailActions from './task-detail/TaskDetailActions';
 import TaskDetailHeader from './task-detail/TaskDetailHeader';
 import TaskLabelsEditor from './task-detail/TaskLabelsEditor';
+import TaskLinksSection from './task-detail/TaskLinksSection';
 import TaskPriorityDateFields from './task-detail/TaskPriorityDateFields';
 import TaskTimestamps from './task-detail/TaskTimestamps';
 import TaskTitleDescriptionFields from './task-detail/TaskTitleDescriptionFields';
@@ -55,8 +63,34 @@ const normalizeNullableId = (value?: string | null) => value ?? null;
 
 const normalizeLabels = (value?: string[] | null) => value ?? [];
 
+const normalizeNullableNumber = (value?: number | null) => value ?? null;
+
+const isValidIntegerRange = (value: unknown, max: number) =>
+  value === null ||
+  value === undefined ||
+  (typeof value === 'number' &&
+    Number.isFinite(value) &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= max);
+
 const areLabelsEqual = (left?: string[] | null, right?: string[] | null) =>
   JSON.stringify(normalizeLabels(left)) === JSON.stringify(normalizeLabels(right));
+
+const createTaskDraft = (task: Task): TaskDraft => ({
+  title: task.title,
+  description: task.description ?? '',
+  priority: task.priority,
+  labels: task.labels ?? [],
+  dueDate: normalizeDateInput(task.dueDate),
+  assigneeName: task.assigneeName ?? '',
+  assigneeId: task.assigneeId ?? undefined,
+  teamId: task.teamId ?? null,
+  isCompleted: task.isCompleted,
+  completedAt: task.completedAt,
+  estimateMinutes: task.estimateMinutes ?? null,
+  storyPoints: task.storyPoints ?? null,
+});
 
 const isTaskDraftChanged = (task: Task | null, form: TaskDraft) => {
   if (!task) return false;
@@ -71,7 +105,11 @@ const isTaskDraftChanged = (task: Task | null, form: TaskDraft) => {
       normalizeNullableId(task.assigneeId) ||
     normalizeText(form.assigneeName) !== normalizeText(task.assigneeName) ||
     normalizeNullableId(form.teamId) !== normalizeNullableId(task.teamId) ||
-    Boolean(form.isCompleted) !== Boolean(task.isCompleted)
+    Boolean(form.isCompleted) !== Boolean(task.isCompleted) ||
+    normalizeNullableNumber(form.estimateMinutes) !==
+      normalizeNullableNumber(task.estimateMinutes) ||
+    normalizeNullableNumber(form.storyPoints) !==
+      normalizeNullableNumber(task.storyPoints)
   );
 };
 
@@ -98,27 +136,29 @@ const TaskDetailModal = ({ board, onClose }: Props) => {
   const [form, setForm] = useState<TaskDraft>({});
   const [labelInput, setLabelInput] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [hasLocalEdits, setHasLocalEdits] = useState(false);
+  const syncedTaskIdRef = useRef<string | null>(null);
   const canEdit = board.capabilities.canEditBoardContent;
   const teams = useWorkspaceTeams(board.workspaceId, !!boardUI.openTaskId);
   const isDirty = useMemo(() => isTaskDraftChanged(task, form), [form, task]);
   const handleClose = onClose ?? boardUI.closeTask;
 
   useEffect(() => {
-    if (task) {
-      setForm({
-        title: task.title,
-        description: task.description ?? '',
-        priority: task.priority,
-        labels: task.labels ?? [],
-        dueDate: normalizeDateInput(task.dueDate),
-        assigneeName: task.assigneeName ?? '',
-        assigneeId: task.assigneeId ?? undefined,
-        teamId: task.teamId ?? null,
-        isCompleted: task.isCompleted,
-        completedAt: task.completedAt,
-      });
+    if (!task) {
+      syncedTaskIdRef.current = null;
+      setForm({});
+      setLabelInput('');
+      setHasLocalEdits(false);
+      return;
     }
-  }, [task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const isDifferentTask = syncedTaskIdRef.current !== task.id;
+    if (isDifferentTask || !hasLocalEdits) {
+      setForm(createTaskDraft(task));
+      setHasLocalEdits(false);
+    }
+    syncedTaskIdRef.current = task.id;
+  }, [hasLocalEdits, task]);
 
   useEffect(() => {
     if (!isOnline) return;
@@ -146,11 +186,25 @@ const TaskDetailModal = ({ board, onClose }: Props) => {
 
   const patch = <K extends keyof Task,>(key: K, value: Task[K]) => {
     if (!canEdit) return;
+    setHasLocalEdits(true);
     setForm((previous) => ({ ...previous, [key]: value }));
   };
 
   const handleSave = async () => {
     if (!task || !canEdit) return;
+
+    if (!isValidIntegerRange(form.estimateMinutes, MAX_ESTIMATE_MINUTES)) {
+      enqueueSnackbar(t('estimateLimitHint', { max: MAX_ESTIMATE_HOURS }), {
+        variant: 'error',
+      });
+      return;
+    }
+    if (!isValidIntegerRange(form.storyPoints, MAX_STORY_POINTS)) {
+      enqueueSnackbar(t('storyPointsLimitHint', { max: MAX_STORY_POINTS }), {
+        variant: 'error',
+      });
+      return;
+    }
 
     const isCompletionChange =
       form.isCompleted !== undefined && form.isCompleted !== task.isCompleted;
@@ -189,6 +243,7 @@ const TaskDetailModal = ({ board, onClose }: Props) => {
           queryKey: queryKeys.boardAnalytics(board.id),
         });
       }
+      setHasLocalEdits(false);
       handleClose();
     } catch (error) {
       qc.setQueryData(queryKeys.board(board.id), previousBoard);
@@ -199,14 +254,21 @@ const TaskDetailModal = ({ board, onClose }: Props) => {
         });
       }
       const isQueuedUpdate = isBoardSocketMutationQueuedError(error);
+      const validationMessage =
+        error instanceof Error && /Estimate must/i.test(error.message)
+          ? t('estimateLimitHint', { max: MAX_ESTIMATE_HOURS })
+          : error instanceof Error && /Story points must/i.test(error.message)
+            ? t('storyPointsLimitHint', { max: MAX_STORY_POINTS })
+            : null;
       enqueueSnackbar(
-        tNotifications(
-          isBoardPermissionError(error)
-            ? 'permissionDenied'
-            : isQueuedUpdate
-              ? 'taskQueued'
-              : 'taskUpdateError',
-        ),
+        validationMessage ??
+          tNotifications(
+            isBoardPermissionError(error)
+              ? 'permissionDenied'
+              : isQueuedUpdate
+                ? 'taskQueued'
+                : 'taskUpdateError',
+          ),
         {
           variant:
             !isBoardPermissionError(error) && isQueuedUpdate ? 'info' : 'error',
@@ -341,6 +403,12 @@ const TaskDetailModal = ({ board, onClose }: Props) => {
           />
         </Box>
 
+        <TaskCustomFieldsSection
+          form={form}
+          canEdit={canEdit}
+          onPatch={patch}
+        />
+
         <TaskLabelsEditor
           labels={form.labels ?? []}
           labelInput={labelInput}
@@ -348,6 +416,20 @@ const TaskDetailModal = ({ board, onClose }: Props) => {
           onLabelInputChange={setLabelInput}
           onAddLabel={addLabel}
           onRemoveLabel={removeLabel}
+        />
+
+        <TaskLinksSection task={task} form={form} />
+
+        <TaskChecklistSection
+          task={task}
+          board={board}
+          canEdit={canEdit}
+        />
+
+        <TaskAttachmentsSection
+          task={task}
+          boardId={board.id}
+          canEdit={canEdit}
         />
 
         <TaskCommentsSection

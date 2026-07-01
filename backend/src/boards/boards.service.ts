@@ -97,6 +97,10 @@ export class BoardsService {
         'columns.tasks',
         'columns.tasks.assignee',
         'columns.tasks.team',
+        'columns.tasks.checklistItems',
+        'columns.tasks.checklistItems.assignee',
+        'columns.tasks.attachments',
+        'columns.tasks.attachments.uploadedBy',
         'members',
         'members.user',
       ],
@@ -110,6 +114,19 @@ export class BoardsService {
     board.columns?.forEach((column) => {
       column.tasks?.forEach((task) => {
         if (task.assignee) task.assignee = toPublicUser(task.assignee);
+        task.checklistItems?.forEach((item) => {
+          if (item.assignee) item.assignee = toPublicUser(item.assignee);
+        });
+        task.checklistItems?.sort((a, b) => a.order - b.order);
+        task.attachments?.forEach((attachment) => {
+          if (attachment.uploadedBy) {
+            attachment.uploadedBy = toPublicUser(attachment.uploadedBy);
+          }
+        });
+        task.attachments?.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
       });
       column.tasks?.sort((a, b) => a.order - b.order);
     });
