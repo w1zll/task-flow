@@ -41,6 +41,6 @@ import {
       },
     },
   ],
-  exports: [STORAGE_ADAPTER],
+  exports: [STORAGE_ADAPTER, LocalStorageAdapter],
 })
 export class StorageModule {}

@@ -10,6 +10,8 @@ import { BoardMember } from './boards/entities/board-member.entity';
 import { BoardView } from './boards/entities/board-view.entity';
 import { Column } from './columns/entities/column.entity';
 import { Task } from './tasks/entities/task.entity';
+import { TaskAttachment } from './tasks/entities/task-attachment.entity';
+import { TaskChecklistItem } from './tasks/entities/task-checklist-item.entity';
 import { RefreshToken } from './auth/entities/refresh-token.entity';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -67,6 +69,8 @@ import { NotificationsModule } from './notifications/notifications.module';
             BoardActivity,
             Column,
             Task,
+            TaskChecklistItem,
+            TaskAttachment,
             TaskComment,
             Mention,
             Notification,

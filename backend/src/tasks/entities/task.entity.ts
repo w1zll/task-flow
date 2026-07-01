@@ -1,11 +1,14 @@
 import { Column } from '@/columns/entities/column.entity';
 import { User } from '@/users/entities/user.entity';
 import { Team } from '@/teams/entities/team.entity';
+import { TaskAttachment } from './task-attachment.entity';
+import { TaskChecklistItem } from './task-checklist-item.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column as OrmColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
@@ -70,6 +73,18 @@ export class Task {
 
   @OrmColumn({ nullable: true })
   completedAt?: Date;
+
+  @OrmColumn({ type: 'int', nullable: true })
+  estimateMinutes?: number | null;
+
+  @OrmColumn({ type: 'int', nullable: true })
+  storyPoints?: number | null;
+
+  @OneToMany(() => TaskChecklistItem, (item) => item.task)
+  checklistItems?: TaskChecklistItem[];
+
+  @OneToMany(() => TaskAttachment, (attachment) => attachment.task)
+  attachments?: TaskAttachment[];
 
   @OrmColumn()
   columnId: string;

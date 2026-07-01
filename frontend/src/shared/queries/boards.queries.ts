@@ -35,6 +35,10 @@ const invalidateBoardViews = (qc: QueryClient, boardId: string) => {
   void qc.invalidateQueries({ queryKey: queryKeys.boardViews(boardId) });
 };
 
+const invalidateBoardActivities = (qc: QueryClient, boardId: string) => {
+  void qc.invalidateQueries({ queryKey: queryKeys.boardActivities(boardId) });
+};
+
 const invalidateBoardAnalytics = (qc: QueryClient, boardId: string) => {
   void qc.invalidateQueries({ queryKey: queryKeys.boardAnalytics(boardId) });
 };
@@ -313,6 +317,140 @@ export const useUpdateTask = () => {
       if (hasCompletionChange(data)) {
         invalidateBoardAnalytics(qc, boardId);
       }
+    },
+  });
+};
+
+export const useCreateTaskChecklistItem = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      title,
+      assigneeId,
+    }: {
+      taskId: string;
+      title: string;
+      assigneeId?: string | null;
+      boardId: string;
+    }) =>
+      taskApi
+        .createChecklistItem(taskId, { title, assigneeId })
+        .then((r) => r.data),
+    onSuccess: (_, { boardId }) => {
+      invalidateBoard(qc, boardId);
+      invalidateBoardActivities(qc, boardId);
+    },
+  });
+};
+
+export const useUpdateTaskChecklistItem = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      itemId,
+      data,
+    }: {
+      taskId: string;
+      itemId: string;
+      data: {
+        title?: string;
+        isDone?: boolean;
+        order?: number;
+        assigneeId?: string | null;
+      };
+      boardId: string;
+    }) =>
+      taskApi
+        .updateChecklistItem(taskId, itemId, data)
+        .then((r) => r.data),
+    onSuccess: (_, { boardId }) => {
+      invalidateBoard(qc, boardId);
+      invalidateBoardActivities(qc, boardId);
+    },
+  });
+};
+
+export const useDeleteTaskChecklistItem = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      itemId,
+    }: {
+      taskId: string;
+      itemId: string;
+      boardId: string;
+    }) => taskApi.removeChecklistItem(taskId, itemId),
+    onSuccess: (_, { boardId }) => {
+      invalidateBoard(qc, boardId);
+      invalidateBoardActivities(qc, boardId);
+    },
+  });
+};
+
+export const useReorderTaskChecklistItems = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      itemIds,
+    }: {
+      taskId: string;
+      itemIds: string[];
+      boardId: string;
+    }) => taskApi.reorderChecklistItems(taskId, itemIds).then((r) => r.data),
+    onSuccess: (_, { boardId }) => {
+      invalidateBoard(qc, boardId);
+      invalidateBoardActivities(qc, boardId);
+    },
+  });
+};
+
+export const useUploadTaskAttachment = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      file,
+      onProgress,
+    }: {
+      taskId: string;
+      file: File;
+      boardId: string;
+      onProgress?: (progress: number) => void;
+    }) =>
+      taskApi
+        .uploadAttachment(taskId, file, (event) => {
+          const total = event.total ?? file.size;
+          if (!total) return;
+          onProgress?.(
+            Math.min(100, Math.round((event.loaded / total) * 100)),
+          );
+        })
+        .then((r) => r.data),
+    onSuccess: (_, { boardId }) => {
+      invalidateBoard(qc, boardId);
+      invalidateBoardActivities(qc, boardId);
+    },
+  });
+};
+
+export const useDeleteTaskAttachment = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      attachmentId,
+    }: {
+      taskId: string;
+      attachmentId: string;
+      boardId: string;
+    }) => taskApi.removeAttachment(taskId, attachmentId),
+    onSuccess: (_, { boardId }) => {
+      invalidateBoard(qc, boardId);
+      invalidateBoardActivities(qc, boardId);
     },
   });
 };
