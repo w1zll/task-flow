@@ -2,8 +2,10 @@
 
 import type { Task } from '@/shared/api/api';
 import {
+  AttachFileOutlined,
   CalendarTodayOutlined,
   CheckCircleOutlined,
+  ChecklistRounded,
   FlagOutlined,
 } from '@mui/icons-material';
 import { Box, Tooltip, Typography } from '@mui/material';
@@ -27,6 +29,10 @@ const TaskMetaRow = ({
   dayjsLocale,
 }: TaskMetaRowProps) => {
   const t = useTranslations('TaskCard');
+  const checklistTotal = task.checklistItems?.length ?? 0;
+  const checklistDone =
+    task.checklistItems?.filter((item) => item.isDone).length ?? 0;
+  const attachmentCount = task.attachments?.length ?? 0;
 
   return (
     <Box
@@ -109,6 +115,52 @@ const TaskMetaRow = ({
           >
               {isOverdue ? `${t('overdue')} · ` : ''}
               {dayjs(task.dueDate).locale(dayjsLocale).format('D MMM')}
+            </Typography>
+          </Box>
+        </Tooltip>
+      )}
+
+      {checklistTotal > 0 && (
+        <Tooltip
+          title={t('checklistTooltip', {
+            done: checklistDone,
+            total: checklistTotal,
+          })}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.25,
+              color:
+                checklistDone === checklistTotal
+                  ? 'success.main'
+                  : 'text.secondary',
+              flexShrink: 0,
+            }}
+          >
+            <ChecklistRounded sx={{ fontSize: 13 }} />
+            <Typography variant="caption" sx={{ fontSize: 11 }}>
+              {checklistDone}/{checklistTotal}
+            </Typography>
+          </Box>
+        </Tooltip>
+      )}
+
+      {attachmentCount > 0 && (
+        <Tooltip title={t('attachmentsTooltip', { count: attachmentCount })}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.25,
+              color: 'text.secondary',
+              flexShrink: 0,
+            }}
+          >
+            <AttachFileOutlined sx={{ fontSize: 13 }} />
+            <Typography variant="caption" sx={{ fontSize: 11 }}>
+              {attachmentCount}
             </Typography>
           </Box>
         </Tooltip>

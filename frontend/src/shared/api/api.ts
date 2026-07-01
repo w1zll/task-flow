@@ -1,5 +1,7 @@
 import apiClient from './client';
 import { ApiBody, ApiResponse } from './types';
+import type { components } from './api.types';
+import type { AxiosProgressEvent } from 'axios';
 
 export type AuthResponse = ApiResponse<'/api/auth/register', 'post'>;
 export type AuthUser = ApiResponse<'/api/auth/me', 'get'>;
@@ -65,6 +67,10 @@ export type BoardColumn = Omit<
   'createdAt' | 'updatedAt'
 >;
 export type Task = ApiResponse<'/api/tasks/{id}', 'put'>;
+export type TaskChecklistItem =
+  components['schemas']['TaskChecklistItemResponseDto'];
+export type TaskAttachment =
+  components['schemas']['TaskAttachmentResponseDto'];
 export type TaskComment =
   ApiResponse<'/api/tasks/{taskId}/comments', 'get'>[number];
 export type TaskMention = TaskComment['mentions'][number];
@@ -401,6 +407,8 @@ export const taskApi = {
     isCompleted?: boolean;
     completedAt?: string;
     assigneeName?: string;
+    estimateMinutes?: number | null;
+    storyPoints?: number | null;
   }) => apiClient.post<ApiResponse<'/api/tasks', 'post'>>('/api/tasks', data),
 
   update: (id: string, data: Partial<Task>) =>
@@ -420,6 +428,57 @@ export const taskApi = {
       `/api/tasks/column/${columnId}/reorder`,
       { taskIds },
     ),
+
+  createChecklistItem: (
+    taskId: string,
+    data: ApiBody<'/api/tasks/{taskId}/checklist-items', 'post'>,
+  ) =>
+    apiClient.post<
+      ApiResponse<'/api/tasks/{taskId}/checklist-items', 'post'>
+    >(`/api/tasks/${taskId}/checklist-items`, data),
+
+  updateChecklistItem: (
+    taskId: string,
+    itemId: string,
+    data: ApiBody<
+      '/api/tasks/{taskId}/checklist-items/{itemId}',
+      'put'
+    >,
+  ) =>
+    apiClient.put<
+      ApiResponse<
+        '/api/tasks/{taskId}/checklist-items/{itemId}',
+        'put'
+      >
+    >(`/api/tasks/${taskId}/checklist-items/${itemId}`, data),
+
+  reorderChecklistItems: (taskId: string, itemIds: string[]) =>
+    apiClient.put<
+      ApiResponse<'/api/tasks/{taskId}/checklist-items/reorder', 'put'>
+    >(`/api/tasks/${taskId}/checklist-items/reorder`, { itemIds }),
+
+  removeChecklistItem: (taskId: string, itemId: string) =>
+    apiClient.delete<void>(`/api/tasks/${taskId}/checklist-items/${itemId}`),
+
+  uploadAttachment: (
+    taskId: string,
+    file: File,
+    onUploadProgress?: (event: AxiosProgressEvent) => void,
+  ) => {
+    const form = new FormData();
+    form.append('file', file);
+    return apiClient.post<TaskAttachment>(
+      `/api/tasks/${taskId}/attachments`,
+      form,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress,
+      },
+    );
+  },
+
+  removeAttachment: (taskId: string, attachmentId: string) =>
+    apiClient.delete<void>(`/api/tasks/${taskId}/attachments/${attachmentId}`),
 
   analytics: {
     daily: (query?: {

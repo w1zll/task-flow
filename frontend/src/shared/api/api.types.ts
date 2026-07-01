@@ -711,6 +711,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tasks/{taskId}/checklist-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a task checklist item */
+        post: operations["TasksController_createChecklistItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{taskId}/checklist-items/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reorder task checklist items */
+        put: operations["TasksController_reorderChecklistItems"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{taskId}/checklist-items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update a task checklist item */
+        put: operations["TasksController_updateChecklistItem"];
+        post?: never;
+        /** Delete a task checklist item */
+        delete: operations["TasksController_removeChecklistItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{taskId}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload a task attachment */
+        post: operations["TasksController_uploadAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{taskId}/attachments/{attachmentId}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a locally stored task attachment */
+        get: operations["TasksController_attachmentFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{taskId}/attachments/{attachmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a task attachment */
+        delete: operations["TasksController_removeAttachment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tasks/analytics/daily": {
         parameters: {
             query?: never;
@@ -1182,6 +1285,49 @@ export interface components {
             /** @example workspace-uuid */
             workspaceId: string;
         };
+        TaskChecklistItemResponseDto: {
+            /** @example checklist-item-uuid */
+            id: string;
+            /** @example task-uuid */
+            taskId: string;
+            /** @example Prepare acceptance criteria */
+            title: string;
+            /** @example false */
+            isDone: boolean;
+            /** @example 0 */
+            order: number;
+            /** @example user-uuid */
+            assigneeId?: string | null;
+            assigneeName?: string | null;
+            assignee?: components["schemas"]["UserResponseDto"] | null;
+            /** @example 2026-05-05T12:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-05-05T12:00:00.000Z */
+            updatedAt: string;
+        };
+        TaskAttachmentResponseDto: {
+            /** @example attachment-uuid */
+            id: string;
+            /** @example task-uuid */
+            taskId: string;
+            /** @example brief.pdf */
+            fileName: string;
+            /** @example application/pdf */
+            mimeType: string;
+            /** @example 102400 */
+            size: number;
+            /** @example /api/tasks/task-uuid/attachments/attachment-uuid/file */
+            url: string;
+            /** @enum {string} */
+            storageProvider: "local" | "cloudinary" | "imagekit";
+            /** @example true */
+            isImage: boolean;
+            /** @example user-uuid */
+            uploadedById: string | null;
+            uploadedBy?: components["schemas"]["UserResponseDto"] | null;
+            /** @example 2026-05-05T12:00:00.000Z */
+            createdAt: string;
+        };
         TaskResponseDto: {
             /** @example task-uuid */
             id: string;
@@ -1214,6 +1360,12 @@ export interface components {
             isCompleted?: boolean;
             /** @example 2026-05-05T12:00:00.000Z */
             completedAt?: string;
+            /** @example 240 */
+            estimateMinutes?: number | null;
+            /** @example 5 */
+            storyPoints?: number | null;
+            checklistItems?: components["schemas"]["TaskChecklistItemResponseDto"][];
+            attachments?: components["schemas"]["TaskAttachmentResponseDto"][];
             /** @example column-uuid */
             columnId: string;
             /** @example 2026-05-05T12:00:00.000Z */
@@ -1509,6 +1661,10 @@ export interface components {
             /** @example 2026-05-05T12:00:00.000Z */
             completedAt?: string;
             assigneeName?: string;
+            /** @example 240 */
+            estimateMinutes?: number | null;
+            /** @example 5 */
+            storyPoints?: number | null;
             /** @example team-uuid */
             teamId?: string | null;
             /** @example column-uuid */
@@ -1538,6 +1694,10 @@ export interface components {
             /** @example 2026-05-05T12:00:00.000Z */
             completedAt?: string;
             assigneeName?: string;
+            /** @example 240 */
+            estimateMinutes?: number | null;
+            /** @example 5 */
+            storyPoints?: number | null;
             /** @example team-uuid */
             teamId?: string | null;
             /** @example column-uuid */
@@ -1553,6 +1713,38 @@ export interface components {
         ReorderTasksDto: {
             /** @description Массив тасок в новой последовательности */
             taskIds: string[];
+        };
+        CreateTaskChecklistItemDto: {
+            /** @example Prepare acceptance criteria */
+            title: string;
+            /** @example false */
+            isDone?: boolean;
+            /** @example 0 */
+            order?: number;
+            /** @example user-uuid */
+            assigneeId?: string | null;
+        };
+        ReorderTaskChecklistItemsDto: {
+            /**
+             * @example [
+             *       "checklist-item-uuid"
+             *     ]
+             */
+            itemIds: unknown[][];
+        };
+        UpdateTaskChecklistItemDto: {
+            /** @example Prepare acceptance criteria */
+            title?: string;
+            /** @example false */
+            isDone?: boolean;
+            /** @example 0 */
+            order?: number;
+            /** @example user-uuid */
+            assigneeId?: string | null;
+        };
+        UploadTaskAttachmentDto: {
+            /** Format: binary */
+            file: string;
         };
         AnalyticsItemDto: {
             /** @example 2026-05-05 */
@@ -2764,6 +2956,169 @@ export interface operations {
                 "application/json": components["schemas"]["ReorderTasksDto"];
             };
         };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_createChecklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskChecklistItemDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskChecklistItemResponseDto"];
+                };
+            };
+        };
+    };
+    TasksController_reorderChecklistItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderTaskChecklistItemsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskChecklistItemResponseDto"][];
+                };
+            };
+        };
+    };
+    TasksController_updateChecklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaskChecklistItemDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskChecklistItemResponseDto"];
+                };
+            };
+        };
+    };
+    TasksController_removeChecklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TasksController_uploadAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["UploadTaskAttachmentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskAttachmentResponseDto"];
+                };
+            };
+        };
+    };
+    TasksController_attachmentFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+                attachmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    TasksController_removeAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskId: string;
+                attachmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             204: {
                 headers: {

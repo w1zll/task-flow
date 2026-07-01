@@ -9,6 +9,9 @@ import {
   IsUUID,
   MaxLength,
   IsBoolean,
+  IsInt,
+  Max,
+  Min,
 } from 'class-validator';
 import { TaskPriority } from '../entities/task.entity';
 import { UserResponseDto } from '@/users/dto/user.dto';
@@ -59,6 +62,20 @@ export class CreateTaskDto {
   @IsOptional()
   @IsString()
   assigneeName?: string;
+
+  @ApiProperty({ required: false, nullable: true, example: 240 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100_000)
+  estimateMinutes?: number | null;
+
+  @ApiProperty({ required: false, nullable: true, example: 5 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(1_000)
+  storyPoints?: number | null;
 
   @ApiProperty({ required: false, nullable: true, example: 'team-uuid' })
   @IsOptional()
@@ -124,6 +141,26 @@ export class TaskResponseDto {
   @ApiProperty({ required: false, example: '2026-05-05T12:00:00.000Z' })
   completedAt?: string;
 
+  @ApiProperty({ required: false, nullable: true, example: 240 })
+  estimateMinutes?: number | null;
+
+  @ApiProperty({ required: false, nullable: true, example: 5 })
+  storyPoints?: number | null;
+
+  @ApiProperty({
+    type: () => TaskChecklistItemResponseDto,
+    isArray: true,
+    required: false,
+  })
+  checklistItems?: TaskChecklistItemResponseDto[];
+
+  @ApiProperty({
+    type: () => TaskAttachmentResponseDto,
+    isArray: true,
+    required: false,
+  })
+  attachments?: TaskAttachmentResponseDto[];
+
   @ApiProperty({ example: 'column-uuid' })
   columnId: string;
 
@@ -149,6 +186,112 @@ export class ReorderTasksDto {
   @IsArray()
   @IsUUID('4', { each: true })
   taskIds: string[];
+}
+
+export class CreateTaskChecklistItemDto {
+  @ApiProperty({ example: 'Prepare acceptance criteria' })
+  @IsString()
+  @MaxLength(500)
+  title: string;
+
+  @ApiProperty({ required: false, example: false })
+  @IsOptional()
+  @IsBoolean()
+  isDone?: boolean;
+
+  @ApiProperty({ required: false, example: 0 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  order?: number;
+
+  @ApiProperty({ required: false, nullable: true, example: 'user-uuid' })
+  @IsOptional()
+  @IsUUID()
+  assigneeId?: string | null;
+}
+
+export class UpdateTaskChecklistItemDto extends PartialType(
+  CreateTaskChecklistItemDto,
+) {}
+
+export class ReorderTaskChecklistItemsDto {
+  @ApiProperty({ example: ['checklist-item-uuid'], isArray: true })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  itemIds: string[];
+}
+
+export class TaskChecklistItemResponseDto {
+  @ApiProperty({ example: 'checklist-item-uuid' })
+  id: string;
+
+  @ApiProperty({ example: 'task-uuid' })
+  taskId: string;
+
+  @ApiProperty({ example: 'Prepare acceptance criteria' })
+  title: string;
+
+  @ApiProperty({ example: false })
+  isDone: boolean;
+
+  @ApiProperty({ example: 0 })
+  order: number;
+
+  @ApiProperty({ required: false, nullable: true, example: 'user-uuid' })
+  assigneeId?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  assigneeName?: string | null;
+
+  @ApiProperty({ type: () => UserResponseDto, required: false, nullable: true })
+  assignee?: UserResponseDto | null;
+
+  @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
+  createdAt: string;
+
+  @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
+  updatedAt: string;
+}
+
+export class UploadTaskAttachmentDto {
+  @ApiProperty({ type: 'string', format: 'binary' })
+  file: unknown;
+}
+
+export class TaskAttachmentResponseDto {
+  @ApiProperty({ example: 'attachment-uuid' })
+  id: string;
+
+  @ApiProperty({ example: 'task-uuid' })
+  taskId: string;
+
+  @ApiProperty({ example: 'brief.pdf' })
+  fileName: string;
+
+  @ApiProperty({ example: 'application/pdf' })
+  mimeType: string;
+
+  @ApiProperty({ example: 102400 })
+  size: number;
+
+  @ApiProperty({ example: '/api/tasks/task-uuid/attachments/attachment-uuid/file' })
+  url: string;
+
+  @ApiProperty({ enum: ['local', 'cloudinary', 'imagekit'] })
+  storageProvider: string;
+
+  @ApiProperty({ example: true })
+  isImage: boolean;
+
+  @ApiProperty({ example: 'user-uuid', nullable: true })
+  uploadedById: string | null;
+
+  @ApiProperty({ type: () => UserResponseDto, required: false, nullable: true })
+  uploadedBy?: UserResponseDto | null;
+
+  @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
+  createdAt: string;
 }
 
 export class AnalyticsQueryDto {

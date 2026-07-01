@@ -42,6 +42,7 @@ jest.mock('../queries/boards.queries', () => ({
   },
   queryKeys: {
     board: (id: string) => ['board', id],
+    boardActivities: (id: string) => ['boards', id, 'activities'],
     boardAnalytics: (id?: string) => ['boards', id, 'analytics'],
   },
   updateTaskInBoard: (board: any, updatedTask: any) => {
@@ -416,6 +417,56 @@ describe('useBoardSocket', () => {
   });
 
   // ─── cleanup ───────────────────────────────────────────────────────────────
+
+  it('should invalidate board on task detail activity changes', () => {
+    renderHook(() => useBoardSocket('board-1'));
+
+    const handler = mockSocket.on.mock.calls.find(
+      ([e]) => e === 'board:activity',
+    )![1];
+    handler({
+      boardId: 'board-1',
+      activity: {
+        id: 'activity-1',
+        event: 'task_updated',
+        metadata: {
+          changes: [{ field: 'attachment', from: null, to: { id: 'file-1' } }],
+        },
+      },
+    });
+
+    expect(mockSetQueryData).toHaveBeenCalledWith(
+      ['boards', 'board-1', 'activities'],
+      expect.any(Function),
+    );
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['board', 'board-1'],
+      exact: true,
+    });
+  });
+
+  it('should not invalidate board on ordinary task activity changes', () => {
+    renderHook(() => useBoardSocket('board-1'));
+
+    const handler = mockSocket.on.mock.calls.find(
+      ([e]) => e === 'board:activity',
+    )![1];
+    handler({
+      boardId: 'board-1',
+      activity: {
+        id: 'activity-1',
+        event: 'task_updated',
+        metadata: {
+          changes: [{ field: 'title', from: 'Old', to: 'New' }],
+        },
+      },
+    });
+
+    expect(mockInvalidateQueries).not.toHaveBeenCalledWith({
+      queryKey: ['board', 'board-1'],
+      exact: true,
+    });
+  });
 
   it('should ignore task events from a previously joined board', () => {
     renderHook(() => useBoardSocket('board-2'));

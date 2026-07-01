@@ -16,6 +16,24 @@ import {
   updateTaskInBoard,
 } from '../queries/boards.queries';
 
+const TASK_DETAIL_ACTIVITY_FIELDS = new Set([
+  'checklist',
+  'checklistOrder',
+  'attachment',
+]);
+
+const hasTaskDetailActivityChange = (
+  metadata?: Record<string, unknown> | null,
+) => {
+  const changes = metadata?.changes;
+  if (!Array.isArray(changes)) return false;
+
+  return changes.some((change) => {
+    const field = (change as { field?: unknown }).field;
+    return typeof field === 'string' && TASK_DETAIL_ACTIVITY_FIELDS.has(field);
+  });
+};
+
 export const useBoardSocket = (boardId: string) => {
   const qc = useQueryClient();
   const isOnline = useOnlineStatus();
@@ -164,6 +182,15 @@ export const useBoardSocket = (boardId: string) => {
         (prev: BoardActivity[] | undefined) =>
           prev ? [payload.activity, ...prev] : [payload.activity],
       );
+      if (
+        payload.activity.event === 'task_updated' &&
+        hasTaskDetailActivityChange(payload.activity.metadata)
+      ) {
+        void qc.invalidateQueries({
+          queryKey: queryKeys.board(boardId),
+          exact: true,
+        });
+      }
     });
 
     socket.on(

@@ -108,6 +108,16 @@ const formatActivityField = (
       return t('activityFields.isCompleted');
     case 'completedAt':
       return t('activityFields.completedAt');
+    case 'estimateMinutes':
+      return t('activityFields.estimateMinutes');
+    case 'storyPoints':
+      return t('activityFields.storyPoints');
+    case 'checklist':
+      return t('activityFields.checklist');
+    case 'checklistOrder':
+      return t('activityFields.checklistOrder');
+    case 'attachment':
+      return t('activityFields.attachment');
     case 'order':
       return t('activityFields.order');
     case 'color':
@@ -135,9 +145,23 @@ const formatActivityValue = (
   }
 
   if (typeof value === 'object') {
-    const namedValue = value as { name?: unknown; id?: unknown };
+    const namedValue = value as {
+      name?: unknown;
+      title?: unknown;
+      fileName?: unknown;
+      id?: unknown;
+    };
     if (typeof namedValue.name === 'string' && namedValue.name.trim()) {
       return namedValue.name;
+    }
+    if (typeof namedValue.title === 'string' && namedValue.title.trim()) {
+      return namedValue.title;
+    }
+    if (
+      typeof namedValue.fileName === 'string' &&
+      namedValue.fileName.trim()
+    ) {
+      return namedValue.fileName;
     }
     if (typeof namedValue.id === 'string' && namedValue.id.trim()) {
       return namedValue.id;
