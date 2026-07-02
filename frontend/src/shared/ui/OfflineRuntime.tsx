@@ -7,7 +7,11 @@ import { warmOfflineNavigationRoutes } from '@/shared/lib/offline-navigation-cac
 import { queryKeys } from '@/shared/queries/board-query-keys';
 import { CloudOffOutlined } from '@mui/icons-material';
 import { Alert, Box } from '@mui/material';
-import { onlineManager, useQueryClient } from '@tanstack/react-query';
+import {
+  onlineManager,
+  type QueryCacheNotifyEvent,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import { useSnackbar } from 'notistack';
 import { useEffect, useRef } from 'react';
@@ -17,6 +21,23 @@ const canRegisterServiceWorker = () =>
   process.env.NODE_ENV === 'production' &&
   'serviceWorker' in navigator &&
   window.isSecureContext;
+
+const shouldWarmNavigationCacheForQueryEvent = (
+  event: QueryCacheNotifyEvent,
+) => {
+  if (event.type !== 'added' && event.type !== 'updated') return false;
+  if (event.query.state.status !== 'success') return false;
+
+  const [scope, id, childScope] = event.query.queryKey;
+
+  if (scope === 'workspaces') {
+    return typeof id === 'undefined';
+  }
+
+  if (scope !== 'boards') return false;
+
+  return typeof id === 'undefined' || typeof childScope === 'undefined';
+};
 
 const copy = {
   en: {
@@ -154,7 +175,11 @@ const OfflineRuntime = () => {
     scheduleWarmNavigationCache();
     const unsubscribe = queryClient
       .getQueryCache()
-      .subscribe(scheduleWarmNavigationCache);
+      .subscribe((event) => {
+        if (shouldWarmNavigationCacheForQueryEvent(event)) {
+          scheduleWarmNavigationCache();
+        }
+      });
 
     return () => {
       if (timer) window.clearTimeout(timer);
