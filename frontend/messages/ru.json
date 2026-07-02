@@ -471,8 +471,13 @@
       "viewer": "Наблюдатель"
     },
     "demo": {
-      "chip": "Demo workspace",
+      "chip": "Demo",
       "description": "Это демонстрационное пространство: данные можно менять и сбрасывать.",
+      "regionLabel": "Панель demo workspace",
+      "drag": "Перетащить плашку",
+      "collapse": "Свернуть плашку",
+      "expand": "Развернуть плашку",
+      "resetPosition": "Вернуть позицию по умолчанию",
       "myTasks": "Мои задачи",
       "overdue": "Просроченные",
       "reset": "Сбросить",
@@ -549,7 +554,6 @@
       "backToWhiteboards": "Назад к рисовалкам",
       "boardSectionTitle": "Рисовалки workspace",
       "boardSectionDescription": "Откройте связанные холсты или прикрепите общую рисовалку workspace.",
-      "boardSectionEmpty": "К этой доске пока не прикреплены рисовалки.",
       "openLinkedWhiteboards": "Открыть список",
       "linkedDrawerTitle": "Прикрепленные рисовалки",
       "linkedCount": "Прикреплено: {count}"
