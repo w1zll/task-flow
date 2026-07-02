@@ -1039,6 +1039,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspaces/{workspaceId}/whiteboards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List workspace whiteboards */
+        get: operations["WhiteboardsController_list"];
+        put?: never;
+        /** Create a workspace whiteboard */
+        post: operations["WhiteboardsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/whiteboards/{whiteboardId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a whiteboard */
+        get: operations["WhiteboardsController_findOne"];
+        put?: never;
+        post?: never;
+        /** Delete a whiteboard */
+        delete: operations["WhiteboardsController_remove"];
+        options?: never;
+        head?: never;
+        /** Update a whiteboard */
+        patch: operations["WhiteboardsController_update"];
+        trace?: never;
+    };
+    "/api/workspaces/{workspaceId}/whiteboards/{whiteboardId}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get whiteboard snapshot and operation tail */
+        get: operations["WhiteboardsController_state"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/columns": {
         parameters: {
             query?: never;
@@ -1815,6 +1869,112 @@ export interface components {
             workspaceId: string;
             /** @example board-uuid */
             boardId: string;
+        };
+        WhiteboardCapabilitiesResponseDto: {
+            canReadWhiteboard: boolean;
+            canDrawWhiteboard: boolean;
+            canManageWhiteboard: boolean;
+        };
+        WhiteboardResponseDto: {
+            /** @example whiteboard-uuid */
+            id: string;
+            /** @example Sprint planning canvas */
+            title: string;
+            description: string | null;
+            /** @example #3b82f6 */
+            color: string;
+            /** @example draw */
+            icon: string;
+            /** @example workspace-uuid */
+            workspaceId: string;
+            /** @example board-uuid */
+            boardId: string | null;
+            /** @example user-uuid */
+            createdById: string | null;
+            /** @example 42 */
+            lastSequence: number;
+            /** @example editor */
+            currentUserRole: string;
+            capabilities: components["schemas"]["WhiteboardCapabilitiesResponseDto"];
+            /** @example 2026-07-02T12:00:00.000Z */
+            createdAt: string;
+            /** @example 2026-07-02T12:00:00.000Z */
+            updatedAt: string;
+        };
+        CreateWhiteboardDto: {
+            /** @example Sprint planning canvas */
+            title: string;
+            /** @example Sketches and notes for sprint 12 */
+            description?: string;
+            /** @example #3b82f6 */
+            color?: string;
+            /** @example draw */
+            icon?: string;
+            /** @example board-uuid */
+            boardId?: string;
+        };
+        WhiteboardSnapshotResponseDto: {
+            /** @example snapshot-uuid */
+            id: string;
+            /** @example whiteboard-uuid */
+            whiteboardId: string;
+            /** @example 50 */
+            sequence: number;
+            /**
+             * @example {
+             *       "operations": []
+             *     }
+             */
+            data: Record<string, never>;
+            /** @example 2026-07-02T12:00:00.000Z */
+            createdAt: string;
+        };
+        WhiteboardOperationResponseDto: {
+            /** @example operation-uuid */
+            id: string;
+            /** @example whiteboard-uuid */
+            whiteboardId: string;
+            /** @example 42 */
+            sequence: number;
+            /** @example user-uuid */
+            userId: string;
+            /** @example client-generated-operation-id */
+            idempotencyKey: string;
+            /** @enum {string} */
+            type: "stroke" | "shape" | "text" | "move" | "undo" | "redo" | "clear";
+            /**
+             * @example {
+             *       "tool": "pen",
+             *       "points": [
+             *         {
+             *           "x": 10,
+             *           "y": 12
+             *         }
+             *       ]
+             *     }
+             */
+            data: Record<string, never>;
+            /** @example 2026-07-02T12:00:00.000Z */
+            createdAt: string;
+        };
+        WhiteboardStateResponseDto: {
+            whiteboard: components["schemas"]["WhiteboardResponseDto"];
+            snapshot: components["schemas"]["WhiteboardSnapshotResponseDto"] | null;
+            operations: components["schemas"]["WhiteboardOperationResponseDto"][];
+            /** @example 72 */
+            latestSequence: number;
+        };
+        UpdateWhiteboardDto: {
+            /** @example Sprint planning canvas */
+            title?: string;
+            /** @example Sketches and notes for sprint 12 */
+            description?: string;
+            /** @example #3b82f6 */
+            color?: string;
+            /** @example draw */
+            icon?: string;
+            /** @example board-uuid */
+            boardId?: string;
         };
         CreateColumnDto: {
             /** @example To Do */
@@ -3501,6 +3661,146 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DemoWorkspaceSessionDto"];
+                };
+            };
+        };
+    };
+    WhiteboardsController_list: {
+        parameters: {
+            query?: {
+                boardId?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhiteboardResponseDto"][];
+                };
+            };
+        };
+    };
+    WhiteboardsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWhiteboardDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhiteboardResponseDto"];
+                };
+            };
+        };
+    };
+    WhiteboardsController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                whiteboardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhiteboardResponseDto"];
+                };
+            };
+        };
+    };
+    WhiteboardsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                whiteboardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    WhiteboardsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: string;
+                whiteboardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWhiteboardDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhiteboardResponseDto"];
+                };
+            };
+        };
+    };
+    WhiteboardsController_state: {
+        parameters: {
+            query?: {
+                afterSequence?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: string;
+                whiteboardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhiteboardStateResponseDto"];
                 };
             };
         };

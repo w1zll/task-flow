@@ -264,10 +264,13 @@ const BoardFiltersForm = ({
           label={t('unread')}
           sx={{
             alignSelf: 'center',
-            minWidth: 0,
+            gridColumn: { md: 'span 2' },
+            justifySelf: 'start',
+            minWidth: { md: 210 },
             '& .MuiFormControlLabel-label': {
               fontSize: 14,
-              overflowWrap: 'anywhere',
+              overflowWrap: 'normal',
+              whiteSpace: { md: 'nowrap' },
             },
           }}
         />

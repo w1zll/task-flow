@@ -62,6 +62,7 @@ const WorkspaceSidebar = ({
     myTasks: t('nav.myTasks'),
     teams: t('nav.teams'),
     boards: t('nav.boards'),
+    whiteboards: t('nav.whiteboards'),
     settings: t('nav.settings'),
   };
   const boardRoleLabels = {
