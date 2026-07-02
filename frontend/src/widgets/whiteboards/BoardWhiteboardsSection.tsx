@@ -156,11 +156,6 @@ const BoardWhiteboardsSection = ({ board }: Props) => {
                   sx={{ maxWidth: { xs: '100%', sm: 280 } }}
                 />
               ))}
-              {!whiteboards.isLoading && !linkedWhiteboards.length && (
-                <Typography variant="body2" color="text.secondary">
-                  {t('boardSectionEmpty')}
-                </Typography>
-              )}
             </Stack>
 
             {actions}
@@ -262,11 +257,7 @@ const BoardWhiteboardsSection = ({ board }: Props) => {
                 </ListItemButton>
               ))}
             </List>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              {t('boardSectionEmpty')}
-            </Typography>
-          )}
+          ) : null}
         </Stack>
       </Drawer>
 
