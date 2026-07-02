@@ -27,6 +27,19 @@ type WhiteboardAckResponse = {
 type WhiteboardAck = (response: WhiteboardAckResponse) => void;
 
 const roomName = (whiteboardId: string) => `whiteboard-${whiteboardId}`;
+const joinedWhiteboardRoomsKey = 'whiteboardRooms';
+
+const getJoinedWhiteboardRooms = (client: Socket) => {
+  const existing = client.data[joinedWhiteboardRoomsKey];
+  if (existing instanceof Set) return existing as Set<string>;
+
+  const rooms = new Set<string>();
+  client.data[joinedWhiteboardRoomsKey] = rooms;
+  return rooms;
+};
+
+const isFiniteCursorPoint = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
 
 @WebSocketGateway({
   cors: {
@@ -62,7 +75,9 @@ export class WhiteboardsGateway
       payload.whiteboardId,
       userId,
     );
-    await client.join(roomName(payload.whiteboardId));
+    const room = roomName(payload.whiteboardId);
+    await client.join(room);
+    getJoinedWhiteboardRooms(client).add(payload.whiteboardId);
     client.emit('whiteboard:joined', {
       whiteboardId: payload.whiteboardId,
       workspaceId: whiteboard.workspaceId,
@@ -76,6 +91,7 @@ export class WhiteboardsGateway
     @MessageBody() payload: { whiteboardId: string },
   ) {
     await client.leave(roomName(payload.whiteboardId));
+    getJoinedWhiteboardRooms(client).delete(payload.whiteboardId);
   }
 
   @UseGuards(WsJwtGuard)
@@ -143,10 +159,11 @@ export class WhiteboardsGateway
     },
   ) {
     const userId = (client as any).user.sub;
-    await this.whiteboardsService.assertCanReadById(
-      payload.whiteboardId,
-      userId,
-    );
+    if (!getJoinedWhiteboardRooms(client).has(payload.whiteboardId)) return;
+    if (!isFiniteCursorPoint(payload.x) || !isFiniteCursorPoint(payload.y)) {
+      return;
+    }
+
     client.to(roomName(payload.whiteboardId)).emit('whiteboard:cursor', {
       ...payload,
       userId,

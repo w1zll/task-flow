@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -42,10 +43,12 @@ export interface WhiteboardState {
   latestSequence: number;
 }
 
-const SNAPSHOT_INTERVAL = 50;
+const SNAPSHOT_INTERVAL = 200;
 
 @Injectable()
 export class WhiteboardsService {
+  private readonly logger = new Logger(WhiteboardsService.name);
+
   constructor(
     @InjectRepository(Whiteboard)
     private readonly whiteboardRepo: Repository<Whiteboard>,
@@ -269,7 +272,16 @@ export class WhiteboardsService {
     });
 
     if (operation.sequence % SNAPSHOT_INTERVAL === 0) {
-      await this.createSnapshot(operation.whiteboardId, operation.sequence, userId);
+      void this.createSnapshot(
+        operation.whiteboardId,
+        operation.sequence,
+        userId,
+      ).catch((error: unknown) => {
+        this.logger.error(
+          `Failed to create whiteboard snapshot ${operation.whiteboardId}:${operation.sequence}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+      });
     }
 
     return operation;
