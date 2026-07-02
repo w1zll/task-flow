@@ -3,6 +3,7 @@
 import type { Board, BoardColumn } from '@/shared/api/api';
 import { isBoardPermissionError } from '@/shared/lib/boardSocketMutations';
 import { queryKeys } from '@/shared/queries/board-query-keys';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import {
   useCreateTask,
   useDeleteColumn,
@@ -57,12 +58,14 @@ const KanbanColumn = ({
   const createTask = useCreateTask();
   const deleteColumn = useDeleteColumn();
   const updateColumn = useUpdateColumn();
+  const isOffline = useIsOffline();
 
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(column.title);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const canEditBoardContent = board.capabilities.canEditBoardContent;
+  const canCreateTasks = canEditBoardContent && !isOffline;
   const canManageColumns = board.capabilities.canManageColumns;
   const isAddingTask = addingTaskInColumnId === column.id;
 
@@ -89,7 +92,7 @@ const KanbanColumn = ({
   };
 
   const handleAddTask = () => {
-    if (!canEditBoardContent) return;
+    if (!canCreateTasks) return;
     const title = newTaskTitle.trim();
     if (!title) return;
 
@@ -179,7 +182,7 @@ const KanbanColumn = ({
 
           <AddTaskComposer
             isAddingTask={isAddingTask}
-            canEditBoardContent={canEditBoardContent}
+            canEditBoardContent={canCreateTasks}
             newTaskTitle={newTaskTitle}
             isCreating={createTask.isPending}
             onTitleChange={setNewTaskTitle}

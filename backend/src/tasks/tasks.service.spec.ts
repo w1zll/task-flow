@@ -11,7 +11,7 @@ import { TaskChecklistItem } from './entities/task-checklist-item.entity';
 import { TasksService } from './tasks.service';
 import { FrontendCacheService } from '@/common/frontend-cache/frontend-cache.service';
 import { BoardPermissionsService } from '@/boards/board-permissions.service';
-import { ForbiddenException } from '@nestjs/common';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
 import { Team } from '@/teams/entities/team.entity';
 import { BoardActivityEventsService } from '@/boards/board-activity-events.service';
@@ -109,10 +109,12 @@ describe('TasksService', () => {
     };
     taskRepo = {
       findOne: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
       count: jest.fn().mockResolvedValue(1),
       create: jest.fn((data) => data as Task),
       createQueryBuilder: jest.fn(() => mockQueryBuilder as any),
       save: jest.fn(async (task: Task) => task),
+      update: jest.fn().mockResolvedValue({}),
     };
     checklistRepo = {
       findOne: jest.fn(),
@@ -571,6 +573,58 @@ describe('TasksService', () => {
         order: 2,
       }),
     );
+  });
+
+  it('rejects a stale queued move when the task source column changed', async () => {
+    taskRepo.findOne.mockResolvedValue(
+      createTask({
+        columnId: 'column-2',
+        column: {
+          id: 'column-2',
+          boardId: 'board-1',
+          board: {
+            id: 'board-1',
+            ownerId: userId,
+            workspaceId: 'workspace-1',
+            members: [],
+          },
+        } as Column,
+      }),
+    );
+
+    await expect(
+      service.move(
+        'task-1',
+        { columnId: 'column-3', order: 0 },
+        userId,
+        'board-1',
+        'column-1',
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(columnRepo.findOne).not.toHaveBeenCalled();
+    expect(taskRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects stale queued reorder when the column task list changed', async () => {
+    columnRepo.findOne!.mockResolvedValue({
+      id: 'column-1',
+      title: 'Todo',
+      boardId: 'board-1',
+    } as Column);
+    taskRepo.find!.mockResolvedValue([createTask()]);
+
+    await expect(
+      service.reorder(
+        { taskIds: ['task-1', 'task-2'] },
+        'column-1',
+        userId,
+        'board-1',
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(taskRepo.update).not.toHaveBeenCalled();
+    expect(boardActivityEvents.logTaskReordered).not.toHaveBeenCalled();
   });
 
   it('returns daily analytics with access and board/date filters', async () => {

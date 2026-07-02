@@ -2,6 +2,7 @@
 
 import type { Board } from '@/shared/api/api';
 import { useBoardSocket } from '@/shared/hooks/useBoardSocket';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import { isBoardPermissionError } from '@/shared/lib/boardSocketMutations';
 import { queryKeys } from '@/shared/queries/board-query-keys';
 import { useCreateTask } from '@/shared/queries/boards.queries';
@@ -41,6 +42,7 @@ const MobileKanbanBoard = ({
   const { enqueueSnackbar } = useSnackbar();
   const qc = useQueryClient();
   const createTask = useCreateTask();
+  const isOffline = useIsOffline();
   const addingTaskInColumnId = useBoardUIStore(
     (state) => state.addingTaskInColumnId,
   );
@@ -51,6 +53,7 @@ const MobileKanbanBoard = ({
   const [activeColumnId, setActiveColumnId] = useState(columns[0]?.id ?? '');
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const canEditBoardContent = board.capabilities.canEditBoardContent;
+  const canCreateTasks = canEditBoardContent && !isOffline;
   const canMoveTasks = canEditBoardContent && !isReorderDisabled;
   const activeColumn =
     columns.find((column) => column.id === activeColumnId) ?? columns[0];
@@ -88,7 +91,7 @@ const MobileKanbanBoard = ({
   }, [columns, highlightedTaskId]);
 
   const handleAddTask = () => {
-    if (!activeColumn || !canEditBoardContent) return;
+    if (!activeColumn || !canCreateTasks) return;
 
     const title = newTaskTitle.trim();
     if (!title) return;
@@ -229,7 +232,7 @@ const MobileKanbanBoard = ({
           overflowY: 'auto',
           px: 2,
           py: 2,
-          pb: canEditBoardContent ? 10 : 2,
+          pb: canCreateTasks ? 10 : 2,
         }}
       >
         {isReorderDisabled && canEditBoardContent && (
@@ -285,7 +288,7 @@ const MobileKanbanBoard = ({
             {isAddingTask && (
               <AddTaskComposer
                 isAddingTask={isAddingTask}
-                canEditBoardContent={canEditBoardContent}
+                canEditBoardContent={canCreateTasks}
                 newTaskTitle={newTaskTitle}
                 isCreating={createTask.isPending}
                 onTitleChange={setNewTaskTitle}
@@ -298,7 +301,7 @@ const MobileKanbanBoard = ({
         </Paper>
       </Box>
 
-      {canEditBoardContent && activeColumn && (
+      {canCreateTasks && activeColumn && (
         <Paper
           elevation={8}
           sx={{

@@ -139,6 +139,7 @@ const TaskDetailModal = ({ board, onClose }: Props) => {
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const syncedTaskIdRef = useRef<string | null>(null);
   const canEdit = board.capabilities.canEditBoardContent;
+  const canUseOnlineTaskDetails = canEdit && isOnline;
   const teams = useWorkspaceTeams(board.workspaceId, !!boardUI.openTaskId);
   const isDirty = useMemo(() => isTaskDraftChanged(task, form), [form, task]);
   const handleClose = onClose ?? boardUI.closeTask;
@@ -283,7 +284,7 @@ const TaskDetailModal = ({ board, onClose }: Props) => {
   };
 
   const handleDelete = () => {
-    if (!task || !canEdit) return;
+    if (!task || !canUseOnlineTaskDetails) return;
     deleteTask.mutate(
       { id: task.id, boardId: board.id },
       {
@@ -423,19 +424,19 @@ const TaskDetailModal = ({ board, onClose }: Props) => {
         <TaskChecklistSection
           task={task}
           board={board}
-          canEdit={canEdit}
+          canEdit={canUseOnlineTaskDetails}
         />
 
         <TaskAttachmentsSection
           task={task}
           boardId={board.id}
-          canEdit={canEdit}
+          canEdit={canUseOnlineTaskDetails}
         />
 
         <TaskCommentsSection
           taskId={task.id}
           board={board}
-          canEdit={canEdit}
+          canEdit={canUseOnlineTaskDetails}
         />
 
         <TaskTimestamps task={task} dayjsLocale={dayjsLocale} />
@@ -445,6 +446,7 @@ const TaskDetailModal = ({ board, onClose }: Props) => {
 
       <TaskDetailActions
         canEdit={canEdit}
+        canDelete={canUseOnlineTaskDetails}
         isDirty={isDirty}
         isUpdating={isUpdating}
         onClose={handleClose}

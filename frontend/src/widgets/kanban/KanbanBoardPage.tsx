@@ -121,7 +121,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const roleCanManageColumns = board?.capabilities.canManageColumns ?? false;
   const roleCanManageBoardMembers =
     board?.capabilities.canManageBoardMembers ?? false;
-  const canEditBoardContent = roleCanEditBoardContent && !isOffline;
+  const canEditBoardContent = roleCanEditBoardContent;
   const canManageColumns = roleCanManageColumns && !isOffline;
   const canManageBoardMembers = roleCanManageBoardMembers && !isOffline;
   const effectiveBoard = useMemo(
