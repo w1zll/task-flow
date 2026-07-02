@@ -160,6 +160,7 @@ const TaskCard = ({
           taskId: task.id,
           columnId,
           order: targetTaskCount,
+          sourceColumnId: currentColumnId ?? task.columnId,
         },
         { boardId },
       );

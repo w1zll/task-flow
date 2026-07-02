@@ -5,15 +5,19 @@ import {
   isSocketReady,
 } from './socket';
 import {
+  BoardSocketAckErrorCode,
   BoardSocketEvent,
+  PENDING_BOARD_MUTATION_TTL_MS,
   PendingBoardMutation,
   usePendingBoardMutationsStore,
 } from '../store/pending-board-mutations.store';
-import { OfflineReadOnlyError, isBrowserOffline } from './offline';
+import { isBrowserOffline } from './offline';
 
 type SocketAckResponse = {
   ok: boolean;
+  code?: BoardSocketAckErrorCode;
   message?: string;
+  retryable?: boolean;
 };
 
 type EmitBoardSocketMutationOptions = {
@@ -30,15 +34,39 @@ export class BoardSocketMutationQueuedError extends Error {
   }
 }
 
-class BoardSocketAckError extends Error {
-  constructor(message: string) {
-    super(message);
+export class BoardSocketAckError extends Error {
+  readonly code: BoardSocketAckErrorCode;
+  readonly retryable: boolean;
+
+  constructor(response: SocketAckResponse) {
+    super(response.message ?? 'Socket operation failed');
     this.name = 'BoardSocketAckError';
+    this.code = response.code ?? 'unknown';
+    this.retryable = response.retryable ?? true;
   }
 }
 
 const createMutationId = () =>
   `mutation-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+const withIdempotencyKey = (payload: unknown, idempotencyKey: string) => {
+  if (
+    typeof payload === 'object' &&
+    payload !== null &&
+    !Array.isArray(payload)
+  ) {
+    const currentKey = (payload as { idempotencyKey?: unknown }).idempotencyKey;
+    return {
+      ...payload,
+      idempotencyKey:
+        typeof currentKey === 'string' && currentKey.trim()
+          ? currentKey
+          : idempotencyKey,
+    };
+  }
+
+  return { value: payload, idempotencyKey };
+};
 
 const discardBufferedSocketWrites = (socket: Socket) => {
   const bufferedSocket = socket as Socket & {
@@ -47,19 +75,26 @@ const discardBufferedSocketWrites = (socket: Socket) => {
   bufferedSocket.sendBuffer = [];
 };
 
-const queueMutation = (
+const createPendingMutation = (
   event: BoardSocketEvent,
   payload: unknown,
   boardId: string,
 ) => {
-  const mutation: PendingBoardMutation = {
-    id: createMutationId(),
+  const id = createMutationId();
+  const createdAt = Date.now();
+
+  return {
+    id,
     boardId,
     event,
-    payload,
-    createdAt: Date.now(),
-  };
+    payload: withIdempotencyKey(payload, id),
+    createdAt,
+    expiresAt: createdAt + PENDING_BOARD_MUTATION_TTL_MS,
+    status: 'pending',
+  } satisfies PendingBoardMutation;
+};
 
+const queueMutation = (mutation: PendingBoardMutation) => {
   usePendingBoardMutationsStore.getState().enqueue(mutation);
   return mutation;
 };
@@ -85,11 +120,7 @@ const emitLiveBoardSocketMutation = async (
         }
 
         if (!response?.ok) {
-          reject(
-            new BoardSocketAckError(
-              response?.message ?? 'Socket operation failed',
-            ),
-          );
+          reject(new BoardSocketAckError(response ?? { ok: false }));
           return;
         }
 
@@ -104,20 +135,23 @@ export const emitBoardSocketMutation = async (
   payload: unknown,
   { boardId, queueOnFailure = true }: EmitBoardSocketMutationOptions,
 ) => {
+  const mutation = createPendingMutation(event, payload, boardId);
+
   if (isBrowserOffline()) {
-    throw new OfflineReadOnlyError();
+    queueMutation(mutation);
+    throw new BoardSocketMutationQueuedError(mutation);
   }
 
   const socket = getSocket();
 
   try {
-    await emitLiveBoardSocketMutation(event, payload);
+    await emitLiveBoardSocketMutation(event, mutation.payload);
   } catch (error) {
     if (error instanceof BoardSocketAckError) throw error;
     if (!queueOnFailure || isSocketReady(socket)) throw error;
 
     discardBufferedSocketWrites(socket);
-    const mutation = queueMutation(event, payload, boardId);
+    queueMutation(mutation);
     throw new BoardSocketMutationQueuedError(mutation);
   }
 };
@@ -141,7 +175,25 @@ export const isBoardSocketMutationQueuedError = (
 ): error is BoardSocketMutationQueuedError =>
   error instanceof BoardSocketMutationQueuedError;
 
+export const isBoardSocketAckError = (
+  error: unknown,
+): error is BoardSocketAckError =>
+  error instanceof BoardSocketAckError ||
+  (error as { name?: string } | null)?.name === 'BoardSocketAckError';
+
+export const getBoardSocketAckErrorCode = (
+  error: unknown,
+): BoardSocketAckErrorCode | undefined =>
+  isBoardSocketAckError(error) ? error.code : undefined;
+
+export const isBoardSocketConflictError = (error: unknown) =>
+  isBoardSocketAckError(error) && !error.retryable;
+
 export const isBoardPermissionError = (error: unknown) => {
+  if (getBoardSocketAckErrorCode(error) === 'permission_changed') {
+    return true;
+  }
+
   const status = (error as { response?: { status?: number } })?.response?.status;
   const message =
     error instanceof Error

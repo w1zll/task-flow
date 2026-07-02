@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { TasksService } from '@/tasks/tasks.service';
 import { BoardGateway } from './boards.gateway';
@@ -10,6 +10,9 @@ describe('BoardGateway', () => {
   let tasksService: jest.Mocked<
     Pick<TasksService, 'update' | 'move' | 'reorder'>
   >;
+  let boardActivityPublisher: { setServer: jest.Mock };
+  let notificationsService: { countUnread: jest.Mock };
+  let notificationsPublisher: { setServer: jest.Mock };
   let roomEmit: jest.Mock;
   let serverTo: jest.Mock;
   let consoleErrorSpy: jest.SpyInstance;
@@ -27,9 +30,15 @@ describe('BoardGateway', () => {
       move: jest.fn(),
       reorder: jest.fn(),
     };
+    boardActivityPublisher = { setServer: jest.fn() };
+    notificationsService = { countUnread: jest.fn().mockResolvedValue(0) };
+    notificationsPublisher = { setServer: jest.fn() };
     gateway = new BoardGateway(
       boardsService as unknown as BoardsService,
       tasksService as unknown as TasksService,
+      boardActivityPublisher as never,
+      notificationsService as never,
+      notificationsPublisher as never,
     );
     roomEmit = jest.fn();
     serverTo = jest.fn(() => ({ emit: roomEmit }));
@@ -113,7 +122,9 @@ describe('BoardGateway', () => {
     expect(serverTo).not.toHaveBeenCalled();
     expect(ack).toHaveBeenCalledWith({
       ok: false,
+      code: 'permission_changed',
       message: 'You do not have permission to edit this board',
+      retryable: false,
     });
   });
 
@@ -141,5 +152,61 @@ describe('BoardGateway', () => {
       task,
     });
     expect(ack).toHaveBeenCalledWith({ ok: true });
+  });
+
+  it('does not replay a duplicate idempotent task update', async () => {
+    const task = {
+      id: 'task-1',
+      column: { boardId: 'board-1' },
+    };
+    tasksService.update.mockResolvedValue(task as never);
+    const firstAck = jest.fn();
+    const secondAck = jest.fn();
+    const payload = {
+      boardId: 'board-1',
+      taskId: 'task-1',
+      changes: { title: 'Updated' },
+      idempotencyKey: 'mutation-1',
+    };
+
+    await gateway.handleTaskUpdate(client as unknown as Socket, payload, firstAck);
+    await gateway.handleTaskUpdate(
+      client as unknown as Socket,
+      payload,
+      secondAck,
+    );
+
+    expect(tasksService.update).toHaveBeenCalledTimes(1);
+    expect(serverTo).toHaveBeenCalledTimes(1);
+    expect(firstAck).toHaveBeenCalledWith({ ok: true });
+    expect(secondAck).toHaveBeenCalledWith({ ok: true });
+  });
+
+  it('acks stale task moves as non-retryable conflicts', async () => {
+    tasksService.move.mockRejectedValue(
+      new ConflictException('Task was moved by another user'),
+    );
+    const ack = jest.fn();
+
+    await gateway.handleTaskMove(
+      client as unknown as Socket,
+      {
+        boardId: 'board-1',
+        taskId: 'task-1',
+        columnId: 'column-2',
+        sourceColumnId: 'column-1',
+        order: 0,
+        idempotencyKey: 'mutation-2',
+      },
+      ack,
+    );
+
+    expect(serverTo).not.toHaveBeenCalled();
+    expect(ack).toHaveBeenCalledWith({
+      ok: false,
+      code: 'task_already_moved',
+      message: 'Task was moved by another user',
+      retryable: false,
+    });
   });
 });

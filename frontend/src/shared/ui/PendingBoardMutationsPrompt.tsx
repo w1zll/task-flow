@@ -2,48 +2,79 @@
 
 import {
   applyPendingBoardMutation,
+  getBoardSocketAckErrorCode,
   isBoardPermissionError,
+  isBoardSocketConflictError,
 } from '@/shared/lib/boardSocketMutations';
 import { Board, boardsApi } from '@/shared/api/api';
 import { getSocket, isSocketReady } from '@/shared/lib/socket';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
+import { describePendingBoardMutation } from '@/shared/lib/pending-board-mutation-descriptions';
 import { queryKeys } from '@/shared/queries/boards.queries';
 import { usePendingBoardMutationsStore } from '@/shared/store/root.store';
 import {
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  List,
+  ListItem,
+  ListItemText,
+  Stack,
   Typography,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
+import type { BoardSocketAckErrorCode } from '@/shared/store/pending-board-mutations.store';
 import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 
+const getConflictCode = (error: unknown): BoardSocketAckErrorCode =>
+  getBoardSocketAckErrorCode(error) ??
+  (isBoardPermissionError(error) ? 'permission_changed' : 'unknown');
+
 const PendingBoardMutationsPrompt = () => {
   const t = useTranslations('PendingChanges');
+  const describeT = (key: string, values?: Record<string, unknown>) =>
+    t(key as never, values as never);
   const mutations = usePendingBoardMutationsStore((state) => state.mutations);
   const remove = usePendingBoardMutationsStore((state) => state.remove);
   const clear = usePendingBoardMutationsStore((state) => state.clear);
+  const markConflict = usePendingBoardMutationsStore(
+    (state) => state.markConflict,
+  );
+  const pruneExpired = usePendingBoardMutationsStore(
+    (state) => state.pruneExpired,
+  );
   const isOnline = useOnlineStatus();
   const [isSocketAvailable, setIsSocketAvailable] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
-  const canApplyPendingChanges =
+  const pendingMutations = mutations.filter(
+    (mutation) => mutation.status === 'pending',
+  );
+  const isDialogOpen =
     isSocketAvailable && mutations.length > 0 && isSocketReady();
+  const canApplyPendingChanges =
+    isDialogOpen && pendingMutations.length > 0;
   const readOnlyMutationCount = mutations.filter(
     (mutation) =>
+      mutation.lastErrorCode === 'permission_changed' ||
       qc.getQueryData<Board>(queryKeys.board(mutation.boardId))?.capabilities
         .canEditBoardContent === false,
   ).length;
   const allMutationsAreReadOnly =
     mutations.length > 0 && readOnlyMutationCount === mutations.length;
 
-  useStableBodyScrollLock(canApplyPendingChanges);
+  useStableBodyScrollLock(isDialogOpen);
+
+  useEffect(() => {
+    pruneExpired();
+  }, [pruneExpired]);
 
   useEffect(() => {
     if (!isOnline) {
@@ -86,8 +117,9 @@ const PendingBoardMutationsPrompt = () => {
     setIsApplying(true);
     let appliedCount = 0;
     let deniedCount = 0;
+    let conflictHandledCount = 0;
 
-    for (const mutation of mutations) {
+    for (const mutation of pendingMutations) {
       try {
         const board =
           qc.getQueryData<Board>(queryKeys.board(mutation.boardId)) ??
@@ -98,7 +130,10 @@ const PendingBoardMutationsPrompt = () => {
             staleTime: 0,
           }));
         if (!board?.capabilities.canEditBoardContent) {
-          remove(mutation.id);
+          markConflict(mutation.id, {
+            code: 'permission_changed',
+            message: t('conflict.permission_changed'),
+          });
           deniedCount += 1;
           invalidateBoards([mutation.boardId]);
           continue;
@@ -109,9 +144,20 @@ const PendingBoardMutationsPrompt = () => {
         appliedCount += 1;
         invalidateBoards([mutation.boardId]);
       } catch (error) {
-        if (isBoardPermissionError(error)) {
-          remove(mutation.id);
-          deniedCount += 1;
+        if (isBoardPermissionError(error) || isBoardSocketConflictError(error)) {
+          const code = getConflictCode(error);
+          markConflict(mutation.id, {
+            code,
+            message:
+              error instanceof Error
+                ? error.message
+                : t(`conflict.${code}`),
+          });
+          if (code === 'permission_changed') {
+            deniedCount += 1;
+          } else {
+            conflictHandledCount += 1;
+          }
           invalidateBoards([mutation.boardId]);
           continue;
         }
@@ -127,6 +173,9 @@ const PendingBoardMutationsPrompt = () => {
     if (deniedCount > 0) {
       enqueueSnackbar(t('permissionChanged'), { variant: 'warning' });
     }
+    if (conflictHandledCount > 0) {
+      enqueueSnackbar(t('conflictsDetected'), { variant: 'warning' });
+    }
     setIsApplying(false);
   };
 
@@ -141,8 +190,8 @@ const PendingBoardMutationsPrompt = () => {
 
   return (
     <Dialog
-      open={canApplyPendingChanges}
-      maxWidth="xs"
+      open={isDialogOpen}
+      maxWidth="sm"
       fullWidth
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
@@ -152,16 +201,111 @@ const PendingBoardMutationsPrompt = () => {
       <DialogContent>
         <Typography id={descriptionId} variant="body2" color="text.secondary">
           {t(
-            allMutationsAreReadOnly ? 'readOnlyDescription' : 'description',
+            allMutationsAreReadOnly
+              ? 'readOnlyDescription'
+              : pendingMutations.length === 0
+                ? 'conflictOnlyDescription'
+                : 'description',
             { count: mutations.length },
           )}
         </Typography>
+        <List
+          dense
+          aria-label={t('listLabel')}
+          sx={{
+            mt: 2,
+            maxHeight: 260,
+            overflowY: 'auto',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '6px',
+          }}
+        >
+          {mutations.map((mutation) => {
+            const isConflict = mutation.status === 'conflict';
+            const conflictKey = mutation.lastErrorCode ?? 'unknown';
+            const board = qc.getQueryData<Board>(
+              queryKeys.board(mutation.boardId),
+            );
+            const description = describePendingBoardMutation(
+              mutation,
+              board,
+              describeT,
+            );
+
+            return (
+              <ListItem
+                key={mutation.id}
+                divider
+                sx={{ alignItems: 'flex-start', px: 1.5, py: 1 }}
+              >
+                <ListItemText
+                  primary={
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        minWidth: 0,
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}
+                      >
+                        {description.title}
+                      </Typography>
+                      <Chip
+                        size="small"
+                        color={isConflict ? 'warning' : 'default'}
+                        label={t(isConflict ? 'status.conflict' : 'status.pending')}
+                      />
+                    </Stack>
+                  }
+                  secondary={
+                    <Stack
+                      component="span"
+                      spacing={0.4}
+                      sx={{ mt: 0.5, color: 'text.secondary' }}
+                    >
+                      {description.lines.map((line) => (
+                        <Typography
+                          key={line}
+                          component="span"
+                          variant="caption"
+                          sx={{ color: 'text.primary' }}
+                        >
+                          {line}
+                        </Typography>
+                      ))}
+                      <Typography component="span" variant="caption">
+                        {t('item.createdAt', {
+                          time: new Date(mutation.createdAt).toLocaleString(),
+                        })}
+                      </Typography>
+                      {isConflict && (
+                        <Typography
+                          component="span"
+                          variant="caption"
+                          color="warning.main"
+                        >
+                          {t(`conflict.${conflictKey}`)}
+                        </Typography>
+                      )}
+                    </Stack>
+                  }
+                />
+              </ListItem>
+            );
+          })}
+        </List>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button autoFocus onClick={handleDiscard} disabled={isApplying}>
           {t('discard')}
         </Button>
-        {!allMutationsAreReadOnly && (
+        {!allMutationsAreReadOnly && pendingMutations.length > 0 && (
           <Button
             variant="contained"
             onClick={handleApply}

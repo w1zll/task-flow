@@ -20,11 +20,13 @@ const canRegisterServiceWorker = () =>
 
 const copy = {
   en: {
-    banner: 'Offline: saved data is shown in read-only mode.',
+    banner:
+      'Offline: saved data is shown, and task edits or moves are queued.',
     reconnected: 'Connection restored. Refreshing saved data.',
   },
   ru: {
-    banner: 'Офлайн: показаны сохраненные данные в режиме просмотра.',
+    banner:
+      'Офлайн: показаны сохраненные данные, а изменения задач попадут в очередь.',
     reconnected: 'Соединение восстановлено. Обновляем сохраненные данные.',
   },
 };
