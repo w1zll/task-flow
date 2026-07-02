@@ -746,14 +746,79 @@
   },
   "PendingChanges": {
     "title": "Unsaved changes",
-    "description": "There are {count} task changes waiting for connection. Apply them now?",
+    "description": "There are {count} task changes waiting for connection. Review them before applying.",
     "readOnlyDescription": "There are {count} pending changes, but your current role is view-only. They cannot be applied.",
+    "conflictOnlyDescription": "The remaining pending changes cannot be applied. Review the reasons and discard them when ready.",
+    "listLabel": "Pending board changes",
     "apply": "Apply",
     "applying": "Applying...",
     "discard": "Discard",
     "applied": "Pending changes applied",
     "discarded": "Pending changes discarded",
     "applyError": "Failed to apply pending changes",
-    "permissionChanged": "Some pending changes were discarded because your permissions changed."
+    "permissionChanged": "Some pending changes cannot be applied because your permissions changed.",
+    "conflictsDetected": "Some pending changes need your attention before they can be discarded.",
+    "status": {
+      "pending": "Pending",
+      "conflict": "Conflict"
+    },
+    "item": {
+      "update": "Task update",
+      "move": "Task move",
+      "reorder": "Task reorder",
+      "unknown": "Board change",
+      "createdAt": "Queued: {time}"
+    },
+    "detail": {
+      "updateTask": "Update \"{task}\"",
+      "moveTask": "Move \"{task}\"",
+      "reorderColumn": "Reorder tasks in \"{column}\"",
+      "fieldChange": "{field}: \"{from}\" -> \"{to}\"",
+      "moveColumns": "Column: \"{from}\" -> \"{to}\"",
+      "moveOrder": "Target position: {order}",
+      "reorderTasks": "Order: {from} -> {to}",
+      "moreTasks": "+{count} more",
+      "noFieldChanges": "No field differences could be detected from the saved board cache."
+    },
+    "field": {
+      "title": "Title",
+      "description": "Description",
+      "priority": "Priority",
+      "labels": "Labels",
+      "dueDate": "Due date",
+      "assignee": "Assignee",
+      "team": "Team",
+      "isCompleted": "Status",
+      "completedAt": "Completed at",
+      "estimateMinutes": "Estimate",
+      "storyPoints": "Story points",
+      "unknown": "Field"
+    },
+    "value": {
+      "empty": "empty",
+      "completed": "completed",
+      "open": "open",
+      "unassigned": "unassigned",
+      "noTeam": "no team",
+      "taskFallback": "task",
+      "columnFallback": "column",
+      "minutes": "{count} min"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "conflict": {
+      "permission_changed": "Your role changed to view-only or you lost access.",
+      "task_deleted": "The task was deleted before this change could be applied.",
+      "column_deleted": "The target column was deleted before this change could be applied.",
+      "board_deleted": "The board is no longer available.",
+      "task_already_moved": "The task was already moved by someone else.",
+      "task_order_conflict": "The task order changed on the server.",
+      "validation_failed": "The server rejected this change.",
+      "unknown": "The change could not be applied."
+    }
   }
 }

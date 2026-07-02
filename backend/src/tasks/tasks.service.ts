@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -414,9 +415,13 @@ export class TasksService {
     dto: MoveTaskDto,
     userId: string,
     expectedBoardId?: string,
+    expectedSourceColumnId?: string,
   ): Promise<Task> {
     const task = await this.verifyTaskWriteAccess(id, userId);
     this.assertExpectedBoard(task.column.boardId, expectedBoardId);
+    if (expectedSourceColumnId && task.columnId !== expectedSourceColumnId) {
+      throw new ConflictException('Task was moved by another user');
+    }
     const sourceColumnId = task.columnId;
     const sourceOrder = task.order;
     const targetColumn = await this.verifyColumnWriteAccess(
@@ -520,6 +525,7 @@ export class TasksService {
   ): Promise<string> {
     const column = await this.verifyColumnWriteAccess(columnId, userId);
     this.assertExpectedBoard(column.boardId, expectedBoardId);
+    await this.assertColumnTaskOrderIsCurrent(columnId, dto.taskIds);
     const updates = dto.taskIds.map((taskId, index) =>
       this.taskRepo.update({ id: taskId, columnId }, { order: index }),
     );
@@ -531,6 +537,22 @@ export class TasksService {
       taskIds: dto.taskIds,
     });
     return column.boardId;
+  }
+
+  private async assertColumnTaskOrderIsCurrent(
+    columnId: string,
+    taskIds: string[],
+  ): Promise<void> {
+    const currentTasks = await this.taskRepo.find({
+      where: { columnId },
+      select: { id: true },
+    });
+    const currentTaskIds = new Set(currentTasks.map((task) => task.id));
+    const hasMissingTask = taskIds.some((taskId) => !currentTaskIds.has(taskId));
+
+    if (hasMissingTask || currentTasks.length !== taskIds.length) {
+      throw new ConflictException('Task order is out of date');
+    }
   }
 
   async createChecklistItem(

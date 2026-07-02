@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 
 interface TaskDetailActionsProps {
   canEdit: boolean;
+  canDelete?: boolean;
   isDirty: boolean;
   isUpdating: boolean;
   onClose: () => void;
@@ -15,6 +16,7 @@ interface TaskDetailActionsProps {
 
 const TaskDetailActions = ({
   canEdit,
+  canDelete = canEdit,
   isDirty,
   isUpdating,
   onClose,
@@ -39,6 +41,7 @@ const TaskDetailActions = ({
           color="error"
           startIcon={<Delete />}
           onClick={onDelete}
+          disabled={!canDelete}
           size="small"
         >
           {t('deleteTask')}

@@ -188,6 +188,7 @@ const KanbanBoard = ({
             taskId: draggableId,
             columnId: dstColId,
             order: destination.index,
+            sourceColumnId: srcColId,
           },
           { boardId: board.id },
         );
