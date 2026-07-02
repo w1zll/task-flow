@@ -7,7 +7,11 @@ import {
   isBoardSocketConflictError,
 } from '@/shared/lib/boardSocketMutations';
 import { Board, boardsApi } from '@/shared/api/api';
-import { getSocket, isSocketReady } from '@/shared/lib/socket';
+import {
+  ensureSocketConnected,
+  getSocket,
+  isSocketReady,
+} from '@/shared/lib/socket';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { describePendingBoardMutation } from '@/shared/lib/pending-board-mutation-descriptions';
@@ -57,10 +61,9 @@ const PendingBoardMutationsPrompt = () => {
   const pendingMutations = mutations.filter(
     (mutation) => mutation.status === 'pending',
   );
-  const isDialogOpen =
-    isSocketAvailable && mutations.length > 0 && isSocketReady();
+  const isDialogOpen = isOnline && mutations.length > 0;
   const canApplyPendingChanges =
-    isDialogOpen && pendingMutations.length > 0;
+    isDialogOpen && isSocketAvailable && pendingMutations.length > 0;
   const readOnlyMutationCount = mutations.filter(
     (mutation) =>
       mutation.lastErrorCode === 'permission_changed' ||
@@ -77,15 +80,24 @@ const PendingBoardMutationsPrompt = () => {
   }, [pruneExpired]);
 
   useEffect(() => {
-    if (!isOnline) {
+    if (!isOnline || pendingMutations.length === 0) {
       setIsSocketAvailable(false);
       return;
     }
 
     const socket = getSocket();
+    let isActive = true;
     const syncConnection = () => setIsSocketAvailable(isSocketReady(socket));
 
     syncConnection();
+    void ensureSocketConnected(socket)
+      .then(() => {
+        if (isActive) syncConnection();
+      })
+      .catch(() => {
+        if (isActive) syncConnection();
+      });
+
     socket.on('connect', syncConnection);
     socket.on('disconnect', syncConnection);
     socket.on('connect_error', syncConnection);
@@ -93,13 +105,14 @@ const PendingBoardMutationsPrompt = () => {
     window.addEventListener('offline', syncConnection);
 
     return () => {
+      isActive = false;
       socket.off('connect', syncConnection);
       socket.off('disconnect', syncConnection);
       socket.off('connect_error', syncConnection);
       window.removeEventListener('online', syncConnection);
       window.removeEventListener('offline', syncConnection);
     };
-  }, [isOnline]);
+  }, [isOnline, pendingMutations.length]);
 
   const invalidateBoards = (boardIds: string[]) => {
     boardIds.forEach((boardId) => {
