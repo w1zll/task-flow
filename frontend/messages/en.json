@@ -15,23 +15,23 @@
       "scroll": "Scroll down"
     },
     "features": {
-      "heading": "More than a board",
-      "subheading": "Manage multiple spaces, their boards, members, and tasks from one product shell.",
+      "heading": "Features that show product and architecture depth",
+      "subheading": "The strongest pieces come first: permissions, offline/realtime, security, and collaboration.",
       "workspaces": {
-        "title": "Workspaces as the home base",
-        "desc": "Each workspace keeps its boards, teams, members, invite links, and settings in one shared context."
+        "title": "Workspace shell",
+        "desc": "A workspace keeps boards, teams, members, invites, my tasks, and settings inside one product shell."
       },
       "boards": {
-        "title": "Boards inside workspaces",
-        "desc": "Create project boards inside the right workspace and switch between them without losing context."
+        "title": "Kanban boards",
+        "desc": "Columns and tasks support drag and drop, quick actions, deep-link highlighting, and persisted ordering."
       },
       "teams": {
         "title": "Teams and members",
         "desc": "Group workspace members into teams and assign tasks to the right person or discipline."
       },
       "permissions": {
-        "title": "Access control",
-        "desc": "Workspace and board roles separate owners, admins, editors, and viewers across the product."
+        "title": "Unified permissions",
+        "desc": "Workspace and board roles are enforced in REST, WebSocket, and UI while viewers stay fully read-only."
       },
       "templates": {
         "title": "Ready starting points",
@@ -42,20 +42,56 @@
         "desc": "Search tasks, filter by assignee, team, priority, and status, then save the views your team uses most."
       },
       "realtime": {
-        "title": "Realtime collaboration",
-        "desc": "Task moves and board updates sync through Socket.IO while the interface stays responsive."
+        "title": "Realtime with ack/rollback",
+        "desc": "Socket.IO syncs tasks, comments, activity, and notifications while the client waits for server ack."
       },
       "analytics": {
         "title": "Task analytics",
         "desc": "Track completed tasks by day, week, and month, including on-time and late completion summaries."
       },
       "pendingChanges": {
-        "title": "Pending changes queue",
-        "desc": "Offline task edits and moves are queued safely, then can be applied or discarded after the connection returns."
+        "title": "Persisted offline queue",
+        "desc": "Task update/move/reorder survives refresh with TTL, idempotency keys, and clear conflict states."
       },
       "auth": {
         "title": "Secure sessions",
-        "desc": "JWT lives in httpOnly cookies, refresh tokens rotate, and protected areas stay behind authenticated access."
+        "desc": "JWT lives in httpOnly cookies, refresh tokens rotate, reuse revokes sessions, and WS gets a separate token."
+      },
+      "pwa": {
+        "title": "PWA and offline cache",
+        "desc": "The Service Worker caches app shell and HTML/RSC routes while TanStack Query persists board data in IndexedDB."
+      },
+      "invites": {
+        "title": "Public invite links",
+        "desc": "Invite preview works before sign-in, the token survives login/register, and accepted invites land in the audit log."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "desc": "The notification bell tracks unread mentions, assignments, board access, and team task changes in realtime."
+      },
+      "taskDetails": {
+        "title": "Richer task details",
+        "desc": "Tasks support checklists, attachments, links, labels, estimates, story points, due dates, and assignees."
+      },
+      "comments": {
+        "title": "Comments and mentions",
+        "desc": "Task discussion syncs across open windows, mentions are scoped to board members, and create notifications."
+      },
+      "activity": {
+        "title": "Board activity log",
+        "desc": "History captures task, column, and member changes, displays old → new values, and can jump back to a task."
+      },
+      "mobile": {
+        "title": "Mobile board",
+        "desc": "Phones get a compact board flow with card actions that do not depend on the desktop drag-and-drop layout."
+      },
+      "demo": {
+        "title": "Showcase demo",
+        "desc": "One button opens a prepared demo workspace with teams, roles, tasks, saved views, and a safe reset flow."
+      },
+      "filesProfile": {
+        "title": "Profile and files",
+        "desc": "Avatars and attachments pass type/size validation and use a StorageAdapter: local, Cloudinary, or ImageKit."
       }
     },
     "footer": "TaskFlow - Next.js · NestJS · Zustand · Material UI"
