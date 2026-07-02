@@ -101,11 +101,12 @@ const RouteProgressBar = () => {
     <Box
       aria-hidden
       sx={{
-        position: 'sticky',
+        position: 'fixed',
         top: { xs: 56, sm: 64 },
+        left: 0,
+        right: 0,
         zIndex: (theme) => theme.zIndex.appBar,
         height: 3,
-        flexShrink: 0,
         pointerEvents: 'none',
       }}
     >

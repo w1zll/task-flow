@@ -13,6 +13,7 @@ import {
 import { WorkspaceMember } from './workspace-member.entity';
 import { WorkspaceInvite } from './workspace-invite.entity';
 import { Team } from '@/teams/entities/team.entity';
+import { Whiteboard } from '@/whiteboards/entities/whiteboard.entity';
 
 @Entity('workspaces')
 export class Workspace {
@@ -59,6 +60,9 @@ export class Workspace {
 
   @OneToMany(() => Team, (team) => team.workspace)
   teams: Team[];
+
+  @OneToMany(() => Whiteboard, (whiteboard) => whiteboard.workspace)
+  whiteboards: Whiteboard[];
 
   @CreateDateColumn()
   createdAt: Date;

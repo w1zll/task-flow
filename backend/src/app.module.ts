@@ -33,6 +33,10 @@ import { Mention } from './notifications/entities/mention.entity';
 import { Notification } from './notifications/entities/notification.entity';
 import { TaskComment } from './notifications/entities/task-comment.entity';
 import { NotificationsModule } from './notifications/notifications.module';
+import { Whiteboard } from './whiteboards/entities/whiteboard.entity';
+import { WhiteboardOperation } from './whiteboards/entities/whiteboard-operation.entity';
+import { WhiteboardSnapshot } from './whiteboards/entities/whiteboard-snapshot.entity';
+import { WhiteboardsModule } from './whiteboards/whiteboards.module';
 
 @Module({
   imports: [
@@ -74,6 +78,9 @@ import { NotificationsModule } from './notifications/notifications.module';
             TaskComment,
             Mention,
             Notification,
+            Whiteboard,
+            WhiteboardOperation,
+            WhiteboardSnapshot,
             RefreshToken,
           ],
           synchronize: false,
@@ -91,6 +98,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     TeamsModule,
     DemoModule,
     NotificationsModule,
+    WhiteboardsModule,
     BoardsModule,
     ColumnsModule,
     TasksModule,

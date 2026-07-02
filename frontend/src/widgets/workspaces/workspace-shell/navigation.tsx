@@ -1,6 +1,7 @@
 import {
   AssignmentTurnedInOutlined,
   DashboardOutlined,
+  GestureOutlined,
   GroupsOutlined,
   SettingsOutlined,
   ViewKanbanOutlined,
@@ -8,7 +9,7 @@ import {
 import type { ReactNode } from 'react';
 
 interface WorkspaceNavItem {
-  key: 'overview' | 'myTasks' | 'teams' | 'boards' | 'settings';
+  key: 'overview' | 'myTasks' | 'teams' | 'boards' | 'whiteboards' | 'settings';
   icon: ReactNode;
   href: (workspaceId: string) => string;
 }
@@ -35,6 +36,11 @@ export const workspaceNavItems = [
     href: (workspaceId: string) => `/workspaces/${workspaceId}/boards`,
   },
   {
+    key: 'whiteboards',
+    icon: <GestureOutlined />,
+    href: (workspaceId: string) => `/workspaces/${workspaceId}/whiteboards`,
+  },
+  {
     key: 'settings',
     icon: <SettingsOutlined />,
     href: (workspaceId: string) => `/workspaces/${workspaceId}/settings`,
@@ -52,6 +58,7 @@ export const getActiveNavKey = (
   if (pathname.startsWith(`${base}/my-tasks`)) return 'myTasks';
   if (pathname.startsWith(`${base}/teams`)) return 'teams';
   if (pathname.startsWith(`${base}/boards`)) return 'boards';
+  if (pathname.startsWith(`${base}/whiteboards`)) return 'whiteboards';
   if (pathname.startsWith(`${base}/settings`)) return 'settings';
   return 'overview';
 };
