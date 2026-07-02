@@ -118,6 +118,7 @@ const optimisticTypes = new Set<WhiteboardOperationType>([
   'text',
   'move',
 ]);
+const CURSOR_EMIT_THROTTLE_MS = 50;
 
 const WhiteboardCanvasPage = ({ workspaceId, whiteboardId }: Props) => {
   const t = useTranslations('Whiteboards');
@@ -130,6 +131,9 @@ const WhiteboardCanvasPage = ({ workspaceId, whiteboardId }: Props) => {
   const { enqueueSnackbar } = useSnackbar();
   const hostRef = useRef<HTMLDivElement | null>(null);
   const pendingSequenceRef = useRef(0);
+  const lastCursorSentAtRef = useRef(0);
+  const pendingCursorRef = useRef<WhiteboardPoint | null>(null);
+  const cursorTimerRef = useRef<number | null>(null);
   const stateQuery = useWhiteboardState(workspaceId, whiteboardId);
   const updateWhiteboard = useUpdateWhiteboard(workspaceId);
   const deleteWhiteboard = useDeleteWhiteboard(workspaceId);
@@ -316,21 +320,63 @@ const WhiteboardCanvasPage = ({ workspaceId, whiteboardId }: Props) => {
     [addPendingOperation, canDraw, emitOperation, enqueueSnackbar, t],
   );
 
-  const handleCursorMove = useCallback(
+  const emitCursor = useCallback(
     (point: WhiteboardPoint) => {
       if (!whiteboardId || isOffline) return;
       const socket = getWhiteboardSocket();
       if (!socket.connected) return;
       socket.emit('whiteboard:cursor', {
         whiteboardId,
-        x: point.x,
-        y: point.y,
+        x: Math.round(point.x * 10) / 10,
+        y: Math.round(point.y * 10) / 10,
         color,
         tool: activeTool,
         userName: user?.name,
       });
     },
     [activeTool, color, isOffline, user?.name, whiteboardId],
+  );
+
+  const handleCursorMove = useCallback(
+    (point: WhiteboardPoint) => {
+      if (!whiteboardId || isOffline) return;
+      pendingCursorRef.current = point;
+
+      const flushCursor = () => {
+        const nextPoint = pendingCursorRef.current;
+        if (!nextPoint) return;
+        pendingCursorRef.current = null;
+        lastCursorSentAtRef.current = performance.now();
+        emitCursor(nextPoint);
+      };
+
+      const elapsed = performance.now() - lastCursorSentAtRef.current;
+      if (elapsed >= CURSOR_EMIT_THROTTLE_MS) {
+        if (cursorTimerRef.current) {
+          window.clearTimeout(cursorTimerRef.current);
+          cursorTimerRef.current = null;
+        }
+        flushCursor();
+        return;
+      }
+
+      if (!cursorTimerRef.current) {
+        cursorTimerRef.current = window.setTimeout(() => {
+          cursorTimerRef.current = null;
+          flushCursor();
+        }, CURSOR_EMIT_THROTTLE_MS - elapsed);
+      }
+    },
+    [emitCursor, isOffline, whiteboardId],
+  );
+
+  useEffect(
+    () => () => {
+      if (cursorTimerRef.current) {
+        window.clearTimeout(cursorTimerRef.current);
+      }
+    },
+    [],
   );
 
   const handleUndo = () => {
