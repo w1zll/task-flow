@@ -473,6 +473,11 @@
     "demo": {
       "chip": "Demo workspace",
       "description": "This is a showcase workspace: data can be changed and reset.",
+      "regionLabel": "Demo workspace panel",
+      "drag": "Move banner",
+      "collapse": "Collapse banner",
+      "expand": "Expand banner",
+      "resetPosition": "Reset banner position",
       "myTasks": "My tasks",
       "overdue": "Overdue",
       "reset": "Reset",
@@ -549,7 +554,6 @@
       "backToWhiteboards": "Back to whiteboards",
       "boardSectionTitle": "Workspace whiteboards",
       "boardSectionDescription": "Open linked canvases or attach a shared workspace whiteboard.",
-      "boardSectionEmpty": "No whiteboards linked to this board yet.",
       "openLinkedWhiteboards": "Open linked",
       "linkedDrawerTitle": "Linked whiteboards",
       "linkedCount": "{count} linked"
