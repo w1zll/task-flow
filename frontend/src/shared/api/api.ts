@@ -59,6 +59,73 @@ export type TeamMember =
     '/api/workspaces/{workspaceId}/teams/{teamId}/members',
     'post'
   >;
+export type WhiteboardOperationType =
+  | 'stroke'
+  | 'shape'
+  | 'text'
+  | 'move'
+  | 'undo'
+  | 'redo'
+  | 'clear';
+export interface WhiteboardCapabilities {
+  canReadWhiteboard: boolean;
+  canDrawWhiteboard: boolean;
+  canManageWhiteboard: boolean;
+}
+export interface Whiteboard {
+  id: string;
+  title: string;
+  description: string | null;
+  color: string;
+  icon: string;
+  workspaceId: string;
+  boardId: string | null;
+  createdById: string | null;
+  lastSequence: number;
+  currentUserRole: string;
+  capabilities: WhiteboardCapabilities;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface WhiteboardOperation {
+  id: string;
+  whiteboardId: string;
+  sequence: number;
+  userId: string;
+  idempotencyKey: string;
+  type: WhiteboardOperationType;
+  data: Record<string, unknown>;
+  createdAt: string;
+}
+export interface WhiteboardSnapshot {
+  id: string;
+  whiteboardId: string;
+  sequence: number;
+  data: {
+    operations?: WhiteboardOperation[];
+    [key: string]: unknown;
+  };
+  createdAt: string;
+}
+export interface WhiteboardState {
+  whiteboard: Whiteboard;
+  snapshot: WhiteboardSnapshot | null;
+  operations: WhiteboardOperation[];
+  latestSequence: number;
+}
+export interface WhiteboardPayload {
+  title: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  boardId?: string | null;
+}
+export interface WhiteboardOperationPayload {
+  whiteboardId: string;
+  idempotencyKey: string;
+  type: WhiteboardOperationType;
+  data: Record<string, unknown>;
+}
 // export type BoardColumn = NonNullable<
 //   ApiResponse<'/api/boards/{id}', 'get'>['columns']
 // >[number];
@@ -370,6 +437,50 @@ export const teamsApi = {
         'get'
       >
     >(`/api/workspaces/${workspaceId}/teams/${teamId}/tasks`),
+};
+
+export const whiteboardsApi = {
+  getAll: (workspaceId: string, params?: { boardId?: string }) =>
+    apiClient.get<Whiteboard[]>(
+      `/api/workspaces/${workspaceId}/whiteboards`,
+      { params },
+    ),
+
+  getOne: (workspaceId: string, whiteboardId: string) =>
+    apiClient.get<Whiteboard>(
+      `/api/workspaces/${workspaceId}/whiteboards/${whiteboardId}`,
+    ),
+
+  getState: (
+    workspaceId: string,
+    whiteboardId: string,
+    params?: { afterSequence?: number },
+  ) =>
+    apiClient.get<WhiteboardState>(
+      `/api/workspaces/${workspaceId}/whiteboards/${whiteboardId}/state`,
+      { params },
+    ),
+
+  create: (workspaceId: string, data: WhiteboardPayload) =>
+    apiClient.post<Whiteboard>(
+      `/api/workspaces/${workspaceId}/whiteboards`,
+      data,
+    ),
+
+  update: (
+    workspaceId: string,
+    whiteboardId: string,
+    data: Partial<WhiteboardPayload>,
+  ) =>
+    apiClient.patch<Whiteboard>(
+      `/api/workspaces/${workspaceId}/whiteboards/${whiteboardId}`,
+      data,
+    ),
+
+  remove: (workspaceId: string, whiteboardId: string) =>
+    apiClient.delete<void>(
+      `/api/workspaces/${workspaceId}/whiteboards/${whiteboardId}`,
+    ),
 };
 
 export const columnsApi = {

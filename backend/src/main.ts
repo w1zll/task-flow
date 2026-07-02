@@ -74,6 +74,7 @@ async function bootstrap() {
     .addTag('columns')
     .addTag('tasks')
     .addTag('teams')
+    .addTag('whiteboards')
     .addTag('demo')
     .build();
 

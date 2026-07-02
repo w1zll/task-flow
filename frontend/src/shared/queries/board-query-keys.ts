@@ -16,6 +16,12 @@ export const queryKeys = {
   workspaceInvitePreview: (token: string) =>
     ['workspace-invites', token, 'preview'] as const,
   workspaceTeams: (id: string) => ['workspaces', id, 'teams'] as const,
+  workspaceWhiteboards: (id: string, boardId?: string) =>
+    ['workspaces', id, 'whiteboards', { boardId: boardId ?? null }] as const,
+  whiteboard: (workspaceId: string, whiteboardId: string) =>
+    ['workspaces', workspaceId, 'whiteboards', whiteboardId] as const,
+  whiteboardState: (workspaceId: string, whiteboardId: string) =>
+    ['workspaces', workspaceId, 'whiteboards', whiteboardId, 'state'] as const,
   myWorkspaceTeams: (id: string) =>
     ['workspaces', id, 'teams', 'mine'] as const,
   teamTasks: (workspaceId: string, teamId: string) =>

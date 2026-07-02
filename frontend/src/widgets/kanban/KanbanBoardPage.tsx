@@ -45,6 +45,7 @@ import { useBoardAnalyticsController } from './kanban-board-page/useBoardAnalyti
 import { useBoardFiltersController } from './kanban-board-page/useBoardFiltersController';
 import TaskDetailModal from './TaskDetailModal';
 import BoardActivityDrawer from './kanban-board-page/BoardActivityDrawer';
+import BoardWhiteboardsSection from '@/widgets/whiteboards/BoardWhiteboardsSection';
 
 interface Props {
   boardId: string;
@@ -427,6 +428,8 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
           setActivityOpen((open) => !open);
         }}
       />
+
+      {board && <BoardWhiteboardsSection board={board} />}
 
       {board && (
         <BoardFiltersToolbar
