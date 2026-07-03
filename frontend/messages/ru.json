@@ -1,14 +1,14 @@
 {
   "HomePage": {
     "title": "TaskFlow - рабочие пространства для команд и задач",
-    "description": "Организуйте работу в пространствах с досками, командами, ролями и задачами.",
+    "description": "Организуйте работу в пространствах с досками, холстами, командами, ролями и задачами.",
     "hero": {
-      "chip": "Workspace · Доски · Команды · Роли",
+      "chip": "Workspace · Доски · Холсты · Команды",
       "heading": "Соберите работу в единых ",
       "headingAccent": "пространствах",
-      "subtitle": "TaskFlow объединяет рабочие пространства, доски, команды, права доступа и задачи, чтобы проект не распадался на разрозненные рабочие места.",
+      "subtitle": "TaskFlow объединяет рабочие пространства, доски, холсты, команды, права доступа и задачи, чтобы проект не распадался на разрозненные рабочие места.",
       "ctaDemo": "Открыть демо",
-      "ctaDemoLoading": "Готовим демо...",
+      "ctaDemoLoading": "Открываем демо...",
       "demoError": "Не удалось открыть демо",
       "ctaStart": "Создать пространство",
       "ctaLogin": "Войти",
@@ -44,6 +44,10 @@
       "realtime": {
         "title": "Realtime с ack/rollback",
         "desc": "Socket.IO синхронизирует задачи, комментарии, активность и уведомления, а клиент ждёт server ack."
+      },
+      "whiteboards": {
+        "title": "Совместные WebGL-холсты",
+        "desc": "Холсты живут внутри workspace, прикрепляются к доскам, поддерживают realtime-рисование, заметки, курсоры и экспорт PNG."
       },
       "analytics": {
         "title": "Аналитика задач",
@@ -87,7 +91,7 @@
       },
       "demo": {
         "title": "Режим для демонстрации проекта",
-        "desc": "Одна кнопка открывает подготовленный demo workspace с командами, ролями, задачами, saved views и reset."
+        "desc": "Одна кнопка открывает подготовленный demo workspace с командами, ролями, задачами, холстами, saved views и reset."
       },
       "filesProfile": {
         "title": "Профиль и файлы",
@@ -457,7 +461,7 @@
         "myTasks": "Мои задачи",
         "teams": "Команды",
         "boards": "Доски",
-        "whiteboards": "Рисовалки",
+        "whiteboards": "Холсты",
         "settings": "Настройки"
       },
     "role": {
@@ -491,23 +495,23 @@
       }
     },
     "Whiteboards": {
-      "pageTitle": "Рисовалки",
+      "pageTitle": "Холсты",
       "pageDescription": "Совместные WebGL-холсты внутри workspace.",
-      "canvasTitle": "Рисовалка {id}",
-      "canvasDescription": "Совместная рисовалка workspace {id}",
+      "canvasTitle": "Холст {id}",
+      "canvasDescription": "Совместный холст workspace {id}",
       "create": "Создать",
-      "createTitle": "Новая рисовалка",
+      "createTitle": "Новый холст",
       "creating": "Создание...",
       "attach": "Прикрепить",
       "attaching": "Прикрепление...",
-      "attachTitle": "Прикрепить рисовалку",
-      "whiteboardTitle": "Название рисовалки",
+      "attachTitle": "Прикрепить холст",
+      "whiteboardTitle": "Название холста",
       "whiteboardDescription": "Описание",
       "linkedBoard": "Связанная доска",
       "noLinkedBoard": "Без связанной доски",
       "linkedElsewhere": "Связана с другой доской",
-      "unlinked": "Рисовалка workspace",
-      "noAttachCandidates": "Нет доступных рисовалок для прикрепления.",
+      "unlinked": "Холст workspace",
+      "noAttachCandidates": "Нет доступных холстов для прикрепления.",
       "color": "Цвет",
       "selectColor": "Выбрать цвет {color}",
       "cancel": "Отмена",
@@ -516,17 +520,17 @@
       "saving": "Сохранение...",
       "add": "Добавить",
       "loading": "Загрузка...",
-      "loadError": "Не удалось загрузить рисовалки.",
-      "empty": "В этом workspace пока нет рисовалок.",
+      "loadError": "Не удалось загрузить холсты.",
+      "empty": "В этом workspace пока нет холстов.",
       "editable": "Можно рисовать",
       "readOnly": "Только просмотр",
-      "offlineReadOnly": "Без интернета рисовалки доступны только для просмотра.",
-      "operationError": "Не удалось сохранить действие на рисовалке.",
+      "offlineReadOnly": "Без интернета холсты доступны только для просмотра.",
+      "operationError": "Не удалось сохранить действие на холсте.",
       "socketUnavailable": "Realtime-соединение недоступно.",
       "syncReady": "Realtime-синхронизация активна",
-      "tools": "Инструменты рисовалки",
+      "tools": "Инструменты холста",
       "openTools": "Инструменты",
-      "toolPanelTitle": "Инструменты рисовалки",
+      "toolPanelTitle": "Инструменты холста",
       "tool": {
         "pan": "Перемещение",
         "pen": "Перо",
@@ -543,19 +547,19 @@
       "redo": "Повторить",
       "clear": "Очистить",
       "rename": "Переименовать",
-      "renamePrompt": "Название рисовалки",
+      "renamePrompt": "Название холста",
       "delete": "Удалить",
       "deleting": "Удаление...",
-      "deleteTitle": "Удалить рисовалку?",
+      "deleteTitle": "Удалить холст?",
       "deleteConfirm": "Удалить «{title}»?",
       "textNoteTitle": "Заметка",
       "textNote": "Текст заметки",
       "exportPng": "Экспорт PNG",
-      "backToWhiteboards": "Назад к рисовалкам",
-      "boardSectionTitle": "Рисовалки workspace",
-      "boardSectionDescription": "Откройте связанные холсты или прикрепите общую рисовалку workspace.",
+      "backToWhiteboards": "Назад к холстам",
+      "boardSectionTitle": "Холсты workspace",
+      "boardSectionDescription": "Откройте связанные холсты или прикрепите общий холст workspace.",
       "openLinkedWhiteboards": "Открыть список",
-      "linkedDrawerTitle": "Прикрепленные рисовалки",
+      "linkedDrawerTitle": "Прикрепленные холсты",
       "linkedCount": "Прикреплено: {count}"
     },
     "WorkspaceOverview": {
