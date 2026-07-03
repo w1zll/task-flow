@@ -6,6 +6,7 @@ import {
   Analytics,
   AssignmentTurnedIn,
   AttachFile,
+  Brush,
   CloudQueue,
   DashboardCustomize,
   FilterAlt,
@@ -59,6 +60,12 @@ const LandingClient = () => {
       icon: <SyncAlt />,
       title: t('features.realtime.title'),
       desc: t('features.realtime.desc'),
+    },
+    {
+      id: 'whiteboards',
+      icon: <Brush />,
+      title: t('features.whiteboards.title'),
+      desc: t('features.whiteboards.desc'),
     },
     {
       id: 'auth',

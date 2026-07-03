@@ -16,7 +16,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
-import { RefObject } from 'react';
+import { RefObject, useState } from 'react';
 
 interface Props {
   badgeRef: RefObject<HTMLDivElement>;
@@ -42,24 +42,34 @@ const Hero = ({
   const queryClient = useQueryClient();
   const setUser = useAuthStore((state) => state.setUser);
   const { enqueueSnackbar } = useSnackbar();
+  const [isDemoNavigating, setDemoNavigating] = useState(false);
   const heading = t('heading');
   const headingTokens = heading.match(/\S+|\s+/g) ?? [];
   const demoLogin = useMutation({
     mutationFn: () => authApi.demoLogin().then((response) => response.data),
     onSuccess: async ({ user, workspaceId, boardId }) => {
-      await clearPersistedQueryCache();
-      queryClient.clear();
-      setUser(user);
-      router.push(`/workspaces/${workspaceId}/boards/${boardId}`);
-      router.refresh();
+      setDemoNavigating(true);
+
+      try {
+        await clearPersistedQueryCache();
+        queryClient.clear();
+        setUser(user);
+        router.push(`/workspaces/${workspaceId}/boards/${boardId}`);
+        router.refresh();
+      } catch {
+        setDemoNavigating(false);
+        enqueueSnackbar(t('demoError'), { variant: 'error' });
+      }
     },
     onError: (error: any) => {
+      setDemoNavigating(false);
       enqueueSnackbar(
         error.response?.data?.message ?? t('demoError'),
         { variant: 'error' },
       );
     },
   });
+  const isDemoLoading = demoLogin.isPending || isDemoNavigating;
 
   return (
     <Box
@@ -185,11 +195,14 @@ const Hero = ({
             variant="contained"
             size="large"
             startIcon={<PlayArrow />}
-            onClick={() => demoLogin.mutate()}
-            disabled={demoLogin.isPending}
+            onClick={() => {
+              setDemoNavigating(true);
+              demoLogin.mutate();
+            }}
+            disabled={isDemoLoading}
             sx={{ px: 4, py: 1.5, minWidth: { xs: 220, sm: 0 } }}
           >
-            {demoLogin.isPending ? t('ctaDemoLoading') : t('ctaDemo')}
+            {isDemoLoading ? t('ctaDemoLoading') : t('ctaDemo')}
           </Button>
           <Link href="/auth/register">
             <Button

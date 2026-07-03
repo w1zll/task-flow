@@ -1,14 +1,14 @@
 {
   "HomePage": {
     "title": "TaskFlow - workspaces for teams and tasks",
-    "description": "Organize work in spaces with boards, teams, roles, and tasks.",
+    "description": "Organize work in spaces with boards, canvases, teams, roles, and tasks.",
     "hero": {
-      "chip": "Workspaces · Boards · Teams · Roles",
+      "chip": "Workspaces · Boards · Canvases · Teams",
       "heading": "Keep work together in shared ",
       "headingAccent": "spaces",
-      "subtitle": "TaskFlow brings workspaces, boards, teams, access roles, and tasks into one product, so projects do not live in disconnected work areas.",
+      "subtitle": "TaskFlow brings workspaces, boards, canvases, teams, access roles, and tasks into one product, so projects do not live in disconnected work areas.",
       "ctaDemo": "Open demo",
-      "ctaDemoLoading": "Preparing demo...",
+      "ctaDemoLoading": "Opening demo...",
       "demoError": "Failed to open demo",
       "ctaStart": "Create workspace",
       "ctaLogin": "Sign in",
@@ -44,6 +44,10 @@
       "realtime": {
         "title": "Realtime with ack/rollback",
         "desc": "Socket.IO syncs tasks, comments, activity, and notifications while the client waits for server ack."
+      },
+      "whiteboards": {
+        "title": "Collaborative WebGL canvases",
+        "desc": "Canvases live inside a workspace, attach to boards, and support realtime drawing, notes, cursors, and PNG export."
       },
       "analytics": {
         "title": "Task analytics",
@@ -87,7 +91,7 @@
       },
       "demo": {
         "title": "Showcase demo",
-        "desc": "One button opens a prepared demo workspace with teams, roles, tasks, saved views, and a safe reset flow."
+        "desc": "One button opens a prepared demo workspace with teams, roles, tasks, canvases, saved views, and a safe reset flow."
       },
       "filesProfile": {
         "title": "Profile and files",
@@ -457,7 +461,7 @@
         "myTasks": "My tasks",
         "teams": "Teams",
         "boards": "Boards",
-        "whiteboards": "Whiteboards",
+        "whiteboards": "Canvases",
         "settings": "Settings"
       },
     "role": {
@@ -491,23 +495,23 @@
       }
     },
     "Whiteboards": {
-      "pageTitle": "Whiteboards",
+      "pageTitle": "Canvases",
       "pageDescription": "Realtime WebGL canvases inside this workspace.",
-      "canvasTitle": "Whiteboard {id}",
-      "canvasDescription": "Realtime workspace whiteboard {id}",
+      "canvasTitle": "Canvas {id}",
+      "canvasDescription": "Realtime workspace canvas {id}",
       "create": "Create",
-      "createTitle": "New whiteboard",
+      "createTitle": "New canvas",
       "creating": "Creating...",
       "attach": "Attach",
       "attaching": "Attaching...",
-      "attachTitle": "Attach whiteboard",
-      "whiteboardTitle": "Whiteboard title",
+      "attachTitle": "Attach canvas",
+      "whiteboardTitle": "Canvas title",
       "whiteboardDescription": "Description",
       "linkedBoard": "Linked board",
       "noLinkedBoard": "No linked board",
       "linkedElsewhere": "Linked to another board",
-      "unlinked": "Workspace whiteboard",
-      "noAttachCandidates": "There are no available whiteboards to attach.",
+      "unlinked": "Workspace canvas",
+      "noAttachCandidates": "There are no available canvases to attach.",
       "color": "Color",
       "selectColor": "Select color {color}",
       "cancel": "Cancel",
@@ -516,17 +520,17 @@
       "saving": "Saving...",
       "add": "Add",
       "loading": "Loading...",
-      "loadError": "Failed to load whiteboards.",
-      "empty": "No whiteboards in this workspace yet.",
+      "loadError": "Failed to load canvases.",
+      "empty": "No canvases in this workspace yet.",
       "editable": "Editable",
       "readOnly": "View only",
-      "offlineReadOnly": "Whiteboards are available as read-only while offline.",
-      "operationError": "Failed to save the whiteboard operation.",
+      "offlineReadOnly": "Canvases are available as read-only while offline.",
+      "operationError": "Failed to save the canvas operation.",
       "socketUnavailable": "Realtime connection is unavailable.",
       "syncReady": "Realtime sync is active",
-      "tools": "Whiteboard tools",
+      "tools": "Canvas tools",
       "openTools": "Tools",
-      "toolPanelTitle": "Whiteboard tools",
+      "toolPanelTitle": "Canvas tools",
       "tool": {
         "pan": "Pan",
         "pen": "Pen",
@@ -543,19 +547,19 @@
       "redo": "Redo",
       "clear": "Clear",
       "rename": "Rename",
-      "renamePrompt": "Whiteboard name",
+      "renamePrompt": "Canvas name",
       "delete": "Delete",
       "deleting": "Deleting...",
-      "deleteTitle": "Delete whiteboard?",
+      "deleteTitle": "Delete canvas?",
       "deleteConfirm": "Delete \"{title}\"?",
       "textNoteTitle": "Text note",
       "textNote": "Note text",
       "exportPng": "Export PNG",
-      "backToWhiteboards": "Back to whiteboards",
-      "boardSectionTitle": "Workspace whiteboards",
-      "boardSectionDescription": "Open linked canvases or attach a shared workspace whiteboard.",
+      "backToWhiteboards": "Back to canvases",
+      "boardSectionTitle": "Workspace canvases",
+      "boardSectionDescription": "Open linked canvases or attach a shared workspace canvas.",
       "openLinkedWhiteboards": "Open linked",
-      "linkedDrawerTitle": "Linked whiteboards",
+      "linkedDrawerTitle": "Linked canvases",
       "linkedCount": "{count} linked"
     },
     "WorkspaceOverview": {
