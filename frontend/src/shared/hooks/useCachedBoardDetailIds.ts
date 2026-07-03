@@ -7,7 +7,7 @@ import {
 } from '@/shared/lib/offline-navigation-cache';
 import { queryKeys } from '@/shared/queries/board-query-keys';
 import { type QueryClient, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const isBoardDetailQueryKey = (
   queryKey: readonly unknown[],
@@ -72,47 +72,68 @@ const areSetsEqual = (left: ReadonlySet<string>, right: ReadonlySet<string>) =>
 
 export const useCachedBoardDetailIds = () => {
   const queryClient = useQueryClient();
+  const syncVersionRef = useRef(0);
   const [cachedBoardIds, setCachedBoardIds] = useState<Set<string>>(() =>
     collectCachedBoardDetailIds(queryClient),
   );
 
   useEffect(() => {
     let isActive = true;
+    let syncTimeoutId: number | null = null;
+
+    const setNextCachedBoardIds = (nextBoardIds: Set<string>) => {
+      setCachedBoardIds((previousBoardIds) =>
+        areSetsEqual(previousBoardIds, nextBoardIds)
+          ? previousBoardIds
+          : nextBoardIds,
+      );
+    };
 
     const syncCachedBoardIds = () => {
+      const syncVersion = ++syncVersionRef.current;
       const fallbackBoardIds = collectCachedBoardDetailIds(queryClient);
 
-      setCachedBoardIds((previousBoardIds) =>
-        areSetsEqual(previousBoardIds, fallbackBoardIds)
-          ? previousBoardIds
-          : fallbackBoardIds,
-      );
+      setNextCachedBoardIds(fallbackBoardIds);
 
       void collectOfflineAvailableBoardIds(queryClient).then(
         (nextBoardIds) => {
-          if (!isActive) return;
+          if (!isActive || syncVersion !== syncVersionRef.current) return;
 
-          setCachedBoardIds((previousBoardIds) =>
-            areSetsEqual(previousBoardIds, nextBoardIds)
-              ? previousBoardIds
-              : nextBoardIds,
-          );
+          setNextCachedBoardIds(nextBoardIds);
         },
       );
     };
 
-    syncCachedBoardIds();
+    const scheduleCachedBoardIdsSync = () => {
+      if (syncTimeoutId !== null) return;
+
+      syncTimeoutId = window.setTimeout(() => {
+        syncTimeoutId = null;
+        if (!isActive) return;
+
+        syncCachedBoardIds();
+      }, 0);
+    };
+
+    scheduleCachedBoardIdsSync();
     const unsubscribe = queryClient
       .getQueryCache()
-      .subscribe(syncCachedBoardIds);
-    window.addEventListener(OFFLINE_ROUTES_WARMED_EVENT, syncCachedBoardIds);
+      .subscribe(scheduleCachedBoardIdsSync);
+    window.addEventListener(
+      OFFLINE_ROUTES_WARMED_EVENT,
+      scheduleCachedBoardIdsSync,
+    );
 
     return () => {
       isActive = false;
+      syncVersionRef.current += 1;
+      if (syncTimeoutId !== null) {
+        window.clearTimeout(syncTimeoutId);
+      }
       unsubscribe();
       window.removeEventListener(
         OFFLINE_ROUTES_WARMED_EVENT,
-        syncCachedBoardIds,
+        scheduleCachedBoardIdsSync,
       );
     };
   }, [queryClient]);
