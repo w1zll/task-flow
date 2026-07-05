@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { In, Repository, SelectQueryBuilder } from 'typeorm';
 import { BoardPermissionsService } from '@/boards/board-permissions.service';
 import { Board } from '@/boards/entities/board.entity';
 import { Column } from '@/columns/entities/column.entity';
@@ -537,6 +537,30 @@ export class TasksService {
       taskIds: dto.taskIds,
     });
     return column.boardId;
+  }
+
+  async getTaskIdsByColumn(
+    columnIds: Array<string | undefined | null>,
+  ): Promise<Record<string, string[]>> {
+    const uniqueColumnIds = Array.from(
+      new Set(columnIds.filter((id): id is string => Boolean(id))),
+    );
+    if (!uniqueColumnIds.length) return {};
+
+    const tasks = await this.taskRepo.find({
+      where: { columnId: In(uniqueColumnIds) },
+      select: { id: true, columnId: true, order: true },
+      order: { columnId: 'ASC', order: 'ASC', id: 'ASC' },
+    });
+    const taskIdsByColumn = Object.fromEntries(
+      uniqueColumnIds.map((columnId) => [columnId, [] as string[]]),
+    );
+
+    for (const task of tasks) {
+      taskIdsByColumn[task.columnId]?.push(task.id);
+    }
+
+    return taskIdsByColumn;
   }
 
   private async assertColumnTaskOrderIsCurrent(

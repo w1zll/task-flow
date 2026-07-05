@@ -8,7 +8,7 @@ describe('BoardGateway', () => {
   let gateway: BoardGateway;
   let boardsService: jest.Mocked<Pick<BoardsService, 'findOne'>>;
   let tasksService: jest.Mocked<
-    Pick<TasksService, 'update' | 'move' | 'reorder'>
+    Pick<TasksService, 'update' | 'move' | 'reorder' | 'getTaskIdsByColumn'>
   >;
   let boardActivityPublisher: { setServer: jest.Mock };
   let notificationsService: { countUnread: jest.Mock };
@@ -29,6 +29,7 @@ describe('BoardGateway', () => {
       update: jest.fn(),
       move: jest.fn(),
       reorder: jest.fn(),
+      getTaskIdsByColumn: jest.fn(),
     };
     boardActivityPublisher = { setServer: jest.fn() };
     notificationsService = { countUnread: jest.fn().mockResolvedValue(0) };
@@ -208,5 +209,46 @@ describe('BoardGateway', () => {
       message: 'Task was moved by another user',
       retryable: false,
     });
+  });
+
+  it('broadcasts final source and target column task order after task move', async () => {
+    const task = {
+      id: 'task-1',
+      columnId: 'column-2',
+      column: { boardId: 'board-1' },
+      order: 0,
+    };
+    tasksService.move.mockResolvedValue(task as never);
+    tasksService.getTaskIdsByColumn.mockResolvedValue({
+      'column-1': ['task-2'],
+      'column-2': ['task-1', 'task-3'],
+    });
+    const ack = jest.fn();
+
+    await gateway.handleTaskMove(
+      client as unknown as Socket,
+      {
+        boardId: 'board-1',
+        taskId: 'task-1',
+        columnId: 'column-2',
+        sourceColumnId: 'column-1',
+        order: 0,
+      },
+      ack,
+    );
+
+    expect(tasksService.getTaskIdsByColumn).toHaveBeenCalledWith([
+      'column-1',
+      'column-2',
+    ]);
+    expect(roomEmit).toHaveBeenCalledWith('task:moved', {
+      boardId: 'board-1',
+      task,
+      taskIdsByColumn: {
+        'column-1': ['task-2'],
+        'column-2': ['task-1', 'task-3'],
+      },
+    });
+    expect(ack).toHaveBeenCalledWith({ ok: true });
   });
 });

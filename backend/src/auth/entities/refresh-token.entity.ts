@@ -3,6 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -15,6 +16,10 @@ export class RefreshToken {
 
   @Column({ unique: true })
   token: string;
+
+  @Index('IDX_refresh_tokens_tokenDigest', { unique: true })
+  @Column({ nullable: true })
+  tokenDigest?: string | null;
 
   @Column()
   userId: string;

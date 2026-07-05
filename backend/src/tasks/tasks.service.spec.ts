@@ -627,6 +627,31 @@ describe('TasksService', () => {
     expect(boardActivityEvents.logTaskReordered).not.toHaveBeenCalled();
   });
 
+  it('returns task ids grouped by final column order', async () => {
+    taskRepo.find!.mockResolvedValue([
+      createTask({ id: 'task-1', columnId: 'column-1', order: 0 }),
+      createTask({ id: 'task-2', columnId: 'column-1', order: 1 }),
+      createTask({ id: 'task-3', columnId: 'column-2', order: 0 }),
+    ]);
+
+    const result = await service.getTaskIdsByColumn([
+      'column-1',
+      'column-2',
+      'column-1',
+      undefined,
+    ]);
+
+    expect(taskRepo.find).toHaveBeenCalledWith({
+      where: { columnId: expect.anything() },
+      select: { id: true, columnId: true, order: true },
+      order: { columnId: 'ASC', order: 'ASC', id: 'ASC' },
+    });
+    expect(result).toEqual({
+      'column-1': ['task-1', 'task-2'],
+      'column-2': ['task-3'],
+    });
+  });
+
   it('returns daily analytics with access and board/date filters', async () => {
     mockQueryBuilder.getRawMany.mockResolvedValue([
       { period: '2026-06-01', count: '2' },
