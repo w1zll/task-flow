@@ -7,7 +7,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -18,6 +18,7 @@ import { AppLocale } from '@/common/locale/request-locale';
 import { AvatarService } from '@/users/avatar.service';
 import { AvatarUploadFile } from '@/storage/storage.types';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
+import { createHmac } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -106,20 +107,10 @@ export class AuthService {
       throw new UnauthorizedException('Пользователь не авторизован');
     }
 
-    const hashed = await bcrypt.hash(rawRefreshToken, 10);
-
-    const storedToken = await this.refreshTokenRepo.find({
-      where: { userId: payload.sub, isRevoked: false },
-    });
-
-    let matchedToken: RefreshToken | null = null;
-    for (const t of storedToken) {
-      const isMatch = await bcrypt.compare(rawRefreshToken, t.token);
-      if (isMatch) {
-        matchedToken = t;
-        break;
-      }
-    }
+    const matchedToken = await this.findStoredRefreshToken(
+      rawRefreshToken,
+      payload.sub,
+    );
 
     if (!matchedToken || matchedToken.isRevoked) {
       await this.refreshTokenRepo.update(
@@ -149,8 +140,25 @@ export class AuthService {
   async logout(rawRefreshToken: string) {
     if (!rawRefreshToken) return;
 
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(rawRefreshToken, {
+        secret: this.config.get('JWT_REFRESH_SECRET'),
+      });
+    } catch {
+      return;
+    }
+
+    const tokenDigest = this.getRefreshTokenDigest(rawRefreshToken);
+    const updateResult = await this.refreshTokenRepo.update(
+      { userId: payload.sub, tokenDigest, isRevoked: false },
+      { isRevoked: true },
+    );
+
+    if (updateResult.affected && updateResult.affected > 0) return;
+
     const storedTokens = await this.refreshTokenRepo.find({
-      where: { isRevoked: false },
+      where: { userId: payload.sub, isRevoked: false, tokenDigest: IsNull() },
     });
 
     for (const t of storedTokens) {
@@ -218,12 +226,14 @@ export class AuthService {
     });
 
     const hashedRefresh = await bcrypt.hash(refreshToken, 10);
+    const tokenDigest = this.getRefreshTokenDigest(refreshToken);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
     await this.refreshTokenRepo.save(
       this.refreshTokenRepo.create({
         token: hashedRefresh,
+        tokenDigest,
         userId: user.id,
         expiresAt,
       }),
@@ -240,5 +250,36 @@ export class AuthService {
         activeWorkspaceId: user.activeWorkspaceId,
       },
     };
+  }
+
+  private async findStoredRefreshToken(
+    rawRefreshToken: string,
+    userId: string,
+  ): Promise<RefreshToken | null> {
+    const tokenDigest = this.getRefreshTokenDigest(rawRefreshToken);
+    const tokenByDigest = await this.refreshTokenRepo.findOne({
+      where: { userId, tokenDigest, isRevoked: false },
+    });
+    if (tokenByDigest) return tokenByDigest;
+
+    const storedTokens = await this.refreshTokenRepo.find({
+      where: { userId, isRevoked: false, tokenDigest: IsNull() },
+    });
+
+    for (const t of storedTokens) {
+      const isMatch = await bcrypt.compare(rawRefreshToken, t.token);
+      if (isMatch) return t;
+    }
+
+    return null;
+  }
+
+  private getRefreshTokenDigest(rawRefreshToken: string): string {
+    return createHmac(
+      'sha256',
+      this.config.get<string>('JWT_REFRESH_SECRET') ?? '',
+    )
+      .update(rawRefreshToken)
+      .digest('hex');
   }
 }

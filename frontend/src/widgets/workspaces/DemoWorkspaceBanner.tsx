@@ -95,6 +95,7 @@ const DemoWorkspaceBanner = () => {
   const [isConfirmOpen, setConfirmOpen] = useState(false);
   const [isCollapsed, setCollapsed] = useState(false);
   const [hasLoadedPreferences, setLoadedPreferences] = useState(false);
+  const [hasMeasuredBanner, setMeasuredBanner] = useState(false);
   const [position, setPosition] =
     useState<BannerPosition>(DEFAULT_POSITION);
   const [viewport, setViewport] = useState<ViewportSize>({
@@ -112,6 +113,9 @@ const DemoWorkspaceBanner = () => {
   const resetDialogTitleId = 'demo-reset-dialog-title';
   const resetDialogDescriptionId = 'demo-reset-dialog-description';
   const isPhoneCollapsed = isPhone && isCollapsed;
+  const canRenderPositionedBanner =
+    hasLoadedPreferences && viewport.width > 0 && viewport.height > 0;
+  const isBannerVisible = canRenderPositionedBanner && hasMeasuredBanner;
   const edgeMargin = isPhone ? 8 : 16;
   const bounds = useMemo(() => {
     const xMin = edgeMargin;
@@ -232,10 +236,15 @@ const DemoWorkspaceBanner = () => {
     if (!node) return;
 
     const updateSize = () => {
+      const width = node.offsetWidth;
+      const height = node.offsetHeight;
       setBannerSize({
-        width: node.offsetWidth,
-        height: node.offsetHeight,
+        width,
+        height,
       });
+      if (width > 0 && height > 0) {
+        setMeasuredBanner(true);
+      }
     };
 
     updateSize();
@@ -365,6 +374,8 @@ const DemoWorkspaceBanner = () => {
     suppressNextClickRef.current = false;
   };
 
+  if (!canRenderPositionedBanner) return null;
+
   return (
     <>
       <Box
@@ -384,6 +395,7 @@ const DemoWorkspaceBanner = () => {
           position: 'fixed',
           left: bannerPoint.x,
           top: bannerPoint.y,
+          visibility: isBannerVisible ? 'visible' : 'hidden',
           zIndex: (muiTheme) => muiTheme.zIndex.drawer + 2,
           maxWidth: {
             xs: 'calc(100vw - 16px)',
@@ -407,7 +419,7 @@ const DemoWorkspaceBanner = () => {
           outline: 'none',
           touchAction: 'none',
           userSelect: dragState ? 'none' : 'auto',
-          transition: dragState
+          transition: dragState || !isBannerVisible
             ? 'none'
             : 'left 0.16s ease, top 0.16s ease, box-shadow 0.16s ease',
         }}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Board, columnsApi } from '@/shared/api/api';
+import { Board, columnsApi, type Task } from '@/shared/api/api';
 import { queryKeys } from '@/shared/queries/boards.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
 import { useQueryClient } from '@tanstack/react-query';
@@ -43,6 +43,8 @@ const KanbanBoard = ({
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
   const canEditBoardContent = board.capabilities.canEditBoardContent;
   const canManageColumns = board.capabilities.canManageColumns;
+  const normalizeTaskOrder = (tasks: Task[]) =>
+    (tasks ?? []).map((task, order) => ({ ...task, order }));
 
   useEffect(() => {
     setLocalBoard(board);
@@ -142,7 +144,9 @@ const KanbanBoard = ({
         return {
           ...prev,
           columns: columns.map((c) =>
-            c.id === srcColId ? { ...c, tasks: srcTasks } : c,
+            c.id === srcColId
+              ? { ...c, tasks: normalizeTaskOrder(srcTasks) }
+              : c,
           ),
         };
       } else {
@@ -156,8 +160,12 @@ const KanbanBoard = ({
         return {
           ...prev,
           columns: columns.map((c) => {
-            if (c.id === srcColId) return { ...c, tasks: srcTasks };
-            if (c.id === dstColId) return { ...c, tasks: dstTasks };
+            if (c.id === srcColId) {
+              return { ...c, tasks: normalizeTaskOrder(srcTasks) };
+            }
+            if (c.id === dstColId) {
+              return { ...c, tasks: normalizeTaskOrder(dstTasks) };
+            }
             return c;
           }),
         };
