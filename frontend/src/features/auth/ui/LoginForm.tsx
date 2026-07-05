@@ -31,7 +31,10 @@ const LoginForm = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: {
+          xs: 'calc(100dvh - 56px)',
+          sm: 'calc(100dvh - 64px)',
+        },
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

@@ -199,10 +199,15 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
         payload.sourceColumnId,
       );
       const boardId = updated.column.boardId;
+      const taskIdsByColumn = await this.tasksService.getTaskIdsByColumn([
+        payload.sourceColumnId,
+        payload.columnId,
+      ]);
 
       this.server.to(`board-${boardId}`).emit('task:moved', {
         boardId,
         task: updated,
+        taskIdsByColumn,
       });
       this.ackAndCache(ack, userId, 'task:move', payload.idempotencyKey, {
         ok: true,

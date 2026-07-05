@@ -11,6 +11,7 @@ import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { BoardsService } from '@/boards/boards.service';
 import { AvatarService } from '@/users/avatar.service';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
+import * as bcrypt from 'bcrypt';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -334,4 +335,57 @@ describe('AuthService', () => {
   });
 
   // Add more tests for refresh, logout, etc.
+  describe('logout', () => {
+    it('revokes a refresh token by digest without scanning bcrypt tokens', async () => {
+      mockJwtService.verify.mockReturnValue({ sub: 'demo-owner' });
+      mockConfigService.get.mockReturnValue('refresh-secret');
+      mockRefreshTokenRepo.update.mockResolvedValue({ affected: 1 });
+
+      await service.logout('raw-refresh-token');
+
+      expect(mockJwtService.verify).toHaveBeenCalledWith(
+        'raw-refresh-token',
+        { secret: 'refresh-secret' },
+      );
+      expect(mockRefreshTokenRepo.update).toHaveBeenCalledWith(
+        {
+          userId: 'demo-owner',
+          tokenDigest: expect.any(String),
+          isRevoked: false,
+        },
+        { isRevoked: true },
+      );
+      expect(mockRefreshTokenRepo.find).not.toHaveBeenCalled();
+    });
+
+    it('falls back to bcrypt comparison for legacy refresh tokens', async () => {
+      const legacyRefreshToken = 'legacy-refresh-token';
+      const legacyHash = await bcrypt.hash(legacyRefreshToken, 4);
+      const legacyToken = {
+        id: 'token-1',
+        token: legacyHash,
+        userId: 'demo-owner',
+        isRevoked: false,
+      };
+
+      mockJwtService.verify.mockReturnValue({ sub: 'demo-owner' });
+      mockConfigService.get.mockReturnValue('refresh-secret');
+      mockRefreshTokenRepo.update.mockResolvedValue({ affected: 0 });
+      mockRefreshTokenRepo.find.mockResolvedValue([legacyToken]);
+
+      await service.logout(legacyRefreshToken);
+
+      expect(mockRefreshTokenRepo.find).toHaveBeenCalledWith({
+        where: {
+          userId: 'demo-owner',
+          isRevoked: false,
+          tokenDigest: expect.anything(),
+        },
+      });
+      expect(mockRefreshTokenRepo.save).toHaveBeenCalledWith({
+        ...legacyToken,
+        isRevoked: true,
+      });
+    });
+  });
 });

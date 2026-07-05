@@ -355,6 +355,53 @@ describe('useBoardSocket', () => {
     expect(orders).toEqual([0, 1, 2]);
   });
 
+  it('should apply server column order after task:moved', () => {
+    renderHook(() => useBoardSocket('board-1'));
+
+    const movedTask = { id: 'task-3', columnId: 'col-2', order: 0 };
+    const handler = mockSocket.on.mock.calls.find(
+      ([e]) => e === 'task:moved',
+    )![1];
+    handler({
+      boardId: 'board-1',
+      task: movedTask,
+      taskIdsByColumn: {
+        'col-1': ['task-1'],
+        'col-2': ['task-3', 'task-2'],
+      },
+    });
+
+    const updaterFn = mockSetQueryData.mock.calls[0][1];
+    const prevBoard = {
+      id: 'board-1',
+      columns: [
+        {
+          id: 'col-1',
+          tasks: [
+            { id: 'task-1', columnId: 'col-1', order: 0 },
+            { id: 'task-3', columnId: 'col-1', order: 1 },
+          ],
+        },
+        {
+          id: 'col-2',
+          tasks: [{ id: 'task-2', columnId: 'col-2', order: 0 }],
+        },
+      ],
+    };
+
+    const result = updaterFn(prevBoard);
+    expect(result.columns[0].tasks.map((task: any) => task.id)).toEqual([
+      'task-1',
+    ]);
+    expect(result.columns[1].tasks.map((task: any) => task.id)).toEqual([
+      'task-3',
+      'task-2',
+    ]);
+    expect(result.columns[1].tasks.map((task: any) => task.order)).toEqual([
+      0, 1,
+    ]);
+  });
+
   // ─── task:reordered ────────────────────────────────────────────────────────
 
   it('should reorder tasks in column on task:reordered event', () => {
@@ -387,6 +434,9 @@ describe('useBoardSocket', () => {
     const result = updaterFn(prevBoard);
     expect(result.columns[0].tasks[0].id).toBe('task-2');
     expect(result.columns[0].tasks[1].id).toBe('task-1');
+    expect(result.columns[0].tasks.map((task: any) => task.order)).toEqual([
+      0, 1,
+    ]);
   });
 
   it('should not affect other columns on task:reordered', () => {

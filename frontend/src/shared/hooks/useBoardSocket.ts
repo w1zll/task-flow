@@ -34,6 +34,30 @@ const hasTaskDetailActivityChange = (
   });
 };
 
+const normalizeTasksByOrder = (tasks: Task[]) =>
+  [...tasks]
+    .sort((a, b) => a.order - b.order)
+    .map((task, order) => ({ ...task, order }));
+
+const applyTaskOrder = (tasks: Task[], taskIds?: string[]) => {
+  if (!taskIds) return normalizeTasksByOrder(tasks);
+
+  const taskById = new Map(tasks.map((task) => [task.id, task]));
+  const orderedTasks = taskIds.flatMap((taskId, order) => {
+    const task = taskById.get(taskId);
+    return task ? [{ ...task, order }] : [];
+  });
+  const orderedTaskIds = new Set(taskIds);
+  const remainingTasks = normalizeTasksByOrder(
+    tasks.filter((task) => !orderedTaskIds.has(task.id)),
+  ).map((task, index) => ({
+    ...task,
+    order: orderedTasks.length + index,
+  }));
+
+  return [...orderedTasks, ...remainingTasks];
+};
+
 export const useBoardSocket = (boardId: string) => {
   const qc = useQueryClient();
   const isOnline = useOnlineStatus();
@@ -150,23 +174,37 @@ export const useBoardSocket = (boardId: string) => {
       },
     );
 
-    socket.on('task:moved', (payload: { boardId: string; task: Task }) => {
-      if (payload.boardId !== boardId) return;
-      const updatedTask = payload.task;
-      qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          columns: prev.columns?.map((col) => ({
-            ...col,
-            tasks: col.tasks
-              ?.filter((t) => t.id !== updatedTask.id)
-              .concat(col.id === updatedTask.columnId ? [updatedTask] : [])
-              .sort((a, b) => a.order - b.order),
-          })),
-        };
-      });
-    });
+    socket.on(
+      'task:moved',
+      (payload: {
+        boardId: string;
+        task: Task;
+        taskIdsByColumn?: Record<string, string[]>;
+      }) => {
+        if (payload.boardId !== boardId) return;
+        const updatedTask = payload.task;
+        qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            columns: prev.columns?.map((col) => {
+              const tasksWithoutMoved = (col.tasks ?? []).filter(
+                (task) => task.id !== updatedTask.id,
+              );
+              const tasks =
+                col.id === updatedTask.columnId
+                  ? [...tasksWithoutMoved, updatedTask]
+                  : tasksWithoutMoved;
+
+              return {
+                ...col,
+                tasks: applyTaskOrder(tasks, payload.taskIdsByColumn?.[col.id]),
+              };
+            }),
+          };
+        });
+      },
+    );
 
     socket.on('task:deleted', (payload: { boardId: string; taskId: string }) => {
       if (payload.boardId !== boardId) return;
@@ -211,10 +249,10 @@ export const useBoardSocket = (boardId: string) => {
             ...prev,
             columns: prev.columns?.map((col) => {
               if (col.id !== columnId) return col;
-              const sorted = taskIds.map((id) =>
-                col.tasks?.find((t) => t.id === id),
-              );
-              return { ...col, tasks: sorted };
+              return {
+                ...col,
+                tasks: applyTaskOrder(col.tasks ?? [], taskIds),
+              };
             }),
           };
         });
