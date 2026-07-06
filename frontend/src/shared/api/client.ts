@@ -11,7 +11,6 @@ const AUTH_ENDPOINTS = [
   '/api/auth/register',
   '/api/auth/refresh',
   '/api/auth/logout',
-  '/api/auth/me',
 ];
 
 export const apiClient: AxiosInstance = axios.create({
