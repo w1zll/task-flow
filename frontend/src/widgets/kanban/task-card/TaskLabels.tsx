@@ -21,7 +21,12 @@ const TaskLabels = ({ labels }: TaskLabelsProps) => {
           sx={{
             height: 20,
             fontSize: 11,
-            '& .MuiChip-label': { px: 0.75 },
+            maxWidth: '100%',
+            '& .MuiChip-label': {
+              px: 0.75,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            },
           }}
         />
       ))}

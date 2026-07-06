@@ -54,6 +54,7 @@ const TaskCardContent = ({
         p: 1.5,
         pl: 2,
         pr: { xs: 6.5, md: 4.5 },
+        minWidth: 0,
         pointerEvents: isCardPending ? 'none' : 'auto',
       }}
     >
@@ -65,6 +66,8 @@ const TaskCardContent = ({
           fontWeight: 500,
           color: task.isCompleted ? 'text.secondary' : 'text.primary',
           textDecoration: task.isCompleted ? 'line-through' : 'none',
+          overflowWrap: 'anywhere',
+          wordBreak: 'break-word',
         }}
       >
         {task.title}

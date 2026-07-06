@@ -11,7 +11,19 @@ export interface DemoWorkspaceSession {
   workspaceId: string;
   boardId: string;
 }
-export type Board = ApiResponse<'/api/boards/{id}', 'get'>;
+type GeneratedBoard = ApiResponse<'/api/boards/{id}', 'get'>;
+export type Task = Omit<ApiResponse<'/api/tasks/{id}', 'put'>, 'dueDate'> & {
+  dueDate?: string | null;
+};
+export type BoardColumn = Omit<
+  NonNullable<GeneratedBoard['columns']>[number],
+  'tasks' | 'createdAt' | 'updatedAt'
+> & {
+  tasks?: Task[];
+};
+export type Board = Omit<GeneratedBoard, 'columns'> & {
+  columns?: BoardColumn[];
+};
 export type BoardRole = Board['currentUserRole'];
 export type BoardMember =
   ApiResponse<'/api/boards/{id}/members', 'get'>[number];
@@ -126,14 +138,6 @@ export interface WhiteboardOperationPayload {
   type: WhiteboardOperationType;
   data: Record<string, unknown>;
 }
-// export type BoardColumn = NonNullable<
-//   ApiResponse<'/api/boards/{id}', 'get'>['columns']
-// >[number];
-export type BoardColumn = Omit<
-  NonNullable<Board['columns']>[number],
-  'createdAt' | 'updatedAt'
->;
-export type Task = ApiResponse<'/api/tasks/{id}', 'put'>;
 export type TaskChecklistItem =
   components['schemas']['TaskChecklistItemResponseDto'];
 export type TaskAttachment =

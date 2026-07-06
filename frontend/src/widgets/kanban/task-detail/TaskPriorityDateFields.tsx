@@ -68,7 +68,10 @@ const TaskPriorityDateFields = ({
         value={form.dueDate ?? ''}
         disabled={!canEdit}
         onChange={(event) =>
-          onPatch('dueDate', event.target.value as Task['dueDate'])
+          onPatch(
+            'dueDate',
+            (event.target.value || null) as Task['dueDate'],
+          )
         }
         slotProps={{
           inputLabel: { shrink: true },
