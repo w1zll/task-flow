@@ -64,6 +64,15 @@ export type CreatedWorkspaceInvite =
   ApiResponse<'/api/workspaces/{workspaceId}/invites', 'post'>;
 export type WorkspaceInvitePreview =
   ApiResponse<'/api/workspace-invites/{token}', 'get'>;
+export type WorkspaceAnalyticsDashboard =
+  ApiResponse<'/api/workspaces/{workspaceId}/analytics/dashboard', 'get'>;
+export interface WorkspaceAnalyticsFilters {
+  boardId?: string | null;
+  teamId?: string | null;
+  assigneeId?: string | null;
+  fromDate?: string | null;
+  toDate?: string | null;
+}
 export type Team =
   ApiResponse<'/api/workspaces/{workspaceId}/teams', 'get'>[number];
 export type TeamMember =
@@ -351,6 +360,19 @@ export const workspacesApi = {
   revokeInvite: (workspaceId: string, inviteId: string) =>
     apiClient.delete(
       `/api/workspaces/${workspaceId}/invites/${inviteId}`,
+    ),
+};
+
+export const workspaceAnalyticsApi = {
+  dashboard: (
+    workspaceId: string,
+    params?: WorkspaceAnalyticsFilters,
+  ) =>
+    apiClient.get<WorkspaceAnalyticsDashboard>(
+      `/api/workspaces/${workspaceId}/analytics/dashboard`,
+      {
+        params,
+      },
     ),
 };
 

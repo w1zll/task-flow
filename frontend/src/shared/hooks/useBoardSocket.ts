@@ -9,6 +9,7 @@ import {
 import { Board, BoardActivity, Task, TaskComment } from '../api/api';
 import {
   addTaskToBoard,
+  invalidateWorkspaceAnalyticsForBoard,
   findTaskInBoard,
   moveTaskToColumnEndInBoard,
   queryKeys,
@@ -139,6 +140,7 @@ export const useBoardSocket = (boardId: string) => {
       qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) =>
         addTaskToBoard(prev, payload.task),
       );
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
     });
 
     socket.on(
@@ -171,6 +173,7 @@ export const useBoardSocket = (boardId: string) => {
             queryKey: queryKeys.boardAnalytics(boardId),
           });
         }
+        invalidateWorkspaceAnalyticsForBoard(qc, boardId);
       },
     );
 
@@ -203,6 +206,7 @@ export const useBoardSocket = (boardId: string) => {
             }),
           };
         });
+        invalidateWorkspaceAnalyticsForBoard(qc, boardId);
       },
     );
 
@@ -211,6 +215,7 @@ export const useBoardSocket = (boardId: string) => {
       qc.setQueryData(queryKeys.board(boardId), (prev: Board | undefined) =>
         removeTaskFromBoard(prev, payload.taskId),
       );
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
     });
 
     socket.on('board:activity', (payload: { boardId: string; activity: BoardActivity }) => {
@@ -256,6 +261,7 @@ export const useBoardSocket = (boardId: string) => {
             }),
           };
         });
+        invalidateWorkspaceAnalyticsForBoard(qc, boardId);
       },
     );
 

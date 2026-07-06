@@ -68,6 +68,9 @@ export const useUpdateTeam = (workspaceId: string) => {
         queryKey: queryKeys.myWorkspaceTeams(workspaceId),
       });
       void queryClient.invalidateQueries({ queryKey: queryKeys.boards });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.workspaceAnalytics(workspaceId),
+      });
     },
   });
 };
@@ -84,6 +87,9 @@ export const useDeleteTeam = (workspaceId: string) => {
         queryKey: queryKeys.myWorkspaceTeams(workspaceId),
       });
       void queryClient.invalidateQueries({ queryKey: queryKeys.boards });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.workspaceAnalytics(workspaceId),
+      });
     },
   });
 };

@@ -294,6 +294,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspaces/{workspaceId}/analytics/dashboard": {
+        parameters: {
+            query?: {
+                boardId?: string;
+                teamId?: string;
+                assigneeId?: string;
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        get: operations["AnalyticsController_dashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workspaces/{workspaceId}/invites": {
         parameters: {
             query?: never;
@@ -3892,6 +3916,94 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    AnalyticsController_dashboard: {
+        parameters: {
+            query?: {
+                boardId?: string;
+                teamId?: string;
+                assigneeId?: string;
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        totals: {
+                            completed: number;
+                            open: number;
+                            overdue: number;
+                            total: number;
+                        };
+                        completedByTeam: {
+                            id: string | null;
+                            name: string | null;
+                            count: number;
+                        }[];
+                        overdue: {
+                            count: number;
+                            topTasks: {
+                                id: string;
+                                title: string;
+                                boardId: string;
+                                boardTitle: string | null;
+                                dueDate: string;
+                                assigneeId: string | null;
+                                assigneeName: string | null;
+                                teamId: string | null;
+                                teamName: string | null;
+                            }[];
+                        };
+                        workloadByAssignee: {
+                            id: string | null;
+                            name: string | null;
+                            openCount: number;
+                            overdueCount: number;
+                            estimateMinutes: number;
+                            storyPoints: number;
+                        }[];
+                        cycleTime: {
+                            averageDays: number | null;
+                            sampleCount: number;
+                        };
+                        throughputByWeek: {
+                            weekStart: string;
+                            count: number;
+                        }[];
+                        burndown: {
+                            boardId: string;
+                            hasStoryPoints: boolean;
+                            remainingTasks: {
+                                weekStart: string;
+                                count: number;
+                            }[];
+                            remainingStoryPoints: {
+                                weekStart: string;
+                                count: number;
+                            }[];
+                            message?: string | null;
+                        } | null;
+                        completionOnTime: {
+                            total: number;
+                            onTime: number;
+                            late: number;
+                            onTimeRatio: number | null;
+                        };
+                    };
+                };
             };
         };
     };

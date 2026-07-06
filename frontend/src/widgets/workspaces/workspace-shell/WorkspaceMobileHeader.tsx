@@ -22,6 +22,7 @@ const WorkspaceMobileHeader = ({
     overview: t('nav.overview'),
     myTasks: t('nav.myTasks'),
     teams: t('nav.teams'),
+    analytics: t('nav.analytics'),
     boards: t('nav.boards'),
     whiteboards: t('nav.whiteboards'),
     settings: t('nav.settings'),

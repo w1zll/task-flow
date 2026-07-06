@@ -37,6 +37,7 @@ import { Whiteboard } from './whiteboards/entities/whiteboard.entity';
 import { WhiteboardOperation } from './whiteboards/entities/whiteboard-operation.entity';
 import { WhiteboardSnapshot } from './whiteboards/entities/whiteboard-snapshot.entity';
 import { WhiteboardsModule } from './whiteboards/whiteboards.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { WhiteboardsModule } from './whiteboards/whiteboards.module';
     DemoModule,
     NotificationsModule,
     WhiteboardsModule,
+    AnalyticsModule,
     BoardsModule,
     ColumnsModule,
     TasksModule,

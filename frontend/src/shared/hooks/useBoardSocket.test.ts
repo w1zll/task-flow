@@ -18,6 +18,10 @@ jest.mock('../queries/boards.queries', () => ({
     board?.columns
       ?.flatMap((column: any) => column.tasks ?? [])
       .find((task: any) => task.id === taskId),
+  invalidateWorkspaceAnalyticsForBoard: (qc: any, boardId: string) =>
+    qc.invalidateQueries({
+      queryKey: ['workspaces', boardId, 'analytics'],
+    }),
   moveTaskToColumnEndInBoard: (board: any, updatedTask: any) => {
     if (!board) return board;
     return {
