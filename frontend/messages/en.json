@@ -100,6 +100,14 @@
     },
     "footer": "TaskFlow - Next.js · NestJS · Zustand · Material UI"
   },
+  "NotFound": {
+    "eyebrow": "Page not found",
+    "title": "This page does not exist",
+    "description": "The URL may be wrong, expired, or no longer available. Use the button below to continue.",
+    "authenticatedAction": "Go to workspaces",
+    "guestAction": "Go home",
+    "loadingAction": "Loading..."
+  },
   "Auth": {
     "Login": {
       "title": "Sign in",
