@@ -8,36 +8,56 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
 const AuthHydrator = () => {
-  const authStore = useAuthStore();
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const hydrate = useAuthStore((state) => state.hydrate);
 
   useEffect(() => {
-    if (pathname.startsWith('/auth')) {
-      authStore.hydrate(null);
-      return;
-    }
-    if (!authStore.isLoading) return;
+    let cancelled = false;
 
-    if (isBrowserOffline()) {
-      authStore.hydrate(readStoredAuthUser());
+    if (pathname === '/auth' || pathname.startsWith('/auth/')) {
+      hydrate(null);
       return;
     }
 
-    authApi
-      .me()
-      .then((res) => {
+    const hydrateFromCache = () => {
+      hydrate(readStoredAuthUser());
+    };
+
+    const loadAuthUser = async () => {
+      if (isBrowserOffline()) {
+        hydrateFromCache();
+        return;
+      }
+
+      if (user && !isLoading) {
+        return;
+      }
+
+      try {
+        const res = await authApi.me();
+        if (cancelled) return;
         writeStoredAuthUser(res.data);
-        authStore.hydrate(res.data);
-      })
-      .catch(() => {
+        hydrate(res.data);
+      } catch {
+        if (cancelled) return;
+
         if (isBrowserOffline()) {
-          authStore.hydrate(readStoredAuthUser());
+          hydrateFromCache();
           return;
         }
 
-        authStore.hydrate(null);
-      });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+        hydrate(null);
+      }
+    };
+
+    void loadAuthUser();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrate, isLoading, pathname, user]);
 
   return null;
 };
