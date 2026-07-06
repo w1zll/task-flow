@@ -842,6 +842,7 @@ export class DemoService {
     const allUsers = [owner, ...demoUsers];
     const teamList = Object.values(teams);
     const tasks: Task[] = [];
+    const now = new Date();
 
     boards.forEach((board, boardIndex) => {
       const labels = this.getDemoText(locale).boards.find(
@@ -858,8 +859,11 @@ export class DemoService {
           const dueOffset = this.getDueOffset(globalIndex, isDoneColumn);
           const isCompleted = isDoneColumn || globalIndex % 11 === 0;
           const completedAt = isCompleted
-            ? this.addDays(new Date(), -((globalIndex % 25) + 1))
+            ? this.addDays(now, -((globalIndex % 25) + 1))
             : null;
+          const createdAt = completedAt
+            ? this.addDays(completedAt, -((globalIndex % 7) + 1))
+            : this.addDays(now, -((globalIndex % 20) + 2));
 
           tasks.push(
             taskRepo.create({
@@ -878,12 +882,14 @@ export class DemoService {
               priority: this.getPriority(globalIndex),
               order,
               labels: this.pickLabels(labels, globalIndex),
-              dueDate: dueOffset === null ? null : this.addDays(new Date(), dueOffset),
+              dueDate: dueOffset === null ? null : this.addDays(now, dueOffset),
               assigneeId: assignee?.id,
               assigneeName: assignee?.name,
               teamId: team.id,
               isCompleted,
               completedAt,
+              createdAt,
+              updatedAt: completedAt ?? this.addDays(now, -(globalIndex % 3)),
               columnId: column.id,
             }),
           );
