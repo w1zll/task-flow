@@ -113,10 +113,6 @@ export class AuthService {
     );
 
     if (!matchedToken || matchedToken.isRevoked) {
-      await this.refreshTokenRepo.update(
-        { userId: payload.sub },
-        { isRevoked: true },
-      );
       throw new UnauthorizedException(
         'Пользователь не авторизован. Пожалуйста, войдите заново.',
       );

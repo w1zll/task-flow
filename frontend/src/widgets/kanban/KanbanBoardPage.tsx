@@ -31,6 +31,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSnackbar } from 'notistack';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BoardFiltersToolbar from './BoardFiltersToolbar';
+import BoardPlanningSection from './BoardPlanningSection';
 import {
   countBoardTasks,
   filterBoard,
@@ -46,6 +47,7 @@ import { useBoardFiltersController } from './kanban-board-page/useBoardFiltersCo
 import TaskDetailModal from './TaskDetailModal';
 import BoardActivityDrawer from './kanban-board-page/BoardActivityDrawer';
 import BoardWhiteboardsSection from '@/widgets/whiteboards/BoardWhiteboardsSection';
+import { useBoardLayoutController } from './kanban-board-page/useBoardLayoutController';
 
 interface Props {
   boardId: string;
@@ -116,6 +118,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     saveCurrentView,
     removeSavedView,
   } = useBoardFiltersController(boardId);
+  const { boardLayout, setBoardLayout } = useBoardLayoutController();
   const boardAnalytics = useBoardAnalyticsController(boardId, dayjsLocale);
   const roleCanEditBoardContent =
     board?.capabilities.canEditBoardContent ?? false;
@@ -205,7 +208,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     [board],
   );
   const isReorderDisabledByView =
-    isBoardReorderDisabledByView(boardFilters);
+    boardLayout === 'kanban' && isBoardReorderDisabledByView(boardFilters);
 
   useStableBodyScrollLock(isMembersOpen || isStatsOpen || isActivityOpen);
 
@@ -436,6 +439,8 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
           filters={boardFilters}
           onChange={updateBoardFilters}
           onReset={resetBoardFilters}
+          layout={boardLayout}
+          onLayoutChange={setBoardLayout}
           boardMembers={boardMembers.data}
           teams={workspaceTeams.data}
           filteredCount={filteredTaskCount}
@@ -453,28 +458,40 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
         />
       )}
 
-      <BoardCanvasSection
-        boardId={boardId}
-        isLoading={isLoading}
-        isFiltering={isFiltering}
-        filteredBoard={filteredBoard}
-        highlightedTaskId={highlightedTaskId}
-        isReorderDisabled={isReorderDisabledByView}
-        canManageColumns={canManageColumns}
-        isAddingColumn={isAddingColumn}
-        newColumnTitle={newColTitle}
-        isCreatingColumn={createColumn.isPending}
-        boardScrollWidth={boardScrollWidth}
-        hasBoardHorizontalOverflow={hasBoardHorizontalOverflow}
-        boardScrollRef={boardScrollRef}
-        boardTopScrollRef={boardTopScrollRef}
-        boardContentRef={boardContentRef}
-        onBoardScroll={syncBoardScroll}
-        onTopScroll={syncTopScroll}
-        onNewColumnTitleChange={setNewColTitle}
-        onAddColumn={handleAddColumn}
-        onCancelAddColumn={() => setAddingColumn(false)}
-      />
+      {boardLayout === 'kanban' ? (
+        <BoardCanvasSection
+          boardId={boardId}
+          isLoading={isLoading}
+          isFiltering={isFiltering}
+          filteredBoard={filteredBoard}
+          highlightedTaskId={highlightedTaskId}
+          isReorderDisabled={isReorderDisabledByView}
+          canManageColumns={canManageColumns}
+          isAddingColumn={isAddingColumn}
+          newColumnTitle={newColTitle}
+          isCreatingColumn={createColumn.isPending}
+          boardScrollWidth={boardScrollWidth}
+          hasBoardHorizontalOverflow={hasBoardHorizontalOverflow}
+          boardScrollRef={boardScrollRef}
+          boardTopScrollRef={boardTopScrollRef}
+          boardContentRef={boardContentRef}
+          onBoardScroll={syncBoardScroll}
+          onTopScroll={syncTopScroll}
+          onNewColumnTitleChange={setNewColTitle}
+          onAddColumn={handleAddColumn}
+          onCancelAddColumn={() => setAddingColumn(false)}
+        />
+      ) : (
+        <BoardPlanningSection
+          boardId={boardId}
+          layout={boardLayout}
+          board={effectiveBoard}
+          filteredBoard={filteredBoard}
+          highlightedTaskId={highlightedTaskId}
+          canEditBoardContent={canEditBoardContent}
+          teams={workspaceTeams.data}
+        />
+      )}
 
       <BoardStatsDrawer
         open={isStatsOpen}

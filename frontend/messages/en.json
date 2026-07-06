@@ -100,6 +100,14 @@
     },
     "footer": "TaskFlow - Next.js · NestJS · Zustand · Material UI"
   },
+  "NotFound": {
+    "eyebrow": "Page not found",
+    "title": "This page does not exist",
+    "description": "The URL may be wrong, expired, or no longer available. Use the button below to continue.",
+    "authenticatedAction": "Go to workspaces",
+    "guestAction": "Go home",
+    "loadingAction": "Loading..."
+  },
   "Auth": {
     "Login": {
       "title": "Sign in",
@@ -305,6 +313,34 @@
       "urgent": "urgent"
     },
     "activitySystem": "System",
+    "layout": {
+      "label": "Layout",
+      "kanban": "Kanban",
+      "calendar": "Calendar",
+      "timeline": "Timeline",
+      "roadmap": "Roadmap"
+    },
+    "calendar": {
+      "modeLabel": "Calendar mode",
+      "week": "Week",
+      "month": "Month",
+      "previous": "Previous",
+      "today": "Today",
+      "next": "Next",
+      "noDueDate": "No due date",
+      "noDueDateEmpty": "Drop a task here to clear its due date.",
+      "emptyDay": "No tasks",
+      "empty": "No calendar items yet"
+    },
+    "timeline": {
+      "empty": "No timeline data yet.",
+      "emptyCell": "No milestones"
+    },
+    "roadmap": {
+      "hiddenDueDate": "{count} tasks without due dates are hidden.",
+      "noTeam": "No team",
+      "emptyCell": "No items"
+    },
     "mobile": {
       "viewModeLabel": "Board view mode",
       "viewSingle": "By column",
@@ -315,7 +351,14 @@
       "emptyColumn": "There are no tasks in this column yet.",
       "noColumns": "This board has no columns yet.",
       "addTask": "New task",
-      "moveDisabledByFilters": "Moving tasks is unavailable while filters or sorting are active."
+      "moveDisabledByFilters": "Moving tasks is unavailable while filters or sorting are active.",
+      "agenda": {
+        "overdue": "Overdue",
+        "today": "Today",
+        "upcoming": "Upcoming",
+        "noDueDate": "No due date",
+        "empty": "No tasks here."
+      }
     },
     "filters": {
       "title": "Filters",

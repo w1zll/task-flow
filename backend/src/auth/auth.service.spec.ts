@@ -13,6 +13,12 @@ import { AvatarService } from '@/users/avatar.service';
 import { WorkspacesService } from '@/workspaces/workspaces.service';
 import * as bcrypt from 'bcrypt';
 
+jest.mock('bcrypt', () => ({
+  __esModule: true,
+  hash: jest.fn(),
+  compare: jest.fn(),
+}));
+
 describe('AuthService', () => {
   let service: AuthService;
   let userRepo: Repository<User>;
@@ -22,6 +28,7 @@ describe('AuthService', () => {
   let boardsService: BoardsService;
   let avatarService: AvatarService;
   let workspacesService: WorkspacesService;
+  const mockBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
 
   const mockUserRepo = {
     findOne: jest.fn(),
@@ -115,6 +122,8 @@ describe('AuthService', () => {
     boardsService = module.get<BoardsService>(BoardsService);
     avatarService = module.get<AvatarService>(AvatarService);
     workspacesService = module.get<WorkspacesService>(WorkspacesService);
+    mockBcrypt.hash.mockResolvedValue('hashed-refresh-token' as never);
+    mockBcrypt.compare.mockResolvedValue(false as never);
   });
 
   afterEach(() => {
@@ -360,7 +369,8 @@ describe('AuthService', () => {
 
     it('falls back to bcrypt comparison for legacy refresh tokens', async () => {
       const legacyRefreshToken = 'legacy-refresh-token';
-      const legacyHash = await bcrypt.hash(legacyRefreshToken, 4);
+      const legacyHash = `hashed-${legacyRefreshToken}`;
+      mockBcrypt.hash.mockResolvedValueOnce(legacyHash as never);
       const legacyToken = {
         id: 'token-1',
         token: legacyHash,
@@ -372,6 +382,7 @@ describe('AuthService', () => {
       mockConfigService.get.mockReturnValue('refresh-secret');
       mockRefreshTokenRepo.update.mockResolvedValue({ affected: 0 });
       mockRefreshTokenRepo.find.mockResolvedValue([legacyToken]);
+      mockBcrypt.compare.mockResolvedValueOnce(true as never);
 
       await service.logout(legacyRefreshToken);
 
@@ -386,6 +397,32 @@ describe('AuthService', () => {
         ...legacyToken,
         isRevoked: true,
       });
+    });
+  });
+
+  describe('refresh', () => {
+    it('rejects a reused refresh token without revoking other active sessions', async () => {
+      mockBcrypt.compare.mockResolvedValue(false as never);
+
+      mockJwtService.verify.mockReturnValue({ sub: 'demo-owner' });
+      mockConfigService.get.mockReturnValue('refresh-secret');
+      mockRefreshTokenRepo.findOne.mockResolvedValue(null);
+      mockRefreshTokenRepo.find.mockResolvedValue([
+        {
+          id: 'active-token-1',
+          token: 'hashed-active-token',
+          userId: 'demo-owner',
+          isRevoked: false,
+        },
+      ]);
+
+      await expect(service.refresh('stale-refresh-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+
+      expect(mockRefreshTokenRepo.update).not.toHaveBeenCalled();
+      expect(mockRefreshTokenRepo.save).not.toHaveBeenCalled();
+      expect(mockUserRepo.findOne).not.toHaveBeenCalled();
     });
   });
 });

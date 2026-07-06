@@ -38,10 +38,10 @@ export class CreateTaskDto {
   @IsArray()
   labels?: string[];
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, nullable: true })
   @IsOptional()
   @IsDateString()
-  dueDate?: string;
+  dueDate?: string | null;
 
   @ApiProperty({ required: false, example: 'assignee-user-uuid' })
   @IsOptional()
@@ -113,8 +113,12 @@ export class TaskResponseDto {
   @ApiProperty({ required: false, example: ['Label 1', 'Label 2'] })
   labels?: string[];
 
-  @ApiProperty({ required: false, example: '2026-05-05T12:00:00.000Z' })
-  dueDate?: string;
+  @ApiProperty({
+    required: false,
+    example: '2026-05-05T12:00:00.000Z',
+    nullable: true,
+  })
+  dueDate?: string | null;
 
   @ApiProperty({ required: false, example: 'assignee-user-uuid' })
   assigneeId?: string;
