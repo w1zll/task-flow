@@ -43,6 +43,17 @@ const invalidateBoardAnalytics = (qc: QueryClient, boardId: string) => {
   void qc.invalidateQueries({ queryKey: queryKeys.boardAnalytics(boardId) });
 };
 
+export const invalidateWorkspaceAnalyticsForBoard = (
+  qc: QueryClient,
+  boardId: string,
+) => {
+  const board = qc.getQueryData<Board>(queryKeys.board(boardId));
+  if (!board?.workspaceId) return;
+  void qc.invalidateQueries({
+    queryKey: queryKeys.workspaceAnalytics(board.workspaceId),
+  });
+};
+
 const hasCompletionChange = (data: Partial<Task>) =>
   Object.prototype.hasOwnProperty.call(data, 'isCompleted') ||
   Object.prototype.hasOwnProperty.call(data, 'completedAt');
@@ -322,7 +333,10 @@ export const useCreateTask = () => {
           teamId: data.teamId,
         })
         .then((r) => r.data),
-    onSuccess: (_, { boardId }) => invalidateBoard(qc, boardId),
+    onSuccess: (_, { boardId }) => {
+      invalidateBoard(qc, boardId);
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
+    },
   });
 };
 
@@ -342,6 +356,7 @@ export const useUpdateTask = () => {
       if (hasCompletionChange(data)) {
         invalidateBoardAnalytics(qc, boardId);
       }
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
     },
   });
 };
@@ -365,6 +380,7 @@ export const useCreateTaskChecklistItem = () => {
     onSuccess: (_, { boardId }) => {
       invalidateBoard(qc, boardId);
       invalidateBoardActivities(qc, boardId);
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
     },
   });
 };
@@ -393,6 +409,7 @@ export const useUpdateTaskChecklistItem = () => {
     onSuccess: (_, { boardId }) => {
       invalidateBoard(qc, boardId);
       invalidateBoardActivities(qc, boardId);
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
     },
   });
 };
@@ -411,6 +428,7 @@ export const useDeleteTaskChecklistItem = () => {
     onSuccess: (_, { boardId }) => {
       invalidateBoard(qc, boardId);
       invalidateBoardActivities(qc, boardId);
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
     },
   });
 };
@@ -429,6 +447,7 @@ export const useReorderTaskChecklistItems = () => {
     onSuccess: (_, { boardId }) => {
       invalidateBoard(qc, boardId);
       invalidateBoardActivities(qc, boardId);
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
     },
   });
 };
@@ -493,6 +512,7 @@ export const useDeleteTaskAttachment = () => {
     },
     onSuccess: (_, { boardId }) => {
       invalidateBoardActivities(qc, boardId);
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
     },
   });
 };
@@ -510,7 +530,10 @@ export const useMoveTask = () => {
       order: number;
       boardId: string;
     }) => taskApi.move(id, { columnId, order }).then((r) => r.data),
-    onSuccess: (_, { boardId }) => invalidateBoard(qc, boardId),
+    onSuccess: (_, { boardId }) => {
+      invalidateBoard(qc, boardId);
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
+    },
   });
 };
 
@@ -519,7 +542,10 @@ export const useDeleteTask = () => {
   return useMutation({
     mutationFn: ({ id, boardId }: { id: string; boardId: string }) =>
       taskApi.remove(id).then(() => boardId),
-    onSuccess: (boardId) => invalidateBoard(qc, boardId),
+    onSuccess: (boardId) => {
+      invalidateBoard(qc, boardId);
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
+    },
   });
 };
 
@@ -542,6 +568,7 @@ export const useShareBoard = () => {
     onSuccess: (_, { boardId }) => {
       invalidateBoardWithList(qc, boardId);
       invalidateBoardMembers(qc, boardId);
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
     },
   });
 };
@@ -630,6 +657,7 @@ export const useRevokeBoardMember = () => {
     onSuccess: (_, { boardId }) => {
       invalidateBoardWithList(qc, boardId);
       invalidateBoardMembers(qc, boardId);
+      invalidateWorkspaceAnalyticsForBoard(qc, boardId);
     },
   });
 };

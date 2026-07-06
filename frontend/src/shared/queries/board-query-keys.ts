@@ -7,6 +7,28 @@ export const queryKeys = {
   tasks: (columnId: string) => ['tasks', columnId] as const,
   taskComments: (taskId: string) => ['tasks', taskId, 'comments'] as const,
   boardAnalytics: (id?: string) => ['boards', id, 'analytics'] as const,
+  workspaceAnalytics: (
+    workspaceId: string,
+    filters?: {
+      boardId?: string | null;
+      teamId?: string | null;
+      assigneeId?: string | null;
+      fromDate?: string | null;
+      toDate?: string | null;
+    },
+  ) =>
+    [
+      'workspaces',
+      workspaceId,
+      'analytics',
+      {
+        boardId: filters?.boardId ?? null,
+        teamId: filters?.teamId ?? null,
+        assigneeId: filters?.assigneeId ?? null,
+        fromDate: filters?.fromDate ?? null,
+        toDate: filters?.toDate ?? null,
+      },
+    ] as const,
   notifications: (unreadOnly = false) =>
     ['notifications', { unreadOnly }] as const,
   notificationUnreadCount: ['notifications', 'unread-count'] as const,

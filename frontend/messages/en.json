@@ -503,6 +503,7 @@
       "overview": "Overview",
         "myTasks": "My tasks",
         "teams": "Teams",
+        "analytics": "Analytics",
         "boards": "Boards",
         "whiteboards": "Canvases",
         "settings": "Settings"
@@ -637,6 +638,77 @@
   "WorkspaceTeamsPage": {
     "title": "Teams",
     "description": "Manage workspace teams and their members."
+  },
+  "WorkspaceAnalytics": {
+    "pageTitle": "Team analytics",
+    "pageDescription": "Workspace and team delivery analytics",
+    "title": "Team analytics",
+    "description": "See team throughput, workload, overdue work, cycle time, and on-time completion across accessible boards.",
+    "updating": "Updating data...",
+    "loadError": "Failed to load analytics. Check your access or try again.",
+    "refreshError": "Could not refresh analytics. Showing the last loaded data.",
+    "empty": "There is no task data for the selected filters yet.",
+    "notAvailable": "N/A",
+    "days": "{count}d",
+    "hours": "{count}h",
+    "unassignedTeam": "No team",
+    "unassignedAssignee": "Unassigned",
+    "unknownBoard": "Unknown board",
+    "filters": {
+      "board": "Board",
+      "allBoards": "All boards",
+      "team": "Team",
+      "allTeams": "All teams",
+      "assignee": "Assignee",
+      "allAssignees": "All assignees",
+      "from": "From",
+      "to": "To",
+      "reset": "Reset"
+    },
+    "stats": {
+      "completed": "Completed",
+      "completedHelp": "Done in the selected period",
+      "overdue": "Overdue",
+      "overdueHelp": "Open tasks past due date",
+      "cycleTime": "Cycle time",
+      "cycleTimeHelp": "{count} completed tasks sampled",
+      "onTime": "On time",
+      "onTimeHelp": "{late} late completions"
+    },
+    "charts": {
+      "completedByTeam": "Completed by team",
+      "completedByTeamHelp": "Completed tasks grouped by assigned team.",
+      "workload": "Workload by person",
+      "workloadHelp": "Open and overdue tasks per assignee.",
+      "throughput": "Weekly throughput",
+      "throughputHelp": "Tasks completed by week in the selected period.",
+      "burndown": "Burndown",
+      "burndownHelp": "Remaining work on “{board}”.",
+      "burndownNeedsBoard": "Pick a board to see Scrum-style remaining work.",
+      "pickBoard": "Select a board filter to show burndown.",
+      "emptyBurndown": "No burndown points for this board and date range.",
+      "emptyCompleted": "No completed tasks for this period.",
+      "emptyWorkload": "No open tasks match the filters.",
+      "emptyThroughput": "No weekly completions yet.",
+      "completedSeries": "Completed",
+      "openSeries": "Open",
+      "overdueSeries": "Overdue",
+      "remainingTasks": "Remaining tasks",
+      "remainingStoryPoints": "Remaining story points"
+    },
+    "overdue": {
+      "title": "Top overdue tasks",
+      "description": "The earliest overdue tasks from accessible boards.",
+      "empty": "No overdue tasks in the selected scope."
+    },
+    "workload": {
+      "title": "Workload details",
+      "description": "Use this list to spot overload and blocked work quickly.",
+      "estimate": "{estimate} estimate / {points} pts",
+      "open": "{count} open",
+      "overdue": "{count} overdue",
+      "empty": "No assignee workload for these filters."
+    }
   },
   "WorkspaceSettings": {
     "title": "Workspace settings",

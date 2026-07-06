@@ -3,13 +3,21 @@ import {
   DashboardOutlined,
   GestureOutlined,
   GroupsOutlined,
+  QueryStatsOutlined,
   SettingsOutlined,
   ViewKanbanOutlined,
 } from '@mui/icons-material';
 import type { ReactNode } from 'react';
 
 interface WorkspaceNavItem {
-  key: 'overview' | 'myTasks' | 'teams' | 'boards' | 'whiteboards' | 'settings';
+  key:
+    | 'overview'
+    | 'myTasks'
+    | 'teams'
+    | 'analytics'
+    | 'boards'
+    | 'whiteboards'
+    | 'settings';
   icon: ReactNode;
   href: (workspaceId: string) => string;
 }
@@ -29,6 +37,11 @@ export const workspaceNavItems = [
     key: 'teams',
     icon: <GroupsOutlined />,
     href: (workspaceId: string) => `/workspaces/${workspaceId}/teams`,
+  },
+  {
+    key: 'analytics',
+    icon: <QueryStatsOutlined />,
+    href: (workspaceId: string) => `/workspaces/${workspaceId}/analytics`,
   },
   {
     key: 'boards',
@@ -57,6 +70,7 @@ export const getActiveNavKey = (
   if (pathname === base) return 'overview';
   if (pathname.startsWith(`${base}/my-tasks`)) return 'myTasks';
   if (pathname.startsWith(`${base}/teams`)) return 'teams';
+  if (pathname.startsWith(`${base}/analytics`)) return 'analytics';
   if (pathname.startsWith(`${base}/boards`)) return 'boards';
   if (pathname.startsWith(`${base}/whiteboards`)) return 'whiteboards';
   if (pathname.startsWith(`${base}/settings`)) return 'settings';
