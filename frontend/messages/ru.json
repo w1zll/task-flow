@@ -305,6 +305,34 @@
       "urgent": "срочный"
     },
     "activitySystem": "Система",
+    "layout": {
+      "label": "Вид",
+      "kanban": "Канбан",
+      "calendar": "Календарь",
+      "timeline": "Таймлайн",
+      "roadmap": "Дорожная карта"
+    },
+    "calendar": {
+      "modeLabel": "Режим календаря",
+      "week": "Неделя",
+      "month": "Месяц",
+      "previous": "Назад",
+      "today": "Сегодня",
+      "next": "Вперед",
+      "noDueDate": "Без дедлайна",
+      "noDueDateEmpty": "Перетащите задачу сюда, чтобы убрать дедлайн.",
+      "emptyDay": "Нет задач",
+      "empty": "Календарь пока пуст"
+    },
+    "timeline": {
+      "empty": "Пока нет данных для таймлайна.",
+      "emptyCell": "Нет вех"
+    },
+    "roadmap": {
+      "hiddenDueDate": "Скрыто задач без дедлайна: {count}.",
+      "noTeam": "Без команды",
+      "emptyCell": "Нет задач"
+    },
     "mobile": {
       "viewModeLabel": "Режим доски",
       "viewSingle": "По колонке",

@@ -95,7 +95,7 @@ const VALID_SORTS = new Set<BoardTaskSort>([
 
 const normalizeLabel = (label: string) => label.trim().toLowerCase();
 
-const normalizeNullableDate = (value?: string) =>
+const normalizeNullableDate = (value?: string | null) =>
   value ? new Date(value).getTime() : Number.POSITIVE_INFINITY;
 
 const getAssigneeName = (task: Task) =>

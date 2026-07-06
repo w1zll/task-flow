@@ -26,6 +26,8 @@ import {
 } from './board-filters-toolbar/filterOptions';
 import SaveViewDialog from './board-filters-toolbar/SaveViewDialog';
 import type { ActiveFilterChip } from './board-filters-toolbar/types';
+import BoardLayoutSwitcher from './BoardLayoutSwitcher';
+import type { BoardLayout } from './board-layout';
 
 interface Props {
   filters: BoardFilters;
@@ -37,6 +39,8 @@ interface Props {
   totalCount: number;
   isFiltering: boolean;
   isReorderDisabled: boolean;
+  layout: BoardLayout;
+  onLayoutChange: (layout: BoardLayout) => void;
   savedViews?: BoardView[];
   selectedViewId?: string | null;
   isSavingView?: boolean;
@@ -57,6 +61,8 @@ const BoardFiltersToolbar = ({
   totalCount,
   isFiltering,
   isReorderDisabled,
+  layout,
+  onLayoutChange,
   savedViews = [],
   selectedViewId,
   isSavingView = false,
@@ -72,7 +78,7 @@ const BoardFiltersToolbar = ({
   const [searchInput, setSearchInput] = useState(filters.search);
   const [labelsInput, setLabelsInput] = useState(filters.labels.join(', '));
   const [isSaveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [isDesktopFiltersExpanded, setDesktopFiltersExpanded] = useState(true);
+  const [isDesktopFiltersExpanded, setDesktopFiltersExpanded] = useState(false);
   const [viewTitle, setViewTitle] = useState('');
   const desktopFiltersPanelId = 'board-filters-desktop-panel';
   const isActive = areBoardFiltersActive(filters);
@@ -258,6 +264,8 @@ const BoardFiltersToolbar = ({
       }}
     >
       <Stack spacing={{ md: 1.25 }}>
+        <BoardLayoutSwitcher layout={layout} onChange={onLayoutChange} />
+
         <BoardFiltersHeader
           isActive={isActive}
           filteredCount={filteredCount}
