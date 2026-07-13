@@ -9,14 +9,14 @@ export const useLandingGSAP = () => {
   const scrollArrowRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
 
-  const titleRef = useRef<HTMLHeadingElement>(null);
+  const titleRef = useRef<HTMLSpanElement>(null);
   const accentRef = useRef<HTMLElement>(null);
   const subtitleRef = useRef<HTMLHeadingElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
 
   const cardsRef = useRef<HTMLDivElement[]>([]);
-  const featuresTitleRef = useRef<HTMLHeadElement>(null);
+  const featuresTitleRef = useRef<HTMLHeadingElement>(null);
   const featuresSubtitleRef = useRef<HTMLParagraphElement>(null);
 
   useGSAP(() => {

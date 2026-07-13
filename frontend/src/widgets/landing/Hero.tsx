@@ -19,13 +19,13 @@ import { useSnackbar } from 'notistack';
 import { RefObject, useState } from 'react';
 
 interface Props {
-  badgeRef: RefObject<HTMLDivElement>;
-  titleRef: RefObject<HTMLSpanElement>;
-  accentRef: RefObject<HTMLElement>;
-  subtitleRef: RefObject<HTMLElement>;
-  buttonsRef: RefObject<HTMLDivElement>;
-  scrollArrowRef: RefObject<HTMLDivElement>;
-  featuresRef: RefObject<HTMLDivElement>;
+  badgeRef: RefObject<HTMLDivElement | null>;
+  titleRef: RefObject<HTMLSpanElement | null>;
+  accentRef: RefObject<HTMLElement | null>;
+  subtitleRef: RefObject<HTMLHeadingElement | null>;
+  buttonsRef: RefObject<HTMLDivElement | null>;
+  scrollArrowRef: RefObject<HTMLDivElement | null>;
+  featuresRef: RefObject<HTMLDivElement | null>;
 }
 
 const Hero = ({

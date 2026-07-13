@@ -12,7 +12,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 interface UpcomingTasksPanelProps {
@@ -27,6 +27,7 @@ const UpcomingTasksPanel = ({
   isLoading,
 }: UpcomingTasksPanelProps) => {
   const t = useTranslations('WorkspaceOverview');
+  const format = useFormatter();
 
   return (
     <Paper
@@ -87,7 +88,11 @@ const UpcomingTasksPanel = ({
                 >
                   {task.boardTitle} · {task.columnTitle}
                   {task.dueDate
-                    ? ` · ${new Date(task.dueDate).toLocaleDateString()}`
+                    ? ` · ${format.dateTime(new Date(task.dueDate), {
+                        year: 'numeric',
+                        month: 'numeric',
+                        day: 'numeric',
+                      })}`
                     : ''}
                 </Typography>
               </CardActionArea>
