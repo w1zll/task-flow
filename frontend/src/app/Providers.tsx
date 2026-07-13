@@ -6,8 +6,10 @@ import PendingBoardMutationsPrompt from '@/shared/ui/PendingBoardMutationsPrompt
 import OfflineRuntime from '@/shared/ui/OfflineRuntime';
 import RouteProgressBar from '@/shared/ui/RouteProgressBar';
 import {
-  installQueryCachePersistence,
-  restorePersistedQueryCache,
+  QUERY_CACHE_BUSTER,
+  QUERY_CACHE_MAX_AGE_MS,
+  queryCachePersister,
+  shouldPersistQuery,
 } from '@/shared/lib/query-persistence';
 import { useThemeStore } from '@/shared/store/root.store';
 import type { ThemeMode } from '@/shared/store/theme.store';
@@ -17,10 +19,10 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import { Box, CssBaseline, ThemeProvider } from '@mui/material';
 import {
   QueryClient,
-  QueryClientProvider,
   onlineManager,
 } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Locale, NextIntlClientProvider } from 'next-intl';
 import { SnackbarProvider } from 'notistack';
 import { useEffect, useMemo } from 'react';
@@ -88,23 +90,35 @@ const Providers = ({
   messages,
   locale,
   initialThemeMode,
+  initialNow,
 }: {
   children: React.ReactNode;
   messages: any;
   locale: Locale;
   initialThemeMode: ThemeMode;
+  initialNow: Date;
 }) => {
   const queryClient = getQueryClient();
 
   return (
     <AppRouterCacheProvider>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister: queryCachePersister,
+          buster: QUERY_CACHE_BUSTER,
+          maxAge: QUERY_CACHE_MAX_AGE_MS,
+          dehydrateOptions: {
+            shouldDehydrateQuery: shouldPersistQuery,
+          },
+        }}
+      >
         <NextIntlClientProvider
           locale={locale}
           messages={messages}
           timeZone={defaultTimeZone}
+          now={initialNow}
         >
-          <QueryPersistenceBootstrap queryClient={queryClient} />
           <ThemedApp initialThemeMode={initialThemeMode}>
             <Box
               sx={{
@@ -121,32 +135,9 @@ const Providers = ({
           </ThemedApp>
         </NextIntlClientProvider>
         <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </AppRouterCacheProvider>
   );
-};
-
-const QueryPersistenceBootstrap = ({
-  queryClient,
-}: {
-  queryClient: QueryClient;
-}) => {
-  useEffect(() => {
-    let isActive = true;
-    let cleanup: () => void = () => undefined;
-
-    void restorePersistedQueryCache(queryClient).finally(() => {
-      if (!isActive) return;
-      cleanup = installQueryCachePersistence(queryClient);
-    });
-
-    return () => {
-      isActive = false;
-      cleanup();
-    };
-  }, [queryClient]);
-
-  return null;
 };
 
 export default Providers;

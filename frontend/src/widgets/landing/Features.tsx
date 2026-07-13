@@ -19,9 +19,9 @@ interface Feature {
 
 interface Props {
   features: Feature[];
-  featuresRef: RefObject<HTMLDivElement>;
-  featuresTitleRef: RefObject<HTMLElement>;
-  featuresSubtitleRef: RefObject<HTMLElement>;
+  featuresRef: RefObject<HTMLDivElement | null>;
+  featuresTitleRef: RefObject<HTMLHeadingElement | null>;
+  featuresSubtitleRef: RefObject<HTMLParagraphElement | null>;
   cardsRef: RefObject<HTMLDivElement[]>;
 }
 
@@ -58,9 +58,9 @@ const Features = ({
             <Card
               ref={(el) => {
                 if (el) {
-                  cardsRef.current![i] = el as HTMLDivElement;
+                  cardsRef.current[i] = el as HTMLDivElement;
                 } else {
-                  delete cardsRef.current![i];
+                  delete cardsRef.current[i];
                 }
               }}
               sx={{
