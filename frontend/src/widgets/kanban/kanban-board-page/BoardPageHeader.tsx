@@ -30,12 +30,10 @@ interface BoardPageHeaderProps {
   isLoading: boolean;
   canManageColumns: boolean;
   canEditBoardContent: boolean;
-  isStatsOpen: boolean;
   isMembersOpen: boolean;
   isActivityOpen: boolean;
   activeFilterCount: number;
   onAddColumn: () => void;
-  onToggleStats: () => void;
   onToggleMembers: () => void;
   onToggleActivity: () => void;
   onOpenMobileTools: () => void;
@@ -46,12 +44,10 @@ const BoardPageHeader = ({
   isLoading,
   canManageColumns,
   canEditBoardContent,
-  isStatsOpen,
   isMembersOpen,
   isActivityOpen,
   activeFilterCount,
   onAddColumn,
-  onToggleStats,
   onToggleMembers,
   onToggleActivity,
   onOpenMobileTools,
@@ -227,29 +223,20 @@ const BoardPageHeader = ({
         }}
       >
         <Button
-          variant={isStatsOpen ? 'contained' : 'outlined'}
+          component={NextLink}
+          href={
+            board
+              ? `/workspaces/${board.workspaceId}/analytics?boardId=${encodeURIComponent(board.id)}`
+              : '/workspaces'
+          }
+          disabled={!board}
+          variant="outlined"
           size="small"
           startIcon={<QueryStats />}
-          onClick={onToggleStats}
           sx={{ display: 'inline-flex' }}
         >
           {t('stats')}
         </Button>
-        <Tooltip title={t('stats')}>
-          <IconButton
-            size="small"
-            color={isStatsOpen ? 'primary' : 'default'}
-            onClick={onToggleStats}
-            aria-label={t('stats')}
-            sx={{
-              display: 'none',
-              width: 36,
-              height: 36,
-            }}
-          >
-            <QueryStats fontSize="small" />
-          </IconButton>
-        </Tooltip>
         <Button
           variant={isActivityOpen ? 'contained' : 'outlined'}
           size="small"

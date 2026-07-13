@@ -41,6 +41,7 @@ const createProps = () => ({
   isWhiteboardsError: false,
   canCreateOrAttachWhiteboard: true,
   canManageColumns: true,
+  analyticsHref: '/workspaces/workspace-1/analytics?boardId=board-1',
   onClose: jest.fn(),
   onFiltersChange: jest.fn(),
   onFiltersReset: jest.fn(),
@@ -52,7 +53,6 @@ const createProps = () => ({
   onAttachWhiteboard: jest.fn(),
   onCreateWhiteboard: jest.fn(),
   onAddColumn: jest.fn(),
-  onOpenStats: jest.fn(),
   onOpenActivity: jest.fn(),
   onOpenMembers: jest.fn(),
 });
@@ -95,5 +95,19 @@ describe('MobileBoardToolsDrawer', () => {
     expect(isDisabled(screen.getByRole('button', { name: 'create' }))).toBe(
       true,
     );
+  });
+
+  it('links analytics to the current board and closes the drawer', () => {
+    const props = createProps();
+    render(<MobileBoardToolsDrawer {...props} />);
+
+    fireEvent.click(screen.getByText('mobileTools.actions'));
+    const analyticsLink = screen.getByRole('link', { name: 'stats' });
+
+    expect(analyticsLink.getAttribute('href')).toBe(
+      '/workspaces/workspace-1/analytics?boardId=board-1',
+    );
+    fireEvent.click(analyticsLink);
+    expect(props.onClose).toHaveBeenCalled();
   });
 });

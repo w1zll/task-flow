@@ -37,6 +37,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
+import NextLink from 'next/link';
 import { type KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import type { BoardFilters } from '../board-filters';
 import BoardLayoutSwitcher from '../BoardLayoutSwitcher';
@@ -67,6 +68,7 @@ interface Props {
   isWhiteboardsError: boolean;
   canCreateOrAttachWhiteboard: boolean;
   canManageColumns: boolean;
+  analyticsHref: string;
   onClose: () => void;
   onFiltersChange: (filters: BoardFilters) => void;
   onFiltersReset: () => void;
@@ -78,7 +80,6 @@ interface Props {
   onAttachWhiteboard: () => void;
   onCreateWhiteboard: () => void;
   onAddColumn: () => void;
-  onOpenStats: () => void;
   onOpenActivity: () => void;
   onOpenMembers: () => void;
 }
@@ -101,6 +102,7 @@ const MobileBoardToolsDrawer = ({
   isWhiteboardsError,
   canCreateOrAttachWhiteboard,
   canManageColumns,
+  analyticsHref,
   onClose,
   onFiltersChange,
   onFiltersReset,
@@ -112,7 +114,6 @@ const MobileBoardToolsDrawer = ({
   onAttachWhiteboard,
   onCreateWhiteboard,
   onAddColumn,
-  onOpenStats,
   onOpenActivity,
   onOpenMembers,
 }: Props) => {
@@ -392,7 +393,9 @@ const MobileBoardToolsDrawer = ({
                     <ListItemText primary={t('addColumn')} />
                   </ListItemButton>
                   <ListItemButton
-                    onClick={closeThen(onOpenStats)}
+                    component={NextLink}
+                    href={analyticsHref}
+                    onClick={onClose}
                     sx={{ minHeight: 44, borderRadius: 1 }}
                   >
                     <ListItemIcon><BarChartOutlined /></ListItemIcon>
