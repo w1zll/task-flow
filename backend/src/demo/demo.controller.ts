@@ -25,6 +25,7 @@ import type { Request, Response } from 'express';
 import { detectRequestLocale } from '@/common/locale/request-locale';
 import { DemoWorkspaceSessionDto } from './dto/demo.dto';
 import { DemoService } from './demo.service';
+import { getRequestSessionMetadata } from '@/auth/session-metadata';
 
 const getClientKey = (req: Request) =>
   req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
@@ -54,7 +55,10 @@ export class DemoController {
     const demo = await this.demoService.startDemoSession(
       detectRequestLocale(req),
     );
-    const tokens = await this.authService.issueTokenPair(demo.user);
+    const tokens = await this.authService.issueTokenPair(
+      demo.user,
+      getRequestSessionMetadata(req),
+    );
     setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
 
     return {
@@ -116,7 +120,10 @@ export class DemoController {
       token,
       detectRequestLocale(req),
     );
-    const tokens = await this.authService.issueTokenPair(demo.user);
+    const tokens = await this.authService.issueTokenPair(
+      demo.user,
+      getRequestSessionMetadata(req),
+    );
     setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
 
     return {

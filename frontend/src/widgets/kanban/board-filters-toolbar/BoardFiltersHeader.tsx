@@ -3,10 +3,8 @@
 import {
   ExpandMoreOutlined,
   FilterListOutlined,
-  RestartAltOutlined,
 } from '@mui/icons-material';
 import {
-  Button,
   CircularProgress,
   IconButton,
   Stack,
@@ -16,26 +14,20 @@ import {
 import { useTranslations } from 'next-intl';
 
 interface BoardFiltersHeaderProps {
-  isActive: boolean;
   filteredCount: number;
   totalCount: number;
   isFiltering: boolean;
   isDesktopExpanded: boolean;
   desktopPanelId: string;
-  onReset: () => void;
-  onOpenMobileDrawer: () => void;
   onToggleDesktopExpanded: () => void;
 }
 
 const BoardFiltersHeader = ({
-  isActive,
   filteredCount,
   totalCount,
   isFiltering,
   isDesktopExpanded,
   desktopPanelId,
-  onReset,
-  onOpenMobileDrawer,
   onToggleDesktopExpanded,
 }: BoardFiltersHeaderProps) => {
   const t = useTranslations('BoardPage.filters');
@@ -83,25 +75,6 @@ const BoardFiltersHeader = ({
             sx={{ display: { xs: 'none', md: 'inline-flex' } }}
           />
         )}
-        {isActive && (
-          <IconButton
-            size="small"
-            onClick={onReset}
-            aria-label={t('reset')}
-            sx={{ display: { xs: 'inline-flex', md: 'none' } }}
-          >
-            <RestartAltOutlined fontSize="small" />
-          </IconButton>
-        )}
-        <Button
-          size="small"
-          variant={isActive ? 'contained' : 'outlined'}
-          startIcon={<FilterListOutlined />}
-          onClick={onOpenMobileDrawer}
-          sx={{ display: { xs: 'inline-flex', md: 'none' } }}
-        >
-          {t('open')}
-        </Button>
         <Tooltip
           title={t(isDesktopExpanded ? 'collapse' : 'expand')}
           describeChild
@@ -113,7 +86,7 @@ const BoardFiltersHeader = ({
             aria-controls={desktopPanelId}
             aria-expanded={isDesktopExpanded}
             sx={{
-              display: { xs: 'none', md: 'inline-flex' },
+              display: 'inline-flex',
               transition: 'transform 160ms ease',
               transform: isDesktopExpanded
                 ? 'rotate(180deg)'

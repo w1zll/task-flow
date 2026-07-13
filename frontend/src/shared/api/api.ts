@@ -207,6 +207,11 @@ export const authApi = {
       '/api/auth/sessions',
     ),
 
+  revokeOtherSessions: () =>
+    apiClient.delete<ApiResponse<'/api/auth/sessions', 'delete'>>(
+      '/api/auth/sessions',
+    ),
+
   revokeSession: (id: string) =>
     apiClient.delete<ApiResponse<'/api/auth/sessions/{id}', 'delete'>>(
       `/api/auth/sessions/${id}`,

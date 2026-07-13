@@ -1,5 +1,6 @@
 import { Board, Task } from '@/shared/api/api';
 import {
+  countActiveBoardFilters,
   DEFAULT_BOARD_FILTERS,
   boardFiltersFromSavedView,
   boardFiltersToSavedView,
@@ -95,6 +96,18 @@ const board = {
 } as Board;
 
 describe('board filters', () => {
+  it('counts active filter groups for the mobile tools badge', () => {
+    expect(countActiveBoardFilters(DEFAULT_BOARD_FILTERS)).toBe(0);
+    expect(
+      countActiveBoardFilters({
+        ...DEFAULT_BOARD_FILTERS,
+        search: 'bug',
+        labels: ['backend', 'urgent'],
+        sort: 'priority',
+      }),
+    ).toBe(3);
+  });
+
   it('filters tasks by search, labels, assignee and team', () => {
     const result = filterBoard(
       board,

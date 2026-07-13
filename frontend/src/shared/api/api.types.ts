@@ -151,7 +151,8 @@ export interface paths {
         get: operations["AuthController_sessions"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Завершить все сессии, кроме текущей */
+        delete: operations["AuthController_revokeOtherSessions"];
         options?: never;
         head?: never;
         patch?: never;
@@ -289,30 +290,6 @@ export interface paths {
         post?: never;
         /** Delete a workspace */
         delete: operations["WorkspacesController_remove"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/workspaces/{workspaceId}/analytics/dashboard": {
-        parameters: {
-            query?: {
-                boardId?: string;
-                teamId?: string;
-                assigneeId?: string;
-                fromDate?: string;
-                toDate?: string;
-            };
-            header?: never;
-            path: {
-                workspaceId: string;
-            };
-            cookie?: never;
-        };
-        get: operations["AnalyticsController_dashboard"];
-        put?: never;
-        post?: never;
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1117,6 +1094,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspaces/{workspaceId}/analytics/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get workspace analytics dashboard metrics */
+        get: operations["AnalyticsController_dashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/columns": {
         parameters: {
             query?: never;
@@ -1220,8 +1214,19 @@ export interface components {
         SessionDto: {
             /** @example session-uuid */
             id: string;
+            current: boolean;
+            /** @example desktop */
+            deviceName: string | null;
+            /** @example Chrome */
+            browser: string | null;
+            /** @example Windows */
+            os: string | null;
+            /** @example 192.0.2.10 */
+            ipAddress: string | null;
             /** @example 2026-05-05T12:00:00.000Z */
             createdAt: string;
+            /** @example 2026-05-05T12:30:00.000Z */
+            lastActiveAt: string;
             /** @example 2026-05-12T12:00:00.000Z */
             expiresAt: string;
         };
@@ -1427,7 +1432,7 @@ export interface components {
              */
             labels?: string[];
             /** @example 2026-05-05T12:00:00.000Z */
-            dueDate?: string;
+            dueDate?: string | null;
             /** @example assignee-user-uuid */
             assigneeId?: string;
             assigneeName?: string;
@@ -1732,7 +1737,7 @@ export interface components {
              *     ]
              */
             labels?: string[];
-            dueDate?: string;
+            dueDate?: string | null;
             /** @example assignee-user-uuid */
             assigneeId?: string;
             isCompleted?: boolean;
@@ -1765,7 +1770,7 @@ export interface components {
              *     ]
              */
             labels?: string[];
-            dueDate?: string;
+            dueDate?: string | null;
             /** @example assignee-user-uuid */
             assigneeId?: string;
             isCompleted?: boolean;
@@ -2000,6 +2005,110 @@ export interface components {
             /** @example board-uuid */
             boardId?: string;
         };
+        AnalyticsTotalsDto: {
+            /** @example 24 */
+            completed: number;
+            /** @example 18 */
+            open: number;
+            /** @example 5 */
+            overdue: number;
+            /** @example 42 */
+            total: number;
+        };
+        AnalyticsCountBucketDto: {
+            /** @example team-uuid */
+            id?: string | null;
+            /** @example Design */
+            name?: string | null;
+            /** @example 12 */
+            count: number;
+        };
+        AnalyticsOverdueTaskDto: {
+            /** @example task-uuid */
+            id: string;
+            /** @example Fix onboarding crash */
+            title: string;
+            /** @example board-uuid */
+            boardId: string;
+            /** @example Product launch */
+            boardTitle?: string | null;
+            /** @example 2026-06-12T00:00:00.000Z */
+            dueDate: string;
+            /** @example user-uuid */
+            assigneeId?: string | null;
+            /** @example Jane Doe */
+            assigneeName?: string | null;
+            /** @example team-uuid */
+            teamId?: string | null;
+            /** @example Design */
+            teamName?: string | null;
+        };
+        AnalyticsOverdueDto: {
+            /** @example 5 */
+            count: number;
+            topTasks: components["schemas"]["AnalyticsOverdueTaskDto"][];
+        };
+        AnalyticsWorkloadBucketDto: {
+            /** @example user-uuid */
+            id?: string | null;
+            /** @example Jane Doe */
+            name?: string | null;
+            /** @example 8 */
+            openCount: number;
+            /** @example 2 */
+            overdueCount: number;
+            /** @example 720 */
+            estimateMinutes: number;
+            /** @example 21 */
+            storyPoints: number;
+        };
+        AnalyticsCycleTimeDto: {
+            /** @example 4.25 */
+            averageDays?: number | null;
+            /** @example 24 */
+            sampleCount: number;
+        };
+        AnalyticsWeekPointDto: {
+            /** @example 2026-06-01 */
+            weekStart: string;
+            /** @example 8 */
+            count: number;
+        };
+        AnalyticsBurndownPointDto: {
+            /** @example 2026-06-01 */
+            weekStart: string;
+            /** @example 32 */
+            count: number;
+        };
+        AnalyticsBurndownDto: {
+            /** @example board-uuid */
+            boardId: string;
+            /** @example true */
+            hasStoryPoints: boolean;
+            remainingTasks: components["schemas"]["AnalyticsBurndownPointDto"][];
+            remainingStoryPoints: components["schemas"]["AnalyticsBurndownPointDto"][];
+            message?: string | null;
+        };
+        AnalyticsCompletionOnTimeDto: {
+            /** @example 24 */
+            total: number;
+            /** @example 18 */
+            onTime: number;
+            /** @example 6 */
+            late: number;
+            /** @example 0.75 */
+            onTimeRatio?: number | null;
+        };
+        AnalyticsDashboardResponseDto: {
+            totals: components["schemas"]["AnalyticsTotalsDto"];
+            completedByTeam: components["schemas"]["AnalyticsCountBucketDto"][];
+            overdue: components["schemas"]["AnalyticsOverdueDto"];
+            workloadByAssignee: components["schemas"]["AnalyticsWorkloadBucketDto"][];
+            cycleTime: components["schemas"]["AnalyticsCycleTimeDto"];
+            throughputByWeek: components["schemas"]["AnalyticsWeekPointDto"][];
+            burndown?: components["schemas"]["AnalyticsBurndownDto"] | null;
+            completionOnTime: components["schemas"]["AnalyticsCompletionOnTimeDto"];
+        };
         CreateColumnDto: {
             /** @example To Do */
             title: string;
@@ -2229,6 +2338,23 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SessionDto"][];
                 };
+            };
+        };
+    };
+    AuthController_revokeOtherSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -3829,6 +3955,33 @@ export interface operations {
             };
         };
     };
+    AnalyticsController_dashboard: {
+        parameters: {
+            query?: {
+                boardId?: string;
+                teamId?: string;
+                assigneeId?: string;
+                fromDate?: string;
+                toDate?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsDashboardResponseDto"];
+                };
+            };
+        };
+    };
     ColumnsController_create: {
         parameters: {
             query?: never;
@@ -3916,94 +4069,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    AnalyticsController_dashboard: {
-        parameters: {
-            query?: {
-                boardId?: string;
-                teamId?: string;
-                assigneeId?: string;
-                fromDate?: string;
-                toDate?: string;
-            };
-            header?: never;
-            path: {
-                workspaceId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        totals: {
-                            completed: number;
-                            open: number;
-                            overdue: number;
-                            total: number;
-                        };
-                        completedByTeam: {
-                            id: string | null;
-                            name: string | null;
-                            count: number;
-                        }[];
-                        overdue: {
-                            count: number;
-                            topTasks: {
-                                id: string;
-                                title: string;
-                                boardId: string;
-                                boardTitle: string | null;
-                                dueDate: string;
-                                assigneeId: string | null;
-                                assigneeName: string | null;
-                                teamId: string | null;
-                                teamName: string | null;
-                            }[];
-                        };
-                        workloadByAssignee: {
-                            id: string | null;
-                            name: string | null;
-                            openCount: number;
-                            overdueCount: number;
-                            estimateMinutes: number;
-                            storyPoints: number;
-                        }[];
-                        cycleTime: {
-                            averageDays: number | null;
-                            sampleCount: number;
-                        };
-                        throughputByWeek: {
-                            weekStart: string;
-                            count: number;
-                        }[];
-                        burndown: {
-                            boardId: string;
-                            hasStoryPoints: boolean;
-                            remainingTasks: {
-                                weekStart: string;
-                                count: number;
-                            }[];
-                            remainingStoryPoints: {
-                                weekStart: string;
-                                count: number;
-                            }[];
-                            message?: string | null;
-                        } | null;
-                        completionOnTime: {
-                            total: number;
-                            onTime: number;
-                            late: number;
-                            onTimeRatio: number | null;
-                        };
-                    };
-                };
             };
         };
     };

@@ -23,7 +23,7 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useNow, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
@@ -33,6 +33,8 @@ interface Props {
 
 const WorkspaceMyTasksPage = ({ workspaceId }: Props) => {
   const t = useTranslations('WorkspaceMyTasks');
+  const format = useFormatter();
+  const now = useNow({ updateInterval: 60_000 });
   const theme = useTheme();
   const user = useAuthStore((state) => state.user);
   const { data: boards = [], isLoading: boardsLoading } = useBoards();
@@ -117,7 +119,7 @@ const WorkspaceMyTasksPage = ({ workspaceId }: Props) => {
               const isOverdue =
                 Boolean(task.dueDate) &&
                 !task.isCompleted &&
-                new Date(task.dueDate!) < new Date();
+                new Date(task.dueDate!) < now;
 
               return (
                 <Card key={task.id} variant="outlined">
@@ -176,9 +178,11 @@ const WorkspaceMyTasksPage = ({ workspaceId }: Props) => {
                           <Chip
                             size="small"
                             icon={<Schedule />}
-                            label={new Date(
-                              task.dueDate,
-                            ).toLocaleDateString()}
+                            label={format.dateTime(new Date(task.dueDate), {
+                              year: 'numeric',
+                              month: 'numeric',
+                              day: 'numeric',
+                            })}
                             color={isOverdue ? 'error' : 'default'}
                             sx={
                               isOverdue

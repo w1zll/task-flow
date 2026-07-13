@@ -81,8 +81,26 @@ export class SessionDto {
   @ApiProperty({ example: 'session-uuid' })
   id: string;
 
+  @ApiProperty()
+  current: boolean;
+
+  @ApiProperty({ nullable: true, example: 'desktop' })
+  deviceName: string | null;
+
+  @ApiProperty({ nullable: true, example: 'Chrome' })
+  browser: string | null;
+
+  @ApiProperty({ nullable: true, example: 'Windows' })
+  os: string | null;
+
+  @ApiProperty({ nullable: true, example: '192.0.2.10' })
+  ipAddress: string | null;
+
   @ApiProperty({ example: '2026-05-05T12:00:00.000Z' })
   createdAt: string;
+
+  @ApiProperty({ example: '2026-05-05T12:30:00.000Z' })
+  lastActiveAt: string;
 
   @ApiProperty({ example: '2026-05-12T12:00:00.000Z' })
   expiresAt: string;

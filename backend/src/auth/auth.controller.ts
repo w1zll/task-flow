@@ -48,6 +48,7 @@ import {
   REFRESH_COOKIE,
   setTokenCookies,
 } from './auth-cookies';
+import { describeSession, getRequestSessionMetadata } from './session-metadata';
 
 @ApiTags('auth')
 @Controller('api/auth')
@@ -70,6 +71,7 @@ export class AuthController {
       dto,
       detectRequestLocale(req),
       avatarFile,
+      getRequestSessionMetadata(req),
     );
     setTokenCookies(res, result.accessToken, result.refreshToken);
     return { user: result.user };
@@ -81,9 +83,13 @@ export class AuthController {
   @ApiOkResponse({ type: AuthResponseDto })
   async login(
     @Body() dto: LoginDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.login(dto);
+    const result = await this.authService.login(
+      dto,
+      getRequestSessionMetadata(req),
+    );
     setTokenCookies(res, result.accessToken, result.refreshToken);
     return { user: result.user };
   }
@@ -97,9 +103,17 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const refreshToken = req.cookies?.[REFRESH_COOKIE];
-    const result = await this.authService.refresh(refreshToken);
-    setTokenCookies(res, result.accessToken, result.refreshToken);
-    return { user: result.user };
+    try {
+      const result = await this.authService.refresh(
+        refreshToken,
+        getRequestSessionMetadata(req),
+      );
+      setTokenCookies(res, result.accessToken, result.refreshToken);
+      return { user: result.user };
+    } catch (error) {
+      clearTokenCookies(res);
+      throw error;
+    }
   }
 
   @Post('logout')
@@ -168,13 +182,32 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Получить активные сессии пользователя' })
   @ApiOkResponse({ type: SessionDto, isArray: true })
-  async sessions(@CurrentUser() user: User) {
-    const sessions = await this.authService.getSessions(user.id);
-    return sessions.map((session) => ({
+  async sessions(@CurrentUser() user: User, @Req() req: Request) {
+    const sessions = await this.authService.getSessions(
+      user.id,
+      req.cookies?.[REFRESH_COOKIE],
+    );
+    return sessions.map(({ session, current }) => ({
       id: session.id,
+      current,
+      ...describeSession(session.userAgent),
+      ipAddress: session.ipAddress ?? null,
       createdAt: session.createdAt,
+      lastActiveAt: session.lastActiveAt,
       expiresAt: session.expiresAt,
     }));
+  }
+
+  @Delete('sessions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Завершить все сессии, кроме текущей' })
+  async revokeOtherSessions(@CurrentUser() user: User, @Req() req: Request) {
+    await this.authService.revokeOtherSessions(
+      user.id,
+      req.cookies?.[REFRESH_COOKIE],
+    );
   }
 
   @Delete('sessions/:id')

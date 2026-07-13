@@ -31,6 +31,15 @@ export class RefreshToken {
   @Column({ type: 'timestamp' })
   expiresAt: Date;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  userAgent?: string | null;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  ipAddress?: string | null;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  lastActiveAt: Date;
+
   @Column({ default: false })
   isRevoked: boolean;
 

@@ -2,7 +2,7 @@ import type {
   BoardMember,
   Team,
 } from '@/shared/api/api';
-import UserAvatar from '@/shared/ui/UserAvatar';
+import UserSelectOption from '@/shared/ui/UserSelectOption';
 import { Box, Typography } from '@mui/material';
 import type {
   BoardTaskPriority,
@@ -60,29 +60,11 @@ export const isPriority = (value: string): value is BoardTaskPriority =>
   value in PRIORITY_META;
 
 export const renderMemberOption = (member: BoardMember) => (
-  <Box
-    sx={{
-      alignItems: 'center',
-      display: 'flex',
-      gap: 1,
-      minWidth: 0,
-    }}
-  >
-    <UserAvatar
-      name={member.user.name}
-      src={member.user.avatar}
-      size={22}
-    />
-    <Typography
-      variant="body2"
-      sx={{
-        minWidth: 0,
-        overflowWrap: 'anywhere',
-      }}
-    >
-      {member.user.name}
-    </Typography>
-  </Box>
+  <UserSelectOption
+    name={member.user.name}
+    avatar={member.user.avatar}
+    avatarSize={22}
+  />
 );
 
 export const renderTeamOption = (team: Team) => (

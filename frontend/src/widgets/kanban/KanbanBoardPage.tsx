@@ -4,7 +4,6 @@ import type { Board } from '@/shared/api/api';
 import { useAuth } from '@/features/auth/useAuth';
 import { getAvailableWorkspaceMembers } from '@/shared/lib/board-members';
 import { isBoardPermissionError } from '@/shared/lib/boardSocketMutations';
-import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import { queryKeys } from '@/shared/queries/board-query-keys';
@@ -12,6 +11,7 @@ import {
   useBoard,
   useBoardActivities,
   useBoardMembers,
+  useBoards,
   useCreateColumn,
   useRevokeBoardMember,
   useShareBoard,
@@ -41,13 +41,16 @@ import BoardCanvasSection from './kanban-board-page/BoardCanvasSection';
 import BoardMembersDrawer from './kanban-board-page/BoardMembersDrawer';
 import BoardNotFoundState from './kanban-board-page/BoardNotFoundState';
 import BoardPageHeader from './kanban-board-page/BoardPageHeader';
-import BoardStatsDrawer from './kanban-board-page/BoardStatsDrawer';
-import { useBoardAnalyticsController } from './kanban-board-page/useBoardAnalyticsController';
 import { useBoardFiltersController } from './kanban-board-page/useBoardFiltersController';
 import TaskDetailModal from './TaskDetailModal';
 import BoardActivityDrawer from './kanban-board-page/BoardActivityDrawer';
 import BoardWhiteboardsSection from '@/widgets/whiteboards/BoardWhiteboardsSection';
 import { useBoardLayoutController } from './kanban-board-page/useBoardLayoutController';
+import { useWorkspaceWhiteboards } from '@/shared/queries/whiteboards.queries';
+import WhiteboardAttachDialog from '@/widgets/whiteboards/WhiteboardAttachDialog';
+import WhiteboardCreateDialog from '@/widgets/whiteboards/WhiteboardCreateDialog';
+import MobileBoardToolsDrawer from './kanban-board-page/MobileBoardToolsDrawer';
+import { countActiveBoardFilters } from './board-filters';
 
 interface Props {
   boardId: string;
@@ -55,7 +58,6 @@ interface Props {
 }
 
 const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
-  const dayjsLocale = useDayjsLocale();
   const locale = useLocale();
   const t = useTranslations('BoardPage');
   const router = useRouter();
@@ -85,8 +87,10 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
 
   const [newColTitle, setNewColTitle] = useState('');
   const [isMembersOpen, setMembersOpen] = useState(false);
-  const [isStatsOpen, setStatsOpen] = useState(false);
   const [isActivityOpen, setActivityOpen] = useState(false);
+  const [isMobileToolsOpen, setMobileToolsOpen] = useState(false);
+  const [isWhiteboardCreateOpen, setWhiteboardCreateOpen] = useState(false);
+  const [isWhiteboardAttachOpen, setWhiteboardAttachOpen] = useState(false);
   const [shareUserId, setShareUserId] = useState('');
   const [shareRole, setShareRole] = useState<'editor' | 'viewer'>('editor');
   const [boardScrollWidth, setBoardScrollWidth] = useState(0);
@@ -100,6 +104,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const boardContentRef = useRef<HTMLDivElement | null>(null);
 
   const boardMembers = useBoardMembers(boardId);
+  const boards = useBoards();
   const boardActivities = useBoardActivities(boardId);
   const shareBoard = useShareBoard();
   const revokeMember = useRevokeBoardMember();
@@ -119,7 +124,11 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     removeSavedView,
   } = useBoardFiltersController(boardId);
   const { boardLayout, setBoardLayout } = useBoardLayoutController();
-  const boardAnalytics = useBoardAnalyticsController(boardId, dayjsLocale);
+  const linkedWhiteboards = useWorkspaceWhiteboards(
+    board?.workspaceId ?? '',
+    board?.id,
+    Boolean(board),
+  );
   const roleCanEditBoardContent =
     board?.capabilities.canEditBoardContent ?? false;
   const roleCanManageColumns = board?.capabilities.canManageColumns ?? false;
@@ -209,8 +218,11 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   );
   const isReorderDisabledByView =
     boardLayout === 'kanban' && isBoardReorderDisabledByView(boardFilters);
+  const activeFilterCount = countActiveBoardFilters(boardFilters);
+  const canCreateOrAttachWhiteboard =
+    Boolean(board?.capabilities.canUseWhiteboard) && !isOffline;
 
-  useStableBodyScrollLock(isMembersOpen || isStatsOpen || isActivityOpen);
+  useStableBodyScrollLock(isMembersOpen || isActivityOpen);
 
   useEffect(() => {
     if (!initialBoard) return;
@@ -378,6 +390,26 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     );
   };
 
+  const openWhiteboard = (whiteboardId: string) => {
+    if (!board) return;
+    setMobileToolsOpen(false);
+    router.push(
+      `/workspaces/${board.workspaceId}/whiteboards/${whiteboardId}`,
+    );
+  };
+
+  const openActivity = () => {
+    setMobileToolsOpen(false);
+    setMembersOpen(false);
+    setActivityOpen(true);
+  };
+
+  const openMembers = () => {
+    setMobileToolsOpen(false);
+    setActivityOpen(false);
+    setMembersOpen(true);
+  };
+
   if (isError && !board) {
     return <BoardNotFoundState onBack={() => router.push('/workspaces')} />;
   }
@@ -411,28 +443,31 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
         isLoading={isLoading}
         canManageColumns={canManageColumns}
         canEditBoardContent={canEditBoardContent}
-        isStatsOpen={isStatsOpen}
         isMembersOpen={isMembersOpen}
         isActivityOpen={isActivityOpen}
+        activeFilterCount={activeFilterCount}
         onAddColumn={() => setAddingColumn(true)}
-        onToggleStats={() => {
-          setMembersOpen(false);
-          setActivityOpen(false);
-          setStatsOpen((open) => !open);
-        }}
         onToggleMembers={() => {
-          setStatsOpen(false);
           setActivityOpen(false);
           setMembersOpen((open) => !open);
         }}
         onToggleActivity={() => {
-          setStatsOpen(false);
           setMembersOpen(false);
           setActivityOpen((open) => !open);
         }}
+        onOpenMobileTools={() => setMobileToolsOpen(true)}
       />
 
-      {board && <BoardWhiteboardsSection board={board} />}
+      {board && (
+        <BoardWhiteboardsSection
+          linkedWhiteboards={linkedWhiteboards.data ?? []}
+          isError={linkedWhiteboards.isError}
+          canCreateOrAttach={canCreateOrAttachWhiteboard}
+          onOpenWhiteboard={openWhiteboard}
+          onAttach={() => setWhiteboardAttachOpen(true)}
+          onCreate={() => setWhiteboardCreateOpen(true)}
+        />
+      )}
 
       {board && (
         <BoardFiltersToolbar
@@ -493,19 +528,41 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
         />
       )}
 
-      <BoardStatsDrawer
-        open={isStatsOpen}
-        analyticsPeriod={boardAnalytics.analyticsPeriod}
-        chartData={boardAnalytics.chartData}
-        chartXAxisLabels={boardAnalytics.chartXAxisLabels}
-        isChartLoading={boardAnalytics.isChartLoading}
-        isChartError={boardAnalytics.isChartError}
-        onTimeCount={boardAnalytics.onTimeCount}
-        lateCount={boardAnalytics.lateCount}
-        todayCompletedCount={boardAnalytics.todayCompletedCount}
-        onClose={() => setStatsOpen(false)}
-        onAnalyticsPeriodChange={boardAnalytics.setAnalyticsPeriod}
-      />
+      {board && (
+        <MobileBoardToolsDrawer
+          open={isMobileToolsOpen}
+          activeFilterCount={activeFilterCount}
+          filters={boardFilters}
+          layout={boardLayout}
+          boardMembers={boardMembers.data}
+          teams={workspaceTeams.data}
+          savedViews={boardViews.data}
+          selectedViewId={selectedViewId}
+          filteredCount={filteredTaskCount}
+          totalCount={totalTaskCount}
+          isSavingView={createBoardView.isPending}
+          isDeletingView={deleteBoardView.isPending}
+          canManageSavedViews={!isOffline}
+          linkedWhiteboards={linkedWhiteboards.data ?? []}
+          isWhiteboardsError={linkedWhiteboards.isError}
+          canCreateOrAttachWhiteboard={canCreateOrAttachWhiteboard}
+          canManageColumns={canManageColumns}
+          onClose={() => setMobileToolsOpen(false)}
+          onFiltersChange={updateBoardFilters}
+          onFiltersReset={resetBoardFilters}
+          onLayoutChange={setBoardLayout}
+          onApplySavedView={applySavedView}
+          onSaveView={saveCurrentView}
+          onDeleteSavedView={removeSavedView}
+          onOpenWhiteboard={openWhiteboard}
+          onAttachWhiteboard={() => setWhiteboardAttachOpen(true)}
+          onCreateWhiteboard={() => setWhiteboardCreateOpen(true)}
+          onAddColumn={() => setAddingColumn(true)}
+          analyticsHref={`/workspaces/${board.workspaceId}/analytics?boardId=${encodeURIComponent(board.id)}`}
+          onOpenActivity={openActivity}
+          onOpenMembers={openMembers}
+        />
+      )}
 
       <BoardActivityDrawer
         open={isActivityOpen}
@@ -546,6 +603,26 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
           revokeMember.mutate({ boardId, memberId })
         }
       />
+
+      {board && (
+        <>
+          <WhiteboardCreateDialog
+            open={isWhiteboardCreateOpen}
+            workspaceId={board.workspaceId}
+            boards={boards.data}
+            defaultBoardId={board.id}
+            lockBoard
+            onClose={() => setWhiteboardCreateOpen(false)}
+            onCreated={(whiteboard) => openWhiteboard(whiteboard.id)}
+          />
+          <WhiteboardAttachDialog
+            open={isWhiteboardAttachOpen}
+            workspaceId={board.workspaceId}
+            boardId={board.id}
+            onClose={() => setWhiteboardAttachOpen(false)}
+          />
+        </>
+      )}
 
       {effectiveBoard && (
         <TaskDetailModal board={effectiveBoard} onClose={handleCloseTask} />

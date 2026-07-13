@@ -46,6 +46,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const messages = await getMessages();
   const locale = await getLocale();
   const initialThemeMode = await getInitialThemeMode();
+  const initialNow = new Date();
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -54,6 +55,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
           messages={messages}
           locale={locale}
           initialThemeMode={initialThemeMode}
+          initialNow={initialNow}
         >
           {children}
         </Providers>

@@ -7,9 +7,11 @@ import {
   HistoryOutlined,
   LockOutlined,
   QueryStats,
+  TuneOutlined,
 } from '@mui/icons-material';
 import {
   Box,
+  Badge,
   Breadcrumbs,
   Button,
   Chip,
@@ -28,13 +30,13 @@ interface BoardPageHeaderProps {
   isLoading: boolean;
   canManageColumns: boolean;
   canEditBoardContent: boolean;
-  isStatsOpen: boolean;
   isMembersOpen: boolean;
   isActivityOpen: boolean;
+  activeFilterCount: number;
   onAddColumn: () => void;
-  onToggleStats: () => void;
   onToggleMembers: () => void;
   onToggleActivity: () => void;
+  onOpenMobileTools: () => void;
 }
 
 const BoardPageHeader = ({
@@ -42,28 +44,28 @@ const BoardPageHeader = ({
   isLoading,
   canManageColumns,
   canEditBoardContent,
-  isStatsOpen,
   isMembersOpen,
   isActivityOpen,
+  activeFilterCount,
   onAddColumn,
-  onToggleStats,
   onToggleMembers,
   onToggleActivity,
+  onOpenMobileTools,
 }: BoardPageHeaderProps) => {
   const t = useTranslations('BoardPage');
 
   return (
     <Box
       sx={{
-        px: { xs: 1.5, sm: 3 },
-        py: { xs: 0.5, sm: 2 },
+        px: { xs: 1.5, md: 3 },
+        py: { xs: 0.5, md: 2 },
         borderBottom: '1px solid',
         borderColor: 'divider',
         display: 'flex',
         alignItems: { xs: 'center', lg: 'center' },
         justifyContent: 'space-between',
-        flexWrap: { xs: 'nowrap', sm: 'wrap' },
-        gap: { xs: 1, sm: 2 },
+        flexWrap: { xs: 'nowrap', md: 'wrap' },
+        gap: { xs: 1, md: 2 },
         bgcolor: 'background.paper',
         flexShrink: 0,
       }}
@@ -71,35 +73,35 @@ const BoardPageHeader = ({
       <Box
         sx={{
           display: 'flex',
-          alignItems: { xs: 'center', sm: 'flex-start' },
-          flex: { xs: '1 1 auto', sm: '1 1 320px' },
-          flexWrap: { xs: 'nowrap', sm: 'wrap' },
-          gap: { xs: 1, sm: 1.5 },
+          alignItems: { xs: 'center', md: 'flex-start' },
+          flex: { xs: '1 1 auto', md: '1 1 320px' },
+          flexWrap: { xs: 'nowrap', md: 'wrap' },
+          gap: { xs: 1, md: 1.5 },
           minWidth: 0,
         }}
       >
         {board && (
           <Box
             sx={{
-              width: { xs: 10, sm: 14 },
-              height: { xs: 10, sm: 14 },
+              width: { xs: 10, md: 14 },
+              height: { xs: 10, md: 14 },
               borderRadius: '50%',
               bgcolor: board.color,
               flexShrink: 0,
-              mt: { xs: 0, sm: 1 },
+              mt: { xs: 0, md: 1 },
             }}
           />
         )}
-        <Box sx={{ flex: { xs: '1 1 auto', sm: '1 1 240px' }, minWidth: 0 }}>
+        <Box sx={{ flex: { xs: '1 1 auto', md: '1 1 240px' }, minWidth: 0 }}>
           {isLoading ? (
             <Skeleton width={200} height={32} />
           ) : (
             <Typography
               variant="h6"
               sx={{
-                fontSize: { xs: '1.05rem', sm: '1.25rem' },
+                fontSize: { xs: '1.05rem', md: '1.25rem' },
                 fontWeight: 700,
-                lineHeight: { xs: 1.15, sm: 1.25 },
+                lineHeight: { xs: 1.15, md: 1.25 },
                 overflowWrap: 'anywhere',
               }}
             >
@@ -108,7 +110,7 @@ const BoardPageHeader = ({
           )}
           <Breadcrumbs
             sx={{
-              display: { xs: 'none', sm: 'flex' },
+              display: { xs: 'none', md: 'flex' },
               fontSize: 12,
               '& .MuiBreadcrumbs-ol': {
                 alignItems: 'center',
@@ -148,7 +150,7 @@ const BoardPageHeader = ({
               startIcon={<Add />}
               onClick={onAddColumn}
               sx={{
-                display: { xs: 'none', sm: 'inline-flex' },
+                display: { xs: 'none', md: 'inline-flex' },
                 flexShrink: 0,
                 alignSelf: 'center',
               }}
@@ -161,7 +163,7 @@ const BoardPageHeader = ({
                 onClick={onAddColumn}
                 aria-label={t('addColumn')}
                 sx={{
-                  display: { xs: 'inline-flex', sm: 'none' },
+                  display: 'none',
                   width: 36,
                   height: 36,
                   flexShrink: 0,
@@ -177,7 +179,7 @@ const BoardPageHeader = ({
             icon={<LockOutlined />}
             label={t('readOnly')}
             variant="outlined"
-            sx={{ display: { xs: 'none', sm: 'inline-flex' }, mt: 0.5 }}
+            sx={{ display: { xs: 'none', md: 'inline-flex' }, mt: 0.5 }}
           />
         ) : null}
         {board && !canManageColumns && !canEditBoardContent && (
@@ -186,7 +188,7 @@ const BoardPageHeader = ({
               component="span"
               aria-label={t('readOnly')}
               sx={{
-                display: { xs: 'inline-flex', sm: 'none' },
+                display: { xs: 'inline-flex', md: 'none' },
                 alignItems: 'center',
                 justifyContent: 'center',
                 width: 30,
@@ -209,6 +211,7 @@ const BoardPageHeader = ({
         spacing={{ xs: 0.25, sm: 1 }}
         useFlexGap
         sx={{
+          display: { xs: 'none', md: 'flex' },
           flex: '0 1 auto',
           flexShrink: 0,
           flexWrap: { xs: 'nowrap', sm: 'wrap' },
@@ -220,35 +223,26 @@ const BoardPageHeader = ({
         }}
       >
         <Button
-          variant={isStatsOpen ? 'contained' : 'outlined'}
+          component={NextLink}
+          href={
+            board
+              ? `/workspaces/${board.workspaceId}/analytics?boardId=${encodeURIComponent(board.id)}`
+              : '/workspaces'
+          }
+          disabled={!board}
+          variant="outlined"
           size="small"
           startIcon={<QueryStats />}
-          onClick={onToggleStats}
-          sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+          sx={{ display: 'inline-flex' }}
         >
           {t('stats')}
         </Button>
-        <Tooltip title={t('stats')}>
-          <IconButton
-            size="small"
-            color={isStatsOpen ? 'primary' : 'default'}
-            onClick={onToggleStats}
-            aria-label={t('stats')}
-            sx={{
-              display: { xs: 'inline-flex', sm: 'none' },
-              width: 36,
-              height: 36,
-            }}
-          >
-            <QueryStats fontSize="small" />
-          </IconButton>
-        </Tooltip>
         <Button
           variant={isActivityOpen ? 'contained' : 'outlined'}
           size="small"
           startIcon={<HistoryOutlined />}
           onClick={onToggleActivity}
-          sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+          sx={{ display: 'inline-flex' }}
         >
           {t('activity')}
         </Button>
@@ -259,7 +253,7 @@ const BoardPageHeader = ({
             onClick={onToggleActivity}
             aria-label={t('activity')}
             sx={{
-              display: { xs: 'inline-flex', sm: 'none' },
+              display: 'none',
               width: 36,
               height: 36,
             }}
@@ -272,7 +266,7 @@ const BoardPageHeader = ({
           size="small"
           startIcon={<GroupOutlined />}
           onClick={onToggleMembers}
-          sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+          sx={{ display: 'inline-flex' }}
         >
           {t('members')}
         </Button>
@@ -283,7 +277,7 @@ const BoardPageHeader = ({
             onClick={onToggleMembers}
             aria-label={t('members')}
             sx={{
-              display: { xs: 'inline-flex', sm: 'none' },
+              display: 'none',
               width: 36,
               height: 36,
             }}
@@ -292,6 +286,27 @@ const BoardPageHeader = ({
           </IconButton>
         </Tooltip>
       </Stack>
+
+      <Tooltip title={t('mobileTools.title')}>
+        <IconButton
+          onClick={onOpenMobileTools}
+          aria-label={t('mobileTools.open')}
+          sx={{
+            display: { xs: 'inline-flex', md: 'none' },
+            width: 44,
+            height: 44,
+            flexShrink: 0,
+          }}
+        >
+          <Badge
+            color="primary"
+            badgeContent={activeFilterCount}
+            invisible={activeFilterCount === 0}
+          >
+            <TuneOutlined />
+          </Badge>
+        </IconButton>
+      </Tooltip>
     </Box>
   );
 };

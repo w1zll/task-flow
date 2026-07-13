@@ -3,7 +3,7 @@
     "title": "TaskFlow - рабочие пространства для команд и задач",
     "description": "Организуйте работу в пространствах с досками, холстами, командами, ролями и задачами.",
     "hero": {
-      "chip": "Workspace · Доски · Холсты · Команды",
+      "chip": "Рабочие пространства · Доски · Холсты · Команды",
       "heading": "Соберите работу в единых ",
       "headingAccent": "пространствах",
       "subtitle": "TaskFlow объединяет рабочие пространства, доски, холсты, команды, права доступа и задачи, чтобы проект не распадался на разрозненные рабочие места.",
@@ -18,8 +18,8 @@
       "heading": "Не просто доска, а рабочая оболочка",
       "subheading": "Управляйте несколькими пространствами, их досками, участниками и задачами.",
       "workspaces": {
-        "title": "Workspace shell",
-        "desc": "Workspace объединяет доски, команды, участников, приглашения, мои задачи и настройки в одной оболочке."
+        "title": "Навигация пространства",
+        "desc": "Пространство объединяет доски, команды, участников, приглашения, мои задачи и настройки в одной оболочке."
       },
       "boards": {
         "title": "Канбан-доски",
@@ -27,11 +27,11 @@
       },
       "teams": {
         "title": "Команды и участники",
-        "desc": "Объединяйте участников workspace в команды и назначайте задачи конкретным людям или направлениям."
+        "desc": "Объединяйте участников пространства в команды и назначайте задачи конкретным людям или направлениям."
       },
       "permissions": {
         "title": "Единая модель прав",
-        "desc": "Workspace и board roles проверяются в REST, WebSocket и UI, а viewer остаётся полностью read-only."
+        "desc": "Роли пространства и доски проверяются в REST, WebSocket и UI, а viewer остаётся полностью read-only."
       },
       "templates": {
         "title": "Готовый старт",
@@ -47,7 +47,7 @@
       },
       "whiteboards": {
         "title": "Совместные WebGL-холсты",
-        "desc": "Холсты живут внутри workspace, прикрепляются к доскам, поддерживают realtime-рисование, заметки, курсоры и экспорт PNG."
+        "desc": "Холсты живут внутри пространства, прикрепляются к доскам, поддерживают realtime-рисование, заметки, курсоры и экспорт PNG."
       },
       "analytics": {
         "title": "Аналитика задач",
@@ -91,7 +91,7 @@
       },
       "demo": {
         "title": "Режим для демонстрации проекта",
-        "desc": "Одна кнопка открывает подготовленный demo workspace с командами, ролями, задачами, холстами, saved views и reset."
+        "desc": "Одна кнопка открывает подготовленное демопространство с командами, ролями, задачами, холстами, saved views и reset."
       },
       "filesProfile": {
         "title": "Профиль и файлы",
@@ -148,9 +148,9 @@
     "title": "Мои пространства",
     "description": "Управление пространствами и досками",
     "globalDescription": "Все доступные вам пространства с досками внутри.",
-    "workspacePageTitle": "Доски workspace",
+    "workspacePageTitle": "Доски пространства",
     "workspaceBoardsTitle": "Доски: {name}",
-    "workspaceBoardsDescription": "Доски внутри текущего workspace.",
+    "workspaceBoardsDescription": "Доски внутри текущего пространства.",
     "boardsCount": "{count} досок",
     "workspacesCount": "{count} пространств",
     "activeWorkspace": "Пространство: {name}",
@@ -205,18 +205,8 @@
     "readOnly": "Только просмотр",
     "permissionDenied": "Ваша роль не позволяет выполнить это изменение.",
     "columnCreateError": "Не удалось создать колонку.",
-    "taskStats": "Статистика по задачам",
-    "onTime": "Выполнено в срок: {count}",
-    "late": "Выполнено после срока: {count}",
-    "today": "За сегодня: {count}",
-    "analyticsDays": "Дни",
-    "analyticsWeeks": "Недели",
-    "analyticsMonths": "Месяцы",
-    "completedTasks": "Выполнено",
-    "noAnalytics": "Пока нет выполненных задач",
-    "analyticsError": "Не удалось загрузить статистику",
     "members": "Участники доски",
-    "membersDescription": "Просматривайте доступ к доске, добавляйте участников workspace и управляйте их ролями.",
+    "membersDescription": "Просматривайте доступ к доске, добавляйте участников пространства и управляйте их ролями.",
     "addMember": "Добавить участника",
     "memberAdded": "Участник добавлен на доску.",
     "loading": "Загрузка...",
@@ -231,11 +221,11 @@
     "noMembers": "Нет участников.",
     "columnTitle": "Название колонки",
     "shareTitle": "Поделиться доской",
-    "shareDescription": "Выберите участника workspace, у которого ещё нет доступа к этой доске.",
-    "shareMember": "Участник workspace",
-    "shareMembersLoading": "Загрузка участников workspace...",
-    "shareNoAvailableMembers": "Все участники workspace уже имеют доступ к этой доске.",
-    "shareMembersError": "Не удалось загрузить участников workspace.",
+    "shareDescription": "Выберите участника пространства, у которого ещё нет доступа к этой доске.",
+    "shareMember": "Участник пространства",
+    "shareMembersLoading": "Загрузка участников пространства...",
+    "shareNoAvailableMembers": "Все участники пространства уже имеют доступ к этой доске.",
+    "shareMembersError": "Не удалось загрузить участников пространства.",
     "memberTeams": "Команды",
     "noMemberTeams": "Без команды",
     "shareError": "Не удалось выдать доступ к доске.",
@@ -353,10 +343,16 @@
       "addTask": "Новая задача",
       "moveDisabledByFilters": "Перемещение задач недоступно, пока включены фильтры или сортировка."
     },
+    "mobileTools": {
+      "title": "Инструменты доски",
+      "open": "Открыть инструменты доски",
+      "actions": "Действия с доской"
+    },
     "filters": {
       "title": "Фильтры",
       "open": "Фильтры",
       "apply": "Показать",
+      "activeCount": "Активно: {count}",
       "search": "Поиск",
       "assignee": "Исполнитель",
       "team": "Команда",
@@ -443,13 +439,26 @@
     "sessionsTitle": "Активные сессии",
     "sessionsDescription": "Здесь вы можете увидеть свои устройства и завершить неиспользуемые сессии.",
     "deviceFallback": "Устройство",
+    "device": {
+      "desktop": "Компьютер",
+      "mobile": "Мобильное устройство",
+      "tablet": "Планшет"
+    },
     "ipUnknown": "IP неизвестен",
     "browserUnknown": "браузер неизвестен",
     "currentSession": "Текущая сессия",
-    "inactive": "Не активна",
+    "otherSession": "Другая сессия",
     "startedAt": "Начало",
     "lastActive": "Последняя активность",
+    "expiresAt": "Истекает",
     "endSession": "Завершить сессию",
+    "endOthers": "Завершить все, кроме текущей",
+    "endOthersTitle": "Завершить остальные сессии?",
+    "endOthersDescription": "Все сессии, кроме текущей, будут немедленно завершены.",
+    "cancel": "Отмена",
+    "sessionsEnded": "Остальные сессии завершены",
+    "sessionEnded": "Сессия завершена",
+    "sessionEndError": "Не удалось завершить сессии",
     "noSessions": "Активных сессий нет.",
     "loadingError": "Не удалось загрузить профиль"
   },
@@ -483,15 +492,15 @@
     }
   },
   "WorkspaceShell": {
-    "workspaceFallback": "Workspace",
+    "workspaceFallback": "Пространство",
     "loading": "Загрузка...",
     "personal": "Личное",
     "boards": "Доски",
     "createBoard": "Создать доску",
     "emptyBoards": "Досок пока нет",
     "boardsCount": "Досок: {count}",
-    "openNavigation": "Открыть навигацию workspace",
-    "offlineSectionUnavailable": "Этот раздел workspace недоступен без интернета.",
+    "openNavigation": "Открыть навигацию пространства",
+    "offlineSectionUnavailable": "Этот раздел пространства недоступен без интернета.",
     "nav": {
       "overview": "Обзор",
         "myTasks": "Мои задачи",
@@ -514,7 +523,7 @@
     "demo": {
       "chip": "Demo",
       "description": "Это демонстрационное пространство: данные можно менять и сбрасывать.",
-      "regionLabel": "Панель demo workspace",
+      "regionLabel": "Панель демопространства",
       "drag": "Перетащить плашку",
       "collapse": "Свернуть плашку",
       "expand": "Развернуть плашку",
@@ -522,20 +531,20 @@
       "myTasks": "Мои задачи",
       "overdue": "Просроченные",
       "reset": "Сбросить",
-      "resetTitle": "Сбросить demo workspace?",
-      "resetDescription": "Все изменения в demo workspace будут удалены, а задачи, команды, доски и saved views вернутся к подготовленному состоянию.",
+      "resetTitle": "Сбросить демопространство?",
+      "resetDescription": "Все изменения в демопространстве будут удалены, а задачи, команды, доски и saved views вернутся к подготовленному состоянию.",
       "resetConfirm": "Сбросить демо",
       "resetting": "Сброс...",
-      "resetSuccess": "Demo workspace сброшен.",
-      "resetError": "Не удалось сбросить demo workspace.",
+      "resetSuccess": "Демопространство сброшено.",
+      "resetError": "Не удалось сбросить демопространство.",
       "cancel": "Отмена"
       }
     },
     "Whiteboards": {
       "pageTitle": "Холсты",
-      "pageDescription": "Совместные WebGL-холсты внутри workspace.",
+      "pageDescription": "Совместные WebGL-холсты внутри пространства.",
       "canvasTitle": "Холст {id}",
-      "canvasDescription": "Совместный холст workspace {id}",
+      "canvasDescription": "Совместный холст пространства {id}",
       "create": "Создать",
       "createTitle": "Новый холст",
       "creating": "Создание...",
@@ -547,7 +556,7 @@
       "linkedBoard": "Связанная доска",
       "noLinkedBoard": "Без связанной доски",
       "linkedElsewhere": "Связана с другой доской",
-      "unlinked": "Холст workspace",
+      "unlinked": "Холст пространства",
       "noAttachCandidates": "Нет доступных холстов для прикрепления.",
       "color": "Цвет",
       "selectColor": "Выбрать цвет {color}",
@@ -558,7 +567,7 @@
       "add": "Добавить",
       "loading": "Загрузка...",
       "loadError": "Не удалось загрузить холсты.",
-      "empty": "В этом workspace пока нет холстов.",
+      "empty": "В этом пространстве пока нет холстов.",
       "editable": "Можно рисовать",
       "readOnly": "Только просмотр",
       "offlineReadOnly": "Без интернета холсты доступны только для просмотра.",
@@ -593,15 +602,15 @@
       "textNote": "Текст заметки",
       "exportPng": "Экспорт PNG",
       "backToWhiteboards": "Назад к холстам",
-      "boardSectionTitle": "Холсты workspace",
-      "boardSectionDescription": "Откройте связанные холсты или прикрепите общий холст workspace.",
+      "boardSectionTitle": "Холсты пространства",
+      "boardSectionDescription": "Откройте связанные холсты или прикрепите общий холст пространства.",
       "openLinkedWhiteboards": "Открыть список",
       "linkedDrawerTitle": "Прикрепленные холсты",
       "linkedCount": "Прикреплено: {count}"
     },
     "WorkspaceOverview": {
-    "pageTitle": "Обзор workspace",
-    "pageDescription": "Единый обзор workspace в TaskFlow",
+    "pageTitle": "Обзор пространства",
+    "pageDescription": "Единый обзор пространства в TaskFlow",
     "loading": "Загрузка...",
     "subtitle": "Общий контекст досок, команд и ваших задач.",
     "openBoards": "Открыть доски",
@@ -610,19 +619,19 @@
     "myTeams": "Мои команды",
     "openMyTasks": "Мои открытые задачи",
     "recentBoards": "Недавние доски",
-    "recentBoardsDescription": "Быстрый переход к рабочим представлениям workspace.",
+    "recentBoardsDescription": "Быстрый переход к рабочим представлениям пространства.",
     "allBoards": "Все доски",
     "noDescription": "Без описания",
-    "emptyBoards": "В этом workspace пока нет доступных досок.",
+    "emptyBoards": "В этом пространстве пока нет доступных досок.",
     "createFirstBoard": "Создать доску",
     "myUpcomingTasks": "Мои ближайшие задачи",
-    "myUpcomingTasksDescription": "Открытые задачи, назначенные вам в этом workspace.",
+    "myUpcomingTasksDescription": "Открытые задачи, назначенные вам в этом пространстве.",
     "allTasks": "Все задачи",
     "emptyTasks": "Назначенных открытых задач пока нет."
   },
   "WorkspaceMyTasks": {
     "title": "Мои задачи",
-    "description": "Задачи, назначенные вам на доступных досках текущего workspace.",
+    "description": "Задачи, назначенные вам на доступных досках текущего пространства.",
     "completed": "Выполнена",
     "noDueDate": "Без срока",
     "emptyTitle": "Назначенных задач нет",
@@ -630,11 +639,11 @@
   },
   "WorkspaceTeamsPage": {
     "title": "Команды",
-    "description": "Управляйте командами workspace и их участниками."
+    "description": "Управляйте командами пространства и их участниками."
   },
   "WorkspaceAnalytics": {
     "pageTitle": "Аналитика команды",
-    "pageDescription": "Аналитика поставки по workspace и командам",
+    "pageDescription": "Аналитика поставки по пространству и командам",
     "title": "Аналитика команды",
     "description": "Смотрите пропускную способность, нагрузку, просрочки, время цикла и выполнение в срок по доступным доскам.",
     "updating": "Обновляем данные...",
@@ -738,7 +747,7 @@
   },
   "WorkspaceTeams": {
     "title": "Команды",
-    "description": "Объединяйте участников workspace и назначайте задачи нужному направлению.",
+    "description": "Объединяйте участников пространства и назначайте задачи нужному направлению.",
     "create": "Создать команду",
     "loadError": "Не удалось загрузить команды рабочего пространства.",
     "emptyTitle": "Команд пока нет",
@@ -762,12 +771,12 @@
     "updated": "Команда обновлена.",
     "saveError": "Не удалось сохранить команду. Проверьте уникальность названия.",
     "membersTitle": "Участники команды {team}",
-    "addMember": "Участник workspace",
+    "addMember": "Участник пространства",
     "add": "Добавить",
     "memberAdded": "Участник добавлен в команду.",
     "memberError": "Не удалось обновить состав команды.",
     "removeMember": "Убрать из команды",
-    "noAvailableMembers": "Все участники workspace уже добавлены в эту команду.",
+    "noAvailableMembers": "Все участники пространства уже добавлены в эту команду.",
     "noMembers": "В этой команде пока нет участников.",
     "close": "Закрыть",
     "deleteTitle": "Удалить команду?",
@@ -778,7 +787,7 @@
   },
   "WorkspaceInvites": {
     "title": "Ссылки-приглашения",
-    "description": "Создавайте публичные ссылки для присоединения к workspace.",
+    "description": "Создавайте публичные ссылки для присоединения к пространству.",
     "create": "Создать ссылку",
     "loading": "Загрузка ссылок...",
     "loadError": "Не удалось загрузить ссылки-приглашения.",
@@ -815,8 +824,8 @@
     }
   },
   "WorkspaceInvite": {
-    "pageTitle": "Приглашение в workspace",
-    "pageDescription": "Присоединение к workspace в TaskFlow",
+    "pageTitle": "Приглашение в пространство",
+    "pageDescription": "Присоединение к пространству в TaskFlow",
     "loading": "Загрузка приглашения...",
     "unavailableTitle": "Приглашение недоступно",
     "unavailableDescription": "Приглашение истекло, было отозвано, достигло лимита использований или не существует.",
@@ -825,8 +834,8 @@
     "signedInAs": "Вы вошли как {email}",
       "accept": "Присоединиться",
       "accepting": "Присоединение...",
-      "alreadyMember": "Вы уже состоите в этом workspace.",
-      "openWorkspace": "Открыть workspace",
+      "alreadyMember": "Вы уже состоите в этом пространстве.",
+      "openWorkspace": "Открыть пространство",
       "instantRegister": "Мгновенно войти в демо",
       "instantRegistering": "Готовим демо-вход...",
       "acceptError": "Не удалось присоединиться. Проверьте, что ваш email соответствует ограничениям приглашения.",

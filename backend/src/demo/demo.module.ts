@@ -17,6 +17,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DemoController } from './demo.controller';
 import { DemoService } from './demo.service';
+import { TaskComment } from '@/notifications/entities/task-comment.entity';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DemoService } from './demo.service';
       BoardView,
       Column,
       Task,
+      TaskComment,
       Team,
       TeamMember,
       User,
