@@ -2,6 +2,7 @@
 
 import type { Team, WorkspaceMember } from '@/shared/api/api';
 import UserAvatar from '@/shared/ui/UserAvatar';
+import UserSelectOption from '@/shared/ui/UserSelectOption';
 import { DeleteOutlined, PersonAddAltOutlined } from '@mui/icons-material';
 import {
   Alert,
@@ -54,29 +55,11 @@ const TeamMembersDialog = ({
   const titleId = 'team-members-dialog-title';
 
   const renderAvailableMemberOption = (member: WorkspaceMember) => (
-    <Box
-      sx={{
-        alignItems: 'center',
-        display: 'flex',
-        gap: 1,
-        minWidth: 0,
-      }}
-    >
-      <UserAvatar
-        name={member.user.name}
-        src={member.user.avatar}
-        size={24}
-      />
-      <Typography
-        variant="body2"
-        sx={{
-          minWidth: 0,
-          overflowWrap: 'anywhere',
-        }}
-      >
-        {member.user.name}
-      </Typography>
-    </Box>
+    <UserSelectOption
+      name={member.user.name}
+      avatar={member.user.avatar}
+      avatarSize={24}
+    />
   );
 
   return (

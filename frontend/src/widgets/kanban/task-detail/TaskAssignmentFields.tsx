@@ -1,7 +1,7 @@
 'use client';
 
 import type { Board, Task, Team } from '@/shared/api/api';
-import UserAvatar from '@/shared/ui/UserAvatar';
+import UserSelectOption from '@/shared/ui/UserSelectOption';
 import {
   Box,
   Chip,
@@ -49,14 +49,10 @@ const TaskAssignmentFields = ({
           renderValue={(value) => {
             const member = board.members?.find((item) => item.userId === value);
             return member ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <UserAvatar
-                  name={member.user.name}
-                  src={member.user.avatar}
-                  size={24}
-                />
-                <span>{member.user.name}</span>
-              </Box>
+              <UserSelectOption
+                name={member.user.name}
+                avatar={member.user.avatar}
+              />
             ) : (
               t('unassigned')
             );
@@ -65,14 +61,10 @@ const TaskAssignmentFields = ({
           <MenuItem value="">{t('unassigned')}</MenuItem>
           {board.members?.map((member) => (
             <MenuItem key={member.id} value={member.userId}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <UserAvatar
-                  name={member.user.name}
-                  src={member.user.avatar}
-                  size={24}
-                />
-                <span>{member.user.name}</span>
-              </Box>
+              <UserSelectOption
+                name={member.user.name}
+                avatar={member.user.avatar}
+              />
             </MenuItem>
           ))}
         </Select>

@@ -7,7 +7,7 @@ import {
   useReorderTaskChecklistItems,
   useUpdateTaskChecklistItem,
 } from '@/shared/queries/boards.queries';
-import UserAvatar from '@/shared/ui/UserAvatar';
+import UserSelectOption from '@/shared/ui/UserSelectOption';
 import {
   AddRounded,
   DeleteOutlineRounded,
@@ -163,14 +163,11 @@ const ChecklistRow = ({
         renderValue={(value) => {
           const member = members.find((option) => option.userId === value);
           return member ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <UserAvatar
-                name={member.user.name}
-                src={member.user.avatar}
-                size={22}
-              />
-              <span>{member.user.name}</span>
-            </Box>
+            <UserSelectOption
+              name={member.user.name}
+              avatar={member.user.avatar}
+              avatarSize={22}
+            />
           ) : (
             t('unassigned')
           );
@@ -180,14 +177,11 @@ const ChecklistRow = ({
         <MenuItem value="">{t('unassigned')}</MenuItem>
         {members.map((member) => (
           <MenuItem key={member.userId} value={member.userId}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <UserAvatar
-                name={member.user.name}
-                src={member.user.avatar}
-                size={22}
-              />
-              {member.user.name}
-            </Box>
+            <UserSelectOption
+              name={member.user.name}
+              avatar={member.user.avatar}
+              avatarSize={22}
+            />
           </MenuItem>
         ))}
       </Select>

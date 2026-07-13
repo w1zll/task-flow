@@ -1,7 +1,7 @@
 'use client';
 
 import type { WorkspaceMember } from '@/shared/api/api';
-import UserAvatar from '@/shared/ui/UserAvatar';
+import UserSelectOption from '@/shared/ui/UserSelectOption';
 import { PersonAddAltOutlined } from '@mui/icons-material';
 import {
   Box,
@@ -79,50 +79,21 @@ const BoardShareMemberForm = ({
               if (!selectedMember) return '';
 
               return (
-                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                  <UserAvatar
-                    name={selectedMember.user.name}
-                    src={selectedMember.user.avatar}
-                    size={24}
-                  />
-                  <Typography
-                    variant="body2"
-                    sx={{ overflowWrap: 'anywhere' }}
-                  >
-                    {selectedMember.user.name}
-                  </Typography>
-                </Stack>
+                <UserSelectOption
+                  name={selectedMember.user.name}
+                  avatar={selectedMember.user.avatar}
+                />
               );
             }}
           >
             {availableWorkspaceMembers.map((member) => (
               <MenuItem key={member.userId} value={member.userId}>
-                <Stack
-                  direction="row"
-                  spacing={1.25}
-                  sx={{ alignItems: 'center', minWidth: 0 }}
-                >
-                  <UserAvatar
-                    name={member.user.name}
-                    src={member.user.avatar}
-                    size={30}
-                  />
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{ overflowWrap: 'anywhere' }}
-                    >
-                      {member.user.name}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ overflowWrap: 'anywhere' }}
-                    >
-                      {member.user.email}
-                    </Typography>
-                  </Box>
-                </Stack>
+                <UserSelectOption
+                  name={member.user.name}
+                  avatar={member.user.avatar}
+                  secondary={member.user.email}
+                  avatarSize={30}
+                />
               </MenuItem>
             ))}
           </Select>
