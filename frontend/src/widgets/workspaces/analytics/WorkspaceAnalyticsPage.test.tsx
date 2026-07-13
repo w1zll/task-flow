@@ -13,6 +13,10 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({ replace: jest.fn() }),
 }));
 
+jest.mock('@tanstack/react-query', () => ({
+  useIsRestoring: () => true,
+}));
+
 jest.mock('@/shared/queries/boards.queries', () => ({
   useBoards: () => ({ data: [], isLoading: true }),
 }));
@@ -24,9 +28,9 @@ jest.mock('@/shared/queries/workspaces.queries', () => ({
 }));
 jest.mock('@/shared/queries/workspace-analytics.queries', () => ({
   useWorkspaceAnalyticsDashboard: () => ({
-    data: undefined,
-    isLoading: true,
-    isFetching: true,
+    data: { totals: { completed: 35, open: 90, overdue: 20, total: 125 } },
+    isLoading: false,
+    isFetching: false,
     isError: false,
   }),
 }));
@@ -39,7 +43,9 @@ jest.mock('./AnalyticsFilterPanel', () => ({
 }));
 jest.mock('./AnalyticsKpiSummary', () => ({
   __esModule: true,
-  default: () => <div>kpis</div>,
+  default: ({ data, isLoading }: { data?: { totals: { completed: number } }; isLoading: boolean }) => (
+    <div>{isLoading ? 'loading-kpis' : (data?.totals.completed ?? 0)}</div>
+  ),
 }));
 jest.mock('./AnalyticsChartGrid', () => ({
   __esModule: true,
@@ -68,6 +74,8 @@ describe('WorkspaceAnalyticsPage hydration', () => {
     const container = document.createElement('div');
     container.innerHTML = renderToString(app);
     const serverHtml = container.innerHTML;
+    expect(container.textContent).toContain('loading-kpis');
+    expect(container.textContent).not.toContain('35');
     const consoleError = jest.spyOn(console, 'error').mockImplementation();
     let root: Root | undefined;
 

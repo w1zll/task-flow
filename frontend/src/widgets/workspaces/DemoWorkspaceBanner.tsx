@@ -31,7 +31,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useSnackbar } from 'notistack';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 type BannerEdge = 'top' | 'right' | 'bottom' | 'left';
 
@@ -93,7 +100,7 @@ const DemoWorkspaceBanner = () => {
   const bannerRef = useRef<HTMLDivElement | null>(null);
   const suppressNextClickRef = useRef(false);
   const [isConfirmOpen, setConfirmOpen] = useState(false);
-  const [isCollapsed, setCollapsed] = useState(false);
+  const [isCollapsed, setCollapsed] = useState(true);
   const [hasLoadedPreferences, setLoadedPreferences] = useState(false);
   const [hasMeasuredBanner, setMeasuredBanner] = useState(false);
   const [position, setPosition] =
@@ -120,15 +127,16 @@ const DemoWorkspaceBanner = () => {
   const bounds = useMemo(() => {
     const xMin = edgeMargin;
     const yMin = edgeMargin;
+    const bottomMargin = isPhone ? 70 : edgeMargin;
     const width = viewport.width || 1;
     const height = viewport.height || 1;
     return {
       xMin,
       xMax: Math.max(xMin, width - bannerSize.width - edgeMargin),
       yMin,
-      yMax: Math.max(yMin, height - bannerSize.height - edgeMargin),
+      yMax: Math.max(yMin, height - bannerSize.height - bottomMargin),
     };
-  }, [bannerSize.height, bannerSize.width, edgeMargin, viewport]);
+  }, [bannerSize.height, bannerSize.width, edgeMargin, isPhone, viewport]);
   const pointFromPosition = useCallback(
     (nextPosition: BannerPosition) => {
       const ratio = clamp(nextPosition.ratio, 0, 1);
@@ -210,7 +218,6 @@ const DemoWorkspaceBanner = () => {
       if (raw) {
         const parsed = JSON.parse(raw) as {
           position?: unknown;
-          isCollapsed?: unknown;
         };
         if (isBannerPosition(parsed.position)) {
           setPosition({
@@ -218,20 +225,16 @@ const DemoWorkspaceBanner = () => {
             ratio: clamp(parsed.position.ratio, 0, 1),
           });
         }
-        if (typeof parsed.isCollapsed === 'boolean') {
-          setCollapsed(parsed.isCollapsed);
-        }
-      } else if (isPhone) {
-        setCollapsed(true);
       }
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
     } finally {
       setLoadedPreferences(true);
     }
-  }, [isPhone]);
+  }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!canRenderPositionedBanner) return;
     const node = bannerRef.current;
     if (!node) return;
 
@@ -252,16 +255,16 @@ const DemoWorkspaceBanner = () => {
     const observer = new ResizeObserver(updateSize);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [isCollapsed, isPhone]);
+  }, [canRenderPositionedBanner, isCollapsed, isPhone]);
 
   useEffect(() => {
     if (!hasLoadedPreferences || typeof window === 'undefined') return;
 
     window.localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ position, isCollapsed }),
+      JSON.stringify({ position }),
     );
-  }, [hasLoadedPreferences, isCollapsed, position]);
+  }, [hasLoadedPreferences, position]);
 
   const resetPosition = () => {
     setPosition(DEFAULT_POSITION);
