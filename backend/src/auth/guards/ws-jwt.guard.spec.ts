@@ -5,6 +5,7 @@ import { Socket } from 'socket.io';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ACCESS_COOKIE } from '../auth-cookies';
 import { WsException } from '@nestjs/websockets';
+import { AuthService } from '../auth.service';
 
 describe('WsJwtGuard', () => {
   let guard: WsJwtGuard;
@@ -12,6 +13,9 @@ describe('WsJwtGuard', () => {
 
   const mockJwtService = {
     verify: jest.fn(),
+  };
+  const mockAuthService = {
+    validateSession: jest.fn(),
   };
 
   // Хелпер для создания мок-контекста с нужными куками
@@ -40,72 +44,90 @@ describe('WsJwtGuard', () => {
       providers: [
         WsJwtGuard,
         { provide: JwtService, useValue: mockJwtService },
+        { provide: AuthService, useValue: mockAuthService },
       ],
     }).compile();
 
     guard = module.get<WsJwtGuard>(WsJwtGuard);
     jwtService = module.get<JwtService>(JwtService);
+    mockAuthService.validateSession.mockResolvedValue({ id: '1' });
   });
 
   afterEach(() => jest.clearAllMocks());
 
-  it('should return true and attach user to client on valid token', () => {
-    const payload = { sub: '1', email: 'test@example.com' };
+  it('should return true and attach user to client on valid token', async () => {
+    const payload = { sub: '1', sid: 'session-1', email: 'test@example.com' };
     mockJwtService.verify.mockReturnValue(payload);
 
     const context = createMockContext(`${ACCESS_COOKIE}=valid-token`);
     const client = context.switchToWs().getClient() as any;
 
-    const result = guard.canActivate(context);
+    const result = await guard.canActivate(context);
 
     expect(result).toBe(true);
     expect(client.user).toEqual(payload);
     expect(mockJwtService.verify).toHaveBeenCalledWith('valid-token');
+    expect(mockAuthService.validateSession).toHaveBeenCalledWith(
+      '1',
+      'session-1',
+    );
   });
 
-  it('should prefer a token from Socket.IO auth payload', () => {
-    const payload = { sub: '1', email: 'test@example.com' };
+  it('should prefer a token from Socket.IO auth payload', async () => {
+    const payload = { sub: '1', sid: 'session-1', email: 'test@example.com' };
     mockJwtService.verify.mockReturnValue(payload);
 
     const context = createMockContext(`${ACCESS_COOKIE}=cookie-token`, {
       token: 'handshake-token',
     });
 
-    const result = guard.canActivate(context);
+    const result = await guard.canActivate(context);
 
     expect(result).toBe(true);
     expect(mockJwtService.verify).toHaveBeenCalledWith('handshake-token');
   });
 
-  it('should reuse user already attached to the socket', () => {
-    const user = { sub: '1', email: 'test@example.com' };
+  it('revalidates a user already attached to the socket', async () => {
+    const user = { sub: '1', sid: 'session-1', email: 'test@example.com' };
     const context = createMockContext(undefined, undefined, user);
 
-    const result = guard.canActivate(context);
+    const result = await guard.canActivate(context);
 
     expect(result).toBe(true);
     expect(mockJwtService.verify).not.toHaveBeenCalled();
+    expect(mockAuthService.validateSession).toHaveBeenCalledWith(
+      '1',
+      'session-1',
+    );
   });
 
-  it('should throw WsException if cookie header is missing', () => {
+  it('should throw WsException if cookie header is missing', async () => {
     const context = createMockContext(undefined);
 
-    expect(() => guard.canActivate(context)).toThrow(WsException);
-    expect(() => guard.canActivate(context)).toThrow('Unauthorized');
+    await expect(guard.canActivate(context)).rejects.toThrow(WsException);
+    await expect(guard.canActivate(context)).rejects.toThrow('Unauthorized');
   });
 
-  it('should throw WsException if access token cookie is absent', () => {
+  it('should throw WsException if access token cookie is absent', async () => {
     const context = createMockContext('other_cookie=some-value');
 
-    expect(() => guard.canActivate(context)).toThrow(WsException);
+    await expect(guard.canActivate(context)).rejects.toThrow(WsException);
   });
 
-  it('should throw WsException with "Invalid token" if jwt.verify throws', () => {
+  it('should throw WsException with "Invalid token" if jwt.verify throws', async () => {
     mockJwtService.verify.mockImplementation(() => {
       throw new Error();
     });
     const context = createMockContext(`${ACCESS_COOKIE}=bad-token`);
 
-    expect(() => guard.canActivate(context)).toThrow('Invalid token');
+    await expect(guard.canActivate(context)).rejects.toThrow('Invalid token');
+  });
+
+  it('rejects realtime events after the session was removed', async () => {
+    const user = { sub: '1', sid: 'deleted-session' };
+    mockAuthService.validateSession.mockRejectedValue(new Error('revoked'));
+    const context = createMockContext(undefined, undefined, user);
+
+    await expect(guard.canActivate(context)).rejects.toThrow('Invalid token');
   });
 });

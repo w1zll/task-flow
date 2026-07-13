@@ -3,24 +3,35 @@ import { JwtService } from '@nestjs/jwt';
 import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { ACCESS_COOKIE } from '../auth-cookies';
+import { AuthService } from '../auth.service';
 
 @Injectable()
 export class WsJwtGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly authService: AuthService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const client: Socket = context.switchToWs().getClient();
-    if ((client as any).user) return true;
-
-    const token =
-      this.getHandshakeAuthToken(client) ?? this.getCookieAccessToken(client);
-    if (!token) throw new WsException('Unauthorized');
 
     try {
-      const payload = this.jwtService.verify(token);
+      let payload = (client as any).user as
+        | { sub?: string; sid?: string }
+        | undefined;
+      if (!payload) {
+        const token =
+          this.getHandshakeAuthToken(client) ?? this.getCookieAccessToken(client);
+        if (!token) throw new WsException('Unauthorized');
+        payload = this.jwtService.verify(token);
+      }
+
+      if (!payload.sub || !payload.sid) throw new WsException('Unauthorized');
+      await this.authService.validateSession(payload.sub, payload.sid);
       (client as any).user = payload;
       return true;
-    } catch (e) {
+    } catch (error) {
+      if (error instanceof WsException) throw error;
       throw new WsException('Invalid token');
     }
   }

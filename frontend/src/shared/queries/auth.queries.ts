@@ -23,6 +23,14 @@ export const useRevokeSession = () => {
   });
 };
 
+export const useRevokeOtherSessions = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => authApi.revokeOtherSessions(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: authQueryKeys.sessions }),
+  });
+};
+
 export const useUpdateAvatar = () => {
   const qc = useQueryClient();
   const setUser = useAuthStore((state) => state.setUser);
