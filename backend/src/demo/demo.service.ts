@@ -427,7 +427,7 @@ const DEMO_TEXT: Record<
     },
   },
   ru: {
-    workspaceName: 'TaskFlow Demo Workspace',
+    workspaceName: 'Демонстрационное пространство TaskFlow',
     teams: [
       {
         key: 'dev',
