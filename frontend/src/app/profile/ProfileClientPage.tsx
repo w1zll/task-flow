@@ -1,8 +1,9 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import {
   useResetAvatar,
+  useRevokeOtherSessions,
   useRevokeSession,
   useSessions,
   useUpdateAvatar,
@@ -15,6 +16,11 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   Skeleton,
   Stack,
@@ -23,21 +29,35 @@ import {
 import { PhotoCamera, RestartAlt } from '@mui/icons-material';
 import { useAuth } from '@/features/auth/useAuth';
 import UserAvatar from '@/shared/ui/UserAvatar';
-import {
-  AVATAR_ACCEPT,
-  validateAvatarFile,
-} from '@/shared/lib/avatar';
+import { AVATAR_ACCEPT, validateAvatarFile } from '@/shared/lib/avatar';
 import { useSnackbar } from 'notistack';
+import { useState } from 'react';
 
 const ProfileClientPage = () => {
   const t = useTranslations('ProfilePage');
+  const format = useFormatter();
   const { user, isLoading: isAuthLoading } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const sessionsQuery = useSessions();
   const revokeSession = useRevokeSession();
+  const revokeOtherSessions = useRevokeOtherSessions();
   const updateAvatar = useUpdateAvatar();
   const resetAvatar = useResetAvatar();
   const isAvatarPending = updateAvatar.isPending || resetAvatar.isPending;
+  const [confirmOthersOpen, setConfirmOthersOpen] = useState(false);
+
+  const formatDate = (value: string) =>
+    format.dateTime(new Date(value), {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
+  const getDeviceName = (value: string | null) => {
+    if (value === 'desktop' || value === 'mobile' || value === 'tablet') {
+      return t(`device.${value}`);
+    }
+    return value ?? t('deviceFallback');
+  };
 
   const handleAvatarChange = (file?: File) => {
     if (!file) return;
@@ -119,7 +139,9 @@ const ProfileClientPage = () => {
                   startIcon={<PhotoCamera />}
                   disabled={isAuthLoading || isAvatarPending}
                 >
-                  {updateAvatar.isPending ? t('avatarSaving') : t('changeAvatar')}
+                  {updateAvatar.isPending
+                    ? t('avatarSaving')
+                    : t('changeAvatar')}
                   <input
                     hidden
                     type="file"
@@ -170,6 +192,19 @@ const ProfileClientPage = () => {
         {t('sessionsDescription')}
       </Typography>
 
+      <Button
+        color="error"
+        variant="outlined"
+        sx={{ mt: 1 }}
+        disabled={
+          (sessionsQuery.data?.length ?? 0) <= 1 ||
+          revokeOtherSessions.isPending
+        }
+        onClick={() => setConfirmOthersOpen(true)}
+      >
+        {t('endOthers')}
+      </Button>
+
       {sessionsQuery.isLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <CircularProgress />
@@ -181,7 +216,7 @@ const ProfileClientPage = () => {
       ) : (
         <Stack spacing={2} sx={{ mt: 2 }}>
           {sessionsQuery.data?.length ? (
-            sessionsQuery.data.map((session: any) => (
+            sessionsQuery.data.map((session) => (
               <Card key={session.id}>
                 <CardContent>
                   <Box
@@ -195,16 +230,22 @@ const ProfileClientPage = () => {
                   >
                     <Box>
                       <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                        {session.deviceName ?? t('deviceFallback')}
+                        {getDeviceName(session.deviceName)}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {session.ipAddress ?? t('ipUnknown')} -{' '}
-                        {session.userAgent ?? t('browserUnknown')}
+                        {[session.browser, session.os]
+                          .filter(Boolean)
+                          .join(' · ') || t('browserUnknown')}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {session.ipAddress ?? t('ipUnknown')}
                       </Typography>
                     </Box>
                     <Chip
                       label={
-                        session.current ? t('currentSession') : t('inactive')
+                        session.current
+                          ? t('currentSession')
+                          : t('otherSession')
                       }
                       color={session.current ? 'success' : 'default'}
                       size="small"
@@ -214,10 +255,13 @@ const ProfileClientPage = () => {
                   <Divider sx={{ my: 2 }} />
 
                   <Typography variant="body2" color="text.secondary">
-                    {t('startedAt')}: {session.createdAt ?? '-'}
+                    {t('startedAt')}: {formatDate(session.createdAt)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {t('lastActive')}: {session.updatedAt ?? '-'}
+                    {t('lastActive')}: {formatDate(session.lastActiveAt)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('expiresAt')}: {formatDate(session.expiresAt)}
                   </Typography>
                 </CardContent>
                 <CardActions>
@@ -225,7 +269,18 @@ const ProfileClientPage = () => {
                     size="small"
                     color="error"
                     disabled={session.current || revokeSession.isPending}
-                    onClick={() => revokeSession.mutate(session.id)}
+                    onClick={() =>
+                      revokeSession.mutate(session.id, {
+                        onSuccess: () =>
+                          enqueueSnackbar(t('sessionEnded'), {
+                            variant: 'success',
+                          }),
+                        onError: () =>
+                          enqueueSnackbar(t('sessionEndError'), {
+                            variant: 'error',
+                          }),
+                      })
+                    }
                   >
                     {t('endSession')}
                   </Button>
@@ -239,6 +294,38 @@ const ProfileClientPage = () => {
           )}
         </Stack>
       )}
+
+      <Dialog
+        open={confirmOthersOpen}
+        onClose={() => setConfirmOthersOpen(false)}
+      >
+        <DialogTitle>{t('endOthersTitle')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{t('endOthersDescription')}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOthersOpen(false)}>
+            {t('cancel')}
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={revokeOtherSessions.isPending}
+            onClick={() =>
+              revokeOtherSessions.mutate(undefined, {
+                onSuccess: () => {
+                  setConfirmOthersOpen(false);
+                  enqueueSnackbar(t('sessionsEnded'), { variant: 'success' });
+                },
+                onError: () =>
+                  enqueueSnackbar(t('sessionEndError'), { variant: 'error' }),
+              })
+            }
+          >
+            {t('endOthers')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

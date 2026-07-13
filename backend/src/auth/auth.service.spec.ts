@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { AuthService } from './auth.service';
 import { User } from '@/users/entities/user.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
@@ -41,6 +41,7 @@ describe('AuthService', () => {
     find: jest.fn(),
     findOne: jest.fn(),
     update: jest.fn(),
+    delete: jest.fn(),
     save: jest.fn(),
     create: jest.fn(),
     createQueryBuilder: jest.fn().mockReturnThis(),
@@ -50,9 +51,18 @@ describe('AuthService', () => {
     getMany: jest.fn(),
   };
 
+  const mockManager = {
+    getRepository: jest.fn(),
+  };
+
+  const mockDataSource = {
+    transaction: jest.fn((callback) => callback(mockManager)),
+  };
+
   const mockJwtService = {
     sign: jest.fn(),
     verify: jest.fn(),
+    decode: jest.fn(),
   };
 
   const mockConfigService = {
@@ -98,6 +108,10 @@ describe('AuthService', () => {
           useValue: mockConfigService,
         },
         {
+          provide: DataSource,
+          useValue: mockDataSource,
+        },
+        {
           provide: BoardsService,
           useValue: mockBoardsService,
         },
@@ -122,8 +136,13 @@ describe('AuthService', () => {
     boardsService = module.get<BoardsService>(BoardsService);
     avatarService = module.get<AvatarService>(AvatarService);
     workspacesService = module.get<WorkspacesService>(WorkspacesService);
+    mockBcrypt.hash.mockReset();
+    mockBcrypt.compare.mockReset();
     mockBcrypt.hash.mockResolvedValue('hashed-refresh-token' as never);
     mockBcrypt.compare.mockResolvedValue(false as never);
+    mockManager.getRepository.mockImplementation((entity) =>
+      entity === User ? mockUserRepo : mockRefreshTokenRepo,
+    );
   });
 
   afterEach(() => {
@@ -147,8 +166,7 @@ describe('AuthService', () => {
       };
       const initializedUser = {
         ...user,
-        avatar:
-          'https://api.dicebear.com/10.x/glyphs/svg?seed=1',
+        avatar: 'https://api.dicebear.com/10.x/glyphs/svg?seed=1',
       };
       const tokenPair = {
         accessToken: 'access',
@@ -345,25 +363,21 @@ describe('AuthService', () => {
 
   // Add more tests for refresh, logout, etc.
   describe('logout', () => {
-    it('revokes a refresh token by digest without scanning bcrypt tokens', async () => {
+    it('deletes a refresh token by digest without scanning bcrypt tokens', async () => {
       mockJwtService.verify.mockReturnValue({ sub: 'demo-owner' });
       mockConfigService.get.mockReturnValue('refresh-secret');
-      mockRefreshTokenRepo.update.mockResolvedValue({ affected: 1 });
+      mockRefreshTokenRepo.delete.mockResolvedValue({ affected: 1 });
 
       await service.logout('raw-refresh-token');
 
-      expect(mockJwtService.verify).toHaveBeenCalledWith(
-        'raw-refresh-token',
-        { secret: 'refresh-secret' },
-      );
-      expect(mockRefreshTokenRepo.update).toHaveBeenCalledWith(
-        {
-          userId: 'demo-owner',
-          tokenDigest: expect.any(String),
-          isRevoked: false,
-        },
-        { isRevoked: true },
-      );
+      expect(mockJwtService.verify).toHaveBeenCalledWith('raw-refresh-token', {
+        secret: 'refresh-secret',
+      });
+      expect(mockRefreshTokenRepo.delete).toHaveBeenCalledWith({
+        userId: 'demo-owner',
+        tokenDigest: expect.any(String),
+        isRevoked: false,
+      });
       expect(mockRefreshTokenRepo.find).not.toHaveBeenCalled();
     });
 
@@ -380,7 +394,9 @@ describe('AuthService', () => {
 
       mockJwtService.verify.mockReturnValue({ sub: 'demo-owner' });
       mockConfigService.get.mockReturnValue('refresh-secret');
-      mockRefreshTokenRepo.update.mockResolvedValue({ affected: 0 });
+      mockRefreshTokenRepo.delete
+        .mockResolvedValueOnce({ affected: 0 })
+        .mockResolvedValueOnce({ affected: 1 });
       mockRefreshTokenRepo.find.mockResolvedValue([legacyToken]);
       mockBcrypt.compare.mockResolvedValueOnce(true as never);
 
@@ -393,10 +409,7 @@ describe('AuthService', () => {
           tokenDigest: expect.anything(),
         },
       });
-      expect(mockRefreshTokenRepo.save).toHaveBeenCalledWith({
-        ...legacyToken,
-        isRevoked: true,
-      });
+      expect(mockRefreshTokenRepo.delete).toHaveBeenLastCalledWith('token-1');
     });
   });
 
@@ -423,6 +436,118 @@ describe('AuthService', () => {
       expect(mockRefreshTokenRepo.update).not.toHaveBeenCalled();
       expect(mockRefreshTokenRepo.save).not.toHaveBeenCalled();
       expect(mockUserRepo.findOne).not.toHaveBeenCalled();
+    });
+
+    it('rotates the token in the same session row with a write lock', async () => {
+      const session = {
+        id: 'stable-session-id',
+        token: 'old-hash',
+        tokenDigest: 'old-digest',
+        userId: 'demo-owner',
+        isRevoked: false,
+        expiresAt: new Date(Date.now() + 60_000),
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        lastActiveAt: new Date('2026-01-01T00:00:00.000Z'),
+      };
+      const user = { id: 'demo-owner', email: 'owner@example.com' };
+      mockJwtService.verify.mockReturnValue({ sub: user.id });
+      mockJwtService.sign
+        .mockReturnValueOnce('new-access')
+        .mockReturnValueOnce('new-refresh');
+      mockConfigService.get.mockReturnValue('refresh-secret');
+      mockRefreshTokenRepo.findOne.mockResolvedValue(session);
+      mockUserRepo.findOne.mockResolvedValue(user);
+      mockRefreshTokenRepo.save.mockImplementation(async (value) => value);
+
+      const result = await service.refresh('old-refresh', {
+        userAgent: 'Browser',
+        ipAddress: '192.0.2.1',
+      });
+
+      expect(mockRefreshTokenRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lock: { mode: 'pessimistic_write' },
+        }),
+      );
+      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ sid: 'stable-session-id' }),
+      );
+      expect(mockRefreshTokenRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'stable-session-id',
+          token: 'hashed-refresh-token',
+          userAgent: 'Browser',
+          ipAddress: '192.0.2.1',
+        }),
+      );
+      expect(result.refreshToken).toBe('new-refresh');
+    });
+
+    it('uses a unique jti for every issued refresh token', async () => {
+      const user = { id: 'user-1', email: 'user@example.com' } as User;
+      mockJwtService.sign
+        .mockReturnValueOnce('access-1')
+        .mockReturnValueOnce('refresh-1')
+        .mockReturnValueOnce('access-2')
+        .mockReturnValueOnce('refresh-2');
+      mockConfigService.get.mockReturnValue('refresh-secret');
+      mockRefreshTokenRepo.create.mockImplementation((value) => value);
+      mockRefreshTokenRepo.save.mockImplementation(async (value) => value);
+
+      await service.issueTokenPair(user);
+      await service.issueTokenPair(user);
+
+      const refreshPayloads = mockJwtService.sign.mock.calls
+        .filter((call) => call.length === 2)
+        .map((call) => call[0] as { jti: string });
+      const accessPayloads = mockJwtService.sign.mock.calls
+        .filter((call) => call.length === 1)
+        .map((call) => call[0] as { sid: string });
+      expect(refreshPayloads).toHaveLength(2);
+      expect(refreshPayloads[0].jti).toEqual(expect.any(String));
+      expect(refreshPayloads[0].jti).not.toBe(refreshPayloads[1].jti);
+      expect(accessPayloads[0].sid).toEqual(expect.any(String));
+      expect(accessPayloads[0].sid).not.toBe(accessPayloads[1].sid);
+    });
+  });
+
+  describe('validateSession', () => {
+    it('accepts only an existing active session belonging to the user', async () => {
+      const user = { id: 'user-1' } as User;
+      mockRefreshTokenRepo.findOne.mockResolvedValue({
+        id: 'session-1',
+        userId: user.id,
+      });
+      mockUserRepo.findOne.mockResolvedValue(user);
+
+      await expect(
+        service.validateSession(user.id, 'session-1'),
+      ).resolves.toBe(user);
+      expect(mockRefreshTokenRepo.findOne).toHaveBeenCalledWith({
+        where: expect.objectContaining({
+          id: 'session-1',
+          userId: user.id,
+          isRevoked: false,
+          expiresAt: expect.anything(),
+        }),
+      });
+    });
+
+    it('rejects an access token after its session was removed', async () => {
+      mockRefreshTokenRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.validateSession('user-1', 'deleted-session'),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(mockUserRepo.findOne).not.toHaveBeenCalled();
+    });
+
+    it('rejects legacy access tokens without a session id', async () => {
+      await expect(service.validateSession('user-1', '')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(mockRefreshTokenRepo.findOne).not.toHaveBeenCalled();
     });
   });
 });
