@@ -32,12 +32,10 @@ describe('BoardPageHeader mobile tools', () => {
         isLoading={false}
         canManageColumns
         canEditBoardContent
-        isStatsOpen={false}
         isMembersOpen={false}
         isActivityOpen={false}
         activeFilterCount={3}
         onAddColumn={jest.fn()}
-        onToggleStats={jest.fn()}
         onToggleMembers={jest.fn()}
         onToggleActivity={jest.fn()}
         onOpenMobileTools={jest.fn()}
@@ -48,5 +46,10 @@ describe('BoardPageHeader mobile tools', () => {
       screen.getByRole('button', { name: 'mobileTools.open' }),
     ).not.toBeNull();
     expect(screen.getByText('3')).not.toBeNull();
+    expect(
+      screen.getByRole('link', { name: 'stats' }).getAttribute('href'),
+    ).toBe(
+      '/workspaces/workspace-1/analytics?boardId=board-1',
+    );
   });
 });

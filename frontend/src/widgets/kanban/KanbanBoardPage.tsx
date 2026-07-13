@@ -4,7 +4,6 @@ import type { Board } from '@/shared/api/api';
 import { useAuth } from '@/features/auth/useAuth';
 import { getAvailableWorkspaceMembers } from '@/shared/lib/board-members';
 import { isBoardPermissionError } from '@/shared/lib/boardSocketMutations';
-import { useDayjsLocale } from '@/shared/lib/useDayjsLocale';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import { queryKeys } from '@/shared/queries/board-query-keys';
@@ -42,8 +41,6 @@ import BoardCanvasSection from './kanban-board-page/BoardCanvasSection';
 import BoardMembersDrawer from './kanban-board-page/BoardMembersDrawer';
 import BoardNotFoundState from './kanban-board-page/BoardNotFoundState';
 import BoardPageHeader from './kanban-board-page/BoardPageHeader';
-import BoardStatsDrawer from './kanban-board-page/BoardStatsDrawer';
-import { useBoardAnalyticsController } from './kanban-board-page/useBoardAnalyticsController';
 import { useBoardFiltersController } from './kanban-board-page/useBoardFiltersController';
 import TaskDetailModal from './TaskDetailModal';
 import BoardActivityDrawer from './kanban-board-page/BoardActivityDrawer';
@@ -61,7 +58,6 @@ interface Props {
 }
 
 const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
-  const dayjsLocale = useDayjsLocale();
   const locale = useLocale();
   const t = useTranslations('BoardPage');
   const router = useRouter();
@@ -91,7 +87,6 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
 
   const [newColTitle, setNewColTitle] = useState('');
   const [isMembersOpen, setMembersOpen] = useState(false);
-  const [isStatsOpen, setStatsOpen] = useState(false);
   const [isActivityOpen, setActivityOpen] = useState(false);
   const [isMobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [isWhiteboardCreateOpen, setWhiteboardCreateOpen] = useState(false);
@@ -129,7 +124,6 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     removeSavedView,
   } = useBoardFiltersController(boardId);
   const { boardLayout, setBoardLayout } = useBoardLayoutController();
-  const boardAnalytics = useBoardAnalyticsController(boardId, dayjsLocale);
   const linkedWhiteboards = useWorkspaceWhiteboards(
     board?.workspaceId ?? '',
     board?.id,
@@ -228,7 +222,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const canCreateOrAttachWhiteboard =
     Boolean(board?.capabilities.canUseWhiteboard) && !isOffline;
 
-  useStableBodyScrollLock(isMembersOpen || isStatsOpen || isActivityOpen);
+  useStableBodyScrollLock(isMembersOpen || isActivityOpen);
 
   useEffect(() => {
     if (!initialBoard) return;
@@ -404,23 +398,14 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     );
   };
 
-  const openStats = () => {
-    setMobileToolsOpen(false);
-    setMembersOpen(false);
-    setActivityOpen(false);
-    setStatsOpen(true);
-  };
-
   const openActivity = () => {
     setMobileToolsOpen(false);
-    setStatsOpen(false);
     setMembersOpen(false);
     setActivityOpen(true);
   };
 
   const openMembers = () => {
     setMobileToolsOpen(false);
-    setStatsOpen(false);
     setActivityOpen(false);
     setMembersOpen(true);
   };
@@ -458,23 +443,15 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
         isLoading={isLoading}
         canManageColumns={canManageColumns}
         canEditBoardContent={canEditBoardContent}
-        isStatsOpen={isStatsOpen}
         isMembersOpen={isMembersOpen}
         isActivityOpen={isActivityOpen}
         activeFilterCount={activeFilterCount}
         onAddColumn={() => setAddingColumn(true)}
-        onToggleStats={() => {
-          setMembersOpen(false);
-          setActivityOpen(false);
-          setStatsOpen((open) => !open);
-        }}
         onToggleMembers={() => {
-          setStatsOpen(false);
           setActivityOpen(false);
           setMembersOpen((open) => !open);
         }}
         onToggleActivity={() => {
-          setStatsOpen(false);
           setMembersOpen(false);
           setActivityOpen((open) => !open);
         }}
@@ -581,25 +558,11 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
           onAttachWhiteboard={() => setWhiteboardAttachOpen(true)}
           onCreateWhiteboard={() => setWhiteboardCreateOpen(true)}
           onAddColumn={() => setAddingColumn(true)}
-          onOpenStats={openStats}
+          analyticsHref={`/workspaces/${board.workspaceId}/analytics?boardId=${encodeURIComponent(board.id)}`}
           onOpenActivity={openActivity}
           onOpenMembers={openMembers}
         />
       )}
-
-      <BoardStatsDrawer
-        open={isStatsOpen}
-        analyticsPeriod={boardAnalytics.analyticsPeriod}
-        chartData={boardAnalytics.chartData}
-        chartXAxisLabels={boardAnalytics.chartXAxisLabels}
-        isChartLoading={boardAnalytics.isChartLoading}
-        isChartError={boardAnalytics.isChartError}
-        onTimeCount={boardAnalytics.onTimeCount}
-        lateCount={boardAnalytics.lateCount}
-        todayCompletedCount={boardAnalytics.todayCompletedCount}
-        onClose={() => setStatsOpen(false)}
-        onAnalyticsPeriodChange={boardAnalytics.setAnalyticsPeriod}
-      />
 
       <BoardActivityDrawer
         open={isActivityOpen}
