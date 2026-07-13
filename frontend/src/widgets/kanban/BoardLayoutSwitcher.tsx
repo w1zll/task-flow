@@ -18,11 +18,15 @@ import { useTranslations } from 'next-intl';
 interface BoardLayoutSwitcherProps {
   layout: BoardLayout;
   onChange: (layout: BoardLayout) => void;
+  hideLabel?: boolean;
+  mobileGrid?: boolean;
 }
 
 const BoardLayoutSwitcher = ({
   layout,
   onChange,
+  hideLabel = false,
+  mobileGrid = false,
 }: BoardLayoutSwitcherProps) => {
   const t = useTranslations('BoardPage');
 
@@ -36,16 +40,18 @@ const BoardLayoutSwitcher = ({
         minWidth: 0,
       }}
     >
-      <Typography
-        sx={{
-          color: 'text.secondary',
-          fontWeight: 700,
-          letterSpacing: 0,
-          flexShrink: 0,
-        }}
-      >
-        {t('layout.label')}
-      </Typography>
+      {!hideLabel && (
+        <Typography
+          sx={{
+            color: 'text.secondary',
+            fontWeight: 700,
+            letterSpacing: 0,
+            flexShrink: 0,
+          }}
+        >
+          {t('layout.label')}
+        </Typography>
+      )}
 
       <ToggleButtonGroup
         exclusive
@@ -56,7 +62,14 @@ const BoardLayoutSwitcher = ({
         }}
         aria-label={t('layout.label')}
         sx={{
-          flexWrap: 'wrap',
+          ...(mobileGrid
+            ? {
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                gap: 1,
+                width: '100%',
+              }
+            : { flexWrap: 'wrap' }),
           minWidth: 0,
           maxWidth: '100%',
           '& .MuiToggleButton-root': {
@@ -68,6 +81,16 @@ const BoardLayoutSwitcher = ({
             whiteSpace: 'normal',
             lineHeight: 1.2,
             overflowWrap: 'anywhere',
+            ...(mobileGrid
+              ? {
+                  width: '100%',
+                  minHeight: 44,
+                  margin: '0 !important',
+                  border: (theme) =>
+                    `1px solid ${theme.palette.divider} !important`,
+                  borderRadius: '8px !important',
+                }
+              : {}),
           },
           '& .MuiSvgIcon-root': {
             flexShrink: 0,

@@ -360,10 +360,16 @@
         "empty": "No tasks here."
       }
     },
+    "mobileTools": {
+      "title": "Board tools",
+      "open": "Open board tools",
+      "actions": "Board actions"
+    },
     "filters": {
       "title": "Filters",
       "open": "Filters",
       "apply": "Show results",
+      "activeCount": "{count} active",
       "search": "Search",
       "assignee": "Assignee",
       "team": "Team",

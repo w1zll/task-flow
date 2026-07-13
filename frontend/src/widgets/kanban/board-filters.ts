@@ -111,6 +111,18 @@ export const areBoardFiltersActive = (filters: BoardFilters) =>
   filters.sort !== DEFAULT_BOARD_FILTERS.sort ||
   filters.unread !== DEFAULT_BOARD_FILTERS.unread;
 
+export const countActiveBoardFilters = (filters: BoardFilters) =>
+  [
+    filters.search.trim() !== '',
+    filters.assignee !== DEFAULT_BOARD_FILTERS.assignee,
+    filters.team !== DEFAULT_BOARD_FILTERS.team,
+    filters.priority !== DEFAULT_BOARD_FILTERS.priority,
+    filters.status !== DEFAULT_BOARD_FILTERS.status,
+    filters.labels.length > 0,
+    filters.sort !== DEFAULT_BOARD_FILTERS.sort,
+    filters.unread !== DEFAULT_BOARD_FILTERS.unread,
+  ].filter(Boolean).length;
+
 export const isBoardReorderDisabledByView = (filters: BoardFilters) =>
   areBoardFiltersActive(filters);
 

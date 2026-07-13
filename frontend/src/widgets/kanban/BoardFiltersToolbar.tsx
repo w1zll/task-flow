@@ -18,7 +18,6 @@ import {
 import ActiveFilterChips from './board-filters-toolbar/ActiveFilterChips';
 import BoardFiltersForm from './board-filters-toolbar/BoardFiltersForm';
 import BoardFiltersHeader from './board-filters-toolbar/BoardFiltersHeader';
-import BoardFiltersMobileDrawer from './board-filters-toolbar/BoardFiltersMobileDrawer';
 import {
   normalizeLabelsInput,
   uniqueMembers,
@@ -74,7 +73,6 @@ const BoardFiltersToolbar = ({
 }: Props) => {
   const t = useTranslations('BoardPage.filters');
   const taskCardT = useTranslations('TaskCard');
-  const [isMobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(filters.search);
   const [labelsInput, setLabelsInput] = useState(filters.labels.join(', '));
   const [isSaveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -254,6 +252,7 @@ const BoardFiltersToolbar = ({
   return (
     <Box
       sx={{
+        display: { xs: 'none', md: 'block' },
         px: { xs: 2, sm: 3 },
         py: { xs: 1, sm: 1.5 },
         borderBottom: '1px solid',
@@ -267,14 +266,11 @@ const BoardFiltersToolbar = ({
         <BoardLayoutSwitcher layout={layout} onChange={onLayoutChange} />
 
         <BoardFiltersHeader
-          isActive={isActive}
           filteredCount={filteredCount}
           totalCount={totalCount}
           isFiltering={isFiltering}
           isDesktopExpanded={isDesktopFiltersExpanded}
           desktopPanelId={desktopFiltersPanelId}
-          onReset={handleReset}
-          onOpenMobileDrawer={() => setMobileDrawerOpen(true)}
           onToggleDesktopExpanded={() =>
             setDesktopFiltersExpanded((expanded) => !expanded)
           }
@@ -296,12 +292,6 @@ const BoardFiltersToolbar = ({
           </Stack>
         </Collapse>
 
-        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-          <ActiveFilterChips
-            activeChips={activeChips}
-            isReorderDisabled={isReorderDisabled}
-          />
-        </Box>
       </Stack>
 
       {isFiltering && (
@@ -316,19 +306,6 @@ const BoardFiltersToolbar = ({
           }}
         />
       )}
-
-      <BoardFiltersMobileDrawer
-        open={isMobileDrawerOpen}
-        isActive={isActive}
-        onClose={() => setMobileDrawerOpen(false)}
-        onReset={handleReset}
-        onApply={() => {
-          applyLabelsInput();
-          setMobileDrawerOpen(false);
-        }}
-      >
-        {filterForm}
-      </BoardFiltersMobileDrawer>
 
       <SaveViewDialog
         open={isSaveDialogOpen}
