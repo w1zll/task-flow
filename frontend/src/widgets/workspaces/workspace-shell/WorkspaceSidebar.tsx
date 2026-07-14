@@ -37,6 +37,7 @@ interface WorkspaceSidebarProps {
   isOffline?: boolean;
   cachedBoardIds?: ReadonlySet<string>;
   onOpenUnavailableBoard?: (board: Board) => void;
+  onOpenCachedBoardOffline?: (board: Board) => boolean;
   onOpenUnavailableSection?: () => void;
 }
 
@@ -53,6 +54,7 @@ const WorkspaceSidebar = ({
   isOffline = false,
   cachedBoardIds,
   onOpenUnavailableBoard,
+  onOpenCachedBoardOffline,
   onOpenUnavailableSection,
 }: WorkspaceSidebarProps) => {
   const t = useTranslations('WorkspaceShell');
@@ -244,7 +246,14 @@ const WorkspaceSidebar = ({
                   component={isOffline ? 'a' : NextLink}
                   href={`/workspaces/${workspaceId}/boards/${board.id}`}
                   selected={isActive}
-                  onClick={onCloseNavigation}
+                  onClick={(event) => {
+                    onCloseNavigation();
+                    if (!isOffline) return;
+
+                    if (onOpenCachedBoardOffline?.(board)) {
+                      event.preventDefault();
+                    }
+                  }}
                   sx={itemSx}
                 >
                   {itemContent}

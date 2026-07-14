@@ -22,13 +22,24 @@ import {
   writeBoardFiltersToSearchParams,
   type BoardFilters,
 } from '../board-filters';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 
 export const useBoardFiltersController = (boardId: string) => {
   const t = useTranslations('BoardPage');
   const router = useRouter();
+  const isOffline = useIsOffline();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchParamsString = searchParams.toString();
+  const [offlineSearchParamsString, setOfflineSearchParamsString] =
+    useState(searchParamsString);
+  const effectiveSearchParamsString = isOffline
+    ? offlineSearchParamsString
+    : searchParamsString;
+  const effectiveSearchParams = useMemo(
+    () => new URLSearchParams(effectiveSearchParamsString),
+    [effectiveSearchParamsString],
+  );
   const { enqueueSnackbar } = useSnackbar();
   const [isFilterRefreshVisible, setFilterRefreshVisible] = useState(false);
   const [isFilterNavigationPending, startFilterNavigation] = useTransition();
@@ -37,15 +48,19 @@ export const useBoardFiltersController = (boardId: string) => {
   const boardViews = useBoardViews(boardId);
   const createBoardView = useCreateBoardView();
   const deleteBoardView = useDeleteBoardView();
-  const selectedViewId = searchParams.get('view');
-  const taskToHighlightId = searchParams.get('taskId');
+  const selectedViewId = effectiveSearchParams.get('view');
+  const taskToHighlightId = effectiveSearchParams.get('taskId');
   const boardFilters = useMemo(
     () =>
       parseBoardFiltersFromSearchParams(
-        new URLSearchParams(searchParamsString),
+        new URLSearchParams(effectiveSearchParamsString),
       ),
-    [searchParamsString],
+    [effectiveSearchParamsString],
   );
+
+  useEffect(() => {
+    if (!isOffline) setOfflineSearchParamsString(searchParamsString);
+  }, [isOffline, searchParamsString]);
 
   const clearFilterRefreshTimer = useCallback(() => {
     if (!filterRefreshTimerRef.current) return;
@@ -90,7 +105,12 @@ export const useBoardFiltersController = (boardId: string) => {
   const replaceBoardFilterUrl = useCallback(
     (nextSearchParams: URLSearchParams) => {
       const nextQuery = nextSearchParams.toString();
-      if (nextQuery === searchParamsString) return;
+      if (nextQuery === effectiveSearchParamsString) return;
+
+      if (isOffline) {
+        setOfflineSearchParamsString(nextQuery);
+        return;
+      }
 
       beginFilterRefresh(nextQuery);
       startFilterNavigation(() => {
@@ -103,7 +123,8 @@ export const useBoardFiltersController = (boardId: string) => {
       beginFilterRefresh,
       pathname,
       router,
-      searchParamsString,
+      effectiveSearchParamsString,
+      isOffline,
       startFilterNavigation,
     ],
   );
@@ -112,12 +133,12 @@ export const useBoardFiltersController = (boardId: string) => {
     (filters: BoardFilters) => {
       const nextSearchParams = writeBoardFiltersToSearchParams(
         filters,
-        new URLSearchParams(searchParamsString),
+        new URLSearchParams(effectiveSearchParamsString),
       );
       nextSearchParams.delete('view');
       replaceBoardFilterUrl(nextSearchParams);
     },
-    [replaceBoardFilterUrl, searchParamsString],
+    [effectiveSearchParamsString, replaceBoardFilterUrl],
   );
 
   const resetBoardFilters = useCallback(() => {
@@ -137,7 +158,7 @@ export const useBoardFiltersController = (boardId: string) => {
       const filters = boardFiltersFromSavedView(view.filters, view.sort);
       const nextSearchParams = writeBoardFiltersToSearchParams(
         filters,
-        new URLSearchParams(searchParamsString),
+        new URLSearchParams(effectiveSearchParamsString),
       );
       nextSearchParams.set('view', viewId);
       replaceBoardFilterUrl(nextSearchParams);
@@ -145,7 +166,7 @@ export const useBoardFiltersController = (boardId: string) => {
     [
       boardViews.data,
       replaceBoardFilterUrl,
-      searchParamsString,
+      effectiveSearchParamsString,
       updateBoardFilters,
     ],
   );
@@ -169,7 +190,7 @@ export const useBoardFiltersController = (boardId: string) => {
             });
             const nextSearchParams = writeBoardFiltersToSearchParams(
               boardFilters,
-              new URLSearchParams(searchParamsString),
+              new URLSearchParams(effectiveSearchParamsString),
             );
             nextSearchParams.set('view', view.id);
             replaceBoardFilterUrl(nextSearchParams);
@@ -188,7 +209,7 @@ export const useBoardFiltersController = (boardId: string) => {
       createBoardView,
       enqueueSnackbar,
       replaceBoardFilterUrl,
-      searchParamsString,
+      effectiveSearchParamsString,
       t,
     ],
   );
