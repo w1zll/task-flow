@@ -13,6 +13,7 @@ import {
   queryCachePersister,
   shouldPersistQuery,
 } from '@/shared/lib/query-persistence';
+import { isBrowserOffline } from '@/shared/lib/offline';
 import { useThemeStore } from '@/shared/store/root.store';
 import type { ThemeMode } from '@/shared/store/theme.store';
 import { createAppTheme } from '@/shared/theme/theme';
@@ -47,8 +48,10 @@ const getQueryClient = () => {
     return createQueryClient();
   }
 
-  onlineManager.setOnline(window.navigator.onLine);
-  browserQueryClient ??= createQueryClient();
+  if (!browserQueryClient) {
+    onlineManager.setOnline(!isBrowserOffline());
+    browserQueryClient = createQueryClient();
+  }
   return browserQueryClient;
 };
 
