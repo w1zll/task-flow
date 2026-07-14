@@ -3,7 +3,10 @@ import AuthHydrator from './AuthHydrator';
 import { authApi } from '@/shared/api/api';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/shared/store/root.store';
-import { isBrowserOffline } from '@/shared/lib/offline';
+import {
+  isBrowserOffline,
+  markNetworkOffline,
+} from '@/shared/lib/offline';
 
 jest.mock('@/shared/api/api');
 jest.mock('next/navigation');
@@ -23,6 +26,9 @@ const mockUseAuthStore = useAuthStore as jest.MockedFunction<
 >;
 const mockIsBrowserOffline = isBrowserOffline as jest.MockedFunction<
   typeof isBrowserOffline
+>;
+const mockMarkNetworkOffline = markNetworkOffline as jest.MockedFunction<
+  typeof markNetworkOffline
 >;
 
 describe('AuthHydrator', () => {
@@ -61,12 +67,26 @@ describe('AuthHydrator', () => {
     render(<AuthHydrator />);
 
     await waitFor(() => {
-      expect(mockAuthApi.me).toHaveBeenCalled();
+      expect(mockAuthApi.me).toHaveBeenCalledWith({ timeout: 5000 });
       expect(store.hydrate).toHaveBeenCalledWith({
         id: 'user-1',
         email: 'test@example.com',
         name: 'Test User',
       });
+    });
+  });
+
+  it('hydrates from cache and marks offline when the startup auth probe has no response', async () => {
+    mockUsePathname.mockReturnValue('/workspaces');
+    mockIsBrowserOffline.mockReturnValue(false);
+    mockAuthApi.me.mockRejectedValue(new Error('timeout'));
+
+    render(<AuthHydrator />);
+
+    await waitFor(() => {
+      expect(mockAuthApi.me).toHaveBeenCalledWith({ timeout: 5000 });
+      expect(mockMarkNetworkOffline).toHaveBeenCalled();
+      expect(store.hydrate).toHaveBeenCalledWith({ id: 'cached-user' });
     });
   });
 });

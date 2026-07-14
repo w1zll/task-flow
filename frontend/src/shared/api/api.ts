@@ -1,7 +1,7 @@
 import apiClient from './client';
 import { ApiBody, ApiResponse } from './types';
 import type { components } from './api.types';
-import type { AxiosProgressEvent } from 'axios';
+import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 export type AuthResponse = ApiResponse<'/api/auth/register', 'post'>;
 export type AuthUser = ApiResponse<'/api/auth/me', 'get'>;
@@ -198,7 +198,8 @@ export const authApi = {
       '/api/auth/refresh',
     ),
 
-  me: () => apiClient.get<ApiResponse<'/api/auth/me', 'get'>>('/api/auth/me'),
+  me: (config?: AxiosRequestConfig) =>
+    apiClient.get<ApiResponse<'/api/auth/me', 'get'>>('/api/auth/me', config),
 
   wsToken: () => apiClient.get<WsTokenResponse>('/api/auth/ws-token'),
 

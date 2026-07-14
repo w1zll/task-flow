@@ -2,10 +2,18 @@
 
 import { authApi } from '@/shared/api/api';
 import { readStoredAuthUser, writeStoredAuthUser } from '@/shared/lib/auth-session';
-import { isBrowserOffline } from '@/shared/lib/offline';
+import {
+  isBrowserOffline,
+  markNetworkOffline,
+} from '@/shared/lib/offline';
 import { useAuthStore } from '@/shared/store/root.store';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+
+const STARTUP_AUTH_TIMEOUT_MS = 5000;
+
+const hasHttpResponse = (error: unknown) =>
+  Boolean((error as { response?: unknown } | null)?.response);
 
 const AuthHydrator = () => {
   const pathname = usePathname();
@@ -36,14 +44,18 @@ const AuthHydrator = () => {
       }
 
       try {
-        const res = await authApi.me();
+        const res = await authApi.me({ timeout: STARTUP_AUTH_TIMEOUT_MS });
         if (cancelled) return;
         writeStoredAuthUser(res.data);
         hydrate(res.data);
-      } catch {
+      } catch (error) {
         if (cancelled) return;
 
-        if (isBrowserOffline()) {
+        if (!hasHttpResponse(error)) {
+          markNetworkOffline();
+        }
+
+        if (isBrowserOffline() || !hasHttpResponse(error)) {
           hydrateFromCache();
           return;
         }
