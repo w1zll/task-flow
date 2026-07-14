@@ -3,6 +3,7 @@
 import { useBoards } from '@/shared/queries/boards.queries';
 import { useWorkspaces } from '@/shared/queries/workspaces.queries';
 import { useWorkspaceWhiteboards } from '@/shared/queries/whiteboards.queries';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import {
   Add,
   GestureOutlined,
@@ -25,6 +26,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { useSnackbar } from 'notistack';
 import WhiteboardCreateDialog from './WhiteboardCreateDialog';
 
 interface Props {
@@ -36,7 +38,10 @@ const canCreateWorkspaceWhiteboard = (role?: string) =>
 
 const WhiteboardsPage = ({ workspaceId }: Props) => {
   const t = useTranslations('Whiteboards');
+  const shellT = useTranslations('WorkspaceShell');
   const router = useRouter();
+  const isOffline = useIsOffline();
+  const { enqueueSnackbar } = useSnackbar();
   const { data: workspaces = [] } = useWorkspaces();
   const { data: boards = [] } = useBoards();
   const whiteboards = useWorkspaceWhiteboards(workspaceId);
@@ -46,7 +51,20 @@ const WhiteboardsPage = ({ workspaceId }: Props) => {
     () => new Map(boards.map((board) => [board.id, board])),
     [boards],
   );
-  const canCreate = canCreateWorkspaceWhiteboard(workspace?.currentUserRole);
+  const canCreate =
+    canCreateWorkspaceWhiteboard(workspace?.currentUserRole) && !isOffline;
+  const openWhiteboard = (whiteboardId: string) => {
+    if (isOffline) {
+      enqueueSnackbar(shellT('offlineSectionUnavailable'), {
+        variant: 'warning',
+      });
+      return;
+    }
+
+    router.push(
+      `/workspaces/${workspaceId}/whiteboards/${whiteboardId}`,
+    );
+  };
 
   return (
     <Box
@@ -114,11 +132,7 @@ const WhiteboardsPage = ({ workspaceId }: Props) => {
               <Card variant="outlined" sx={{ height: '100%', borderRadius: 1 }}>
                 <CardActionArea
                   sx={{ height: '100%', alignItems: 'stretch' }}
-                  onClick={() =>
-                    router.push(
-                      `/workspaces/${workspaceId}/whiteboards/${whiteboard.id}`,
-                    )
-                  }
+                  onClick={() => openWhiteboard(whiteboard.id)}
                 >
                   <CardContent
                     sx={{
@@ -182,9 +196,7 @@ const WhiteboardsPage = ({ workspaceId }: Props) => {
         workspaceId={workspaceId}
         boards={boards}
         onClose={() => setCreateOpen(false)}
-        onCreated={(whiteboard) =>
-          router.push(`/workspaces/${workspaceId}/whiteboards/${whiteboard.id}`)
-        }
+        onCreated={(whiteboard) => openWhiteboard(whiteboard.id)}
       />
     </Box>
   );

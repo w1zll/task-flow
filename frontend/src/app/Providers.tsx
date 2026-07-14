@@ -5,6 +5,8 @@ import { defaultTimeZone } from '@/i18n/config';
 import PendingBoardMutationsPrompt from '@/shared/ui/PendingBoardMutationsPrompt';
 import OfflineRuntime from '@/shared/ui/OfflineRuntime';
 import RouteProgressBar from '@/shared/ui/RouteProgressBar';
+import OfflineNavigationGuard from '@/shared/ui/OfflineNavigationGuard';
+import OfflineNavigationOutlet from '@/shared/ui/OfflineNavigationOutlet';
 import {
   QUERY_CACHE_BUSTER,
   QUERY_CACHE_MAX_AGE_MS,
@@ -130,7 +132,10 @@ const Providers = ({
               <AppHeader initialThemeMode={initialThemeMode} />
               <RouteProgressBar />
               <OfflineRuntime />
-              {children}
+              <OfflineNavigationGuard />
+              <OfflineNavigationOutlet>
+                {children}
+              </OfflineNavigationOutlet>
             </Box>
           </ThemedApp>
         </NextIntlClientProvider>

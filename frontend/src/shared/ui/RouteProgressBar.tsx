@@ -1,6 +1,7 @@
 'use client';
 
 import { Box, LinearProgress } from '@mui/material';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import { usePathname, useSearchParams } from 'next/navigation';
 import type { MutableRefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -36,6 +37,7 @@ const clearTimer = (timerRef: MutableRefObject<number | undefined>) => {
 };
 
 const RouteProgressBar = () => {
+  const isOffline = useIsOffline();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const route = `${pathname}?${searchParams.toString()}`;
@@ -75,7 +77,12 @@ const RouteProgressBar = () => {
   }, [finish, isVisible, route]);
 
   useEffect(() => {
+    if (isOffline && isVisible) finish();
+  }, [finish, isOffline, isVisible]);
+
+  useEffect(() => {
     const handleClick = (event: MouseEvent) => {
+      if (isOffline) return;
       if (event.defaultPrevented || isModifiedClick(event)) return;
       if (!(event.target instanceof Element)) return;
 
@@ -84,7 +91,9 @@ const RouteProgressBar = () => {
       if (shouldTrackAnchor(anchor)) start();
     };
 
-    const handlePopState = () => start();
+    const handlePopState = () => {
+      if (!isOffline) start();
+    };
 
     document.addEventListener('click', handleClick, true);
     window.addEventListener('popstate', handlePopState);
@@ -95,7 +104,7 @@ const RouteProgressBar = () => {
       clearTimer(fallbackTimerRef);
       clearTimer(finishTimerRef);
     };
-  }, [start]);
+  }, [isOffline, start]);
 
   return (
     <Box

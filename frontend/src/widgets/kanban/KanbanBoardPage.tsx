@@ -45,6 +45,7 @@ import { useBoardFiltersController } from './kanban-board-page/useBoardFiltersCo
 import TaskDetailModal from './TaskDetailModal';
 import BoardActivityDrawer from './kanban-board-page/BoardActivityDrawer';
 import BoardWhiteboardsSection from '@/widgets/whiteboards/BoardWhiteboardsSection';
+import { useOfflineBoardNavigationStore } from '@/shared/store/offline-board-navigation.store';
 import { useBoardLayoutController } from './kanban-board-page/useBoardLayoutController';
 import { useWorkspaceWhiteboards } from '@/shared/queries/whiteboards.queries';
 import WhiteboardAttachDialog from '@/widgets/whiteboards/WhiteboardAttachDialog';
@@ -57,23 +58,33 @@ interface Props {
   initialBoard?: Board;
 }
 
-const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
+const KanbanBoardPage = ({ boardId: serverBoardId, initialBoard }: Props) => {
   const locale = useLocale();
   const t = useTranslations('BoardPage');
+  const shellT = useTranslations('WorkspaceShell');
   const router = useRouter();
   const pathname = usePathname();
+  const offlineBoardId = useOfflineBoardNavigationStore(
+    (state) =>
+      state.view?.type === 'board' ? state.view.boardId : null,
+  );
+  const boardId = offlineBoardId ?? serverBoardId;
+  const matchingInitialBoard =
+    initialBoard?.id === boardId ? initialBoard : undefined;
   const searchParams = useSearchParams();
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const isOffline = useIsOffline();
-  const [isInitialBoardSynced, setInitialBoardSynced] = useState(!initialBoard);
+  const [isInitialBoardSynced, setInitialBoardSynced] = useState(
+    !matchingInitialBoard,
+  );
   const {
     data: queriedBoard,
     isLoading,
     isError,
     fetchStatus: boardFetchStatus,
-  } = useBoard(boardId, initialBoard);
-  const board = isInitialBoardSynced ? queriedBoard : initialBoard;
+  } = useBoard(boardId, matchingInitialBoard);
+  const board = isInitialBoardSynced ? queriedBoard : matchingInitialBoard;
   const createColumn = useCreateColumn();
   const isAddingColumn = useBoardUIStore((state) => state.isAddingColumn);
   const closeTask = useBoardUIStore((state) => state.closeTask);
@@ -225,11 +236,14 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   useStableBodyScrollLock(isMembersOpen || isActivityOpen);
 
   useEffect(() => {
-    if (!initialBoard) return;
+    if (!matchingInitialBoard) {
+      setInitialBoardSynced(true);
+      return;
+    }
 
-    qc.setQueryData(queryKeys.board(boardId), initialBoard);
+    qc.setQueryData(queryKeys.board(boardId), matchingInitialBoard);
     setInitialBoardSynced(true);
-  }, [boardId, initialBoard, qc]);
+  }, [boardId, matchingInitialBoard, qc]);
 
   useEffect(() => {
     closeTask();
@@ -305,17 +319,21 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
       setActivityOpen(false);
       setHighlightedTaskId(taskId);
 
+      if (isOffline) return;
+
       const nextSearchParams = new URLSearchParams(searchParams.toString());
       nextSearchParams.set('taskId', taskId);
       router.replace(`${pathname}?${nextSearchParams.toString()}`, {
         scroll: false,
       });
     },
-    [openTask, pathname, router, searchParams],
+    [isOffline, openTask, pathname, router, searchParams],
   );
 
   const handleCloseTask = useCallback(() => {
     closeTask();
+
+    if (isOffline) return;
 
     const nextSearchParams = new URLSearchParams(searchParams.toString());
     if (!nextSearchParams.has('taskId')) return;
@@ -325,7 +343,7 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
       scroll: false,
     });
-  }, [closeTask, pathname, router, searchParams]);
+  }, [closeTask, isOffline, pathname, router, searchParams]);
 
   useEffect(() => {
     if (!board || !openTaskId) return;
@@ -393,6 +411,12 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   const openWhiteboard = (whiteboardId: string) => {
     if (!board) return;
     setMobileToolsOpen(false);
+    if (isOffline) {
+      enqueueSnackbar(shellT('offlineSectionUnavailable'), {
+        variant: 'warning',
+      });
+      return;
+    }
     router.push(
       `/workspaces/${board.workspaceId}/whiteboards/${whiteboardId}`,
     );
@@ -411,7 +435,17 @@ const KanbanBoardPage = ({ boardId, initialBoard }: Props) => {
   };
 
   if (isError && !board) {
-    return <BoardNotFoundState onBack={() => router.push('/workspaces')} />;
+    return (
+      <BoardNotFoundState
+        onBack={() => {
+          if (isOffline) {
+            useOfflineBoardNavigationStore.getState().openCatalog();
+            return;
+          }
+          router.push('/workspaces');
+        }}
+      />
+    );
   }
 
   if (isOffline && !board && boardFetchStatus === 'paused') {
