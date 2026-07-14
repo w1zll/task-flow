@@ -15,6 +15,18 @@ const STARTUP_AUTH_TIMEOUT_MS = 5000;
 const hasHttpResponse = (error: unknown) =>
   Boolean((error as { response?: unknown } | null)?.response);
 
+const isOfflineProbeResponse = (error: unknown) => {
+  const response = (
+    error as {
+      response?: {
+        headers?: { get?: (name: string) => unknown };
+      };
+    } | null
+  )?.response;
+
+  return response?.headers?.get?.('x-taskflow-offline-miss') === '1';
+};
+
 const AuthHydrator = () => {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
@@ -61,11 +73,14 @@ const AuthHydrator = () => {
       } catch (error) {
         if (cancelled) return;
 
-        if (!hasHttpResponse(error)) {
+        const isOfflineFailure =
+          !hasHttpResponse(error) || isOfflineProbeResponse(error);
+
+        if (isOfflineFailure) {
           markNetworkOffline();
         }
 
-        if (isBrowserOffline() || !hasHttpResponse(error)) {
+        if (isBrowserOffline() || isOfflineFailure) {
           hydrateFromCache();
           return;
         }

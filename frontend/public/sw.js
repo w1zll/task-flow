@@ -139,6 +139,17 @@ const createOfflineRoutePayloadResponse = () =>
     },
   });
 
+const createOfflineAuthProbeResponse = () =>
+  new Response(JSON.stringify({ message: 'Offline' }), {
+    status: 503,
+    statusText: 'Offline',
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-TaskFlow-Offline-Miss': '1',
+    },
+  });
+
 const cacheFirst = async (request) => {
   const cache = await caches.open(ASSET_CACHE);
   const cached = await cache.match(request);
@@ -221,13 +232,13 @@ const networkFirstRoutePayload = async (request) => {
 
 const networkOnlyStartupAuthProbe = async (request) => {
   if (isExplicitlyOffline()) {
-    return Response.error();
+    return createOfflineAuthProbeResponse();
   }
 
   try {
     return await fetchWithTimeout(request);
   } catch {
-    return Response.error();
+    return createOfflineAuthProbeResponse();
   }
 };
 

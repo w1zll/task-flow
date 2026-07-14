@@ -96,6 +96,27 @@ describe('AuthHydrator', () => {
     });
   });
 
+  it('hydrates from cache when the service worker returns an offline response', async () => {
+    mockUsePathname.mockReturnValue('/workspaces');
+    mockIsBrowserOffline.mockReturnValue(false);
+    mockAuthApi.me.mockRejectedValue({
+      response: {
+        status: 503,
+        headers: {
+          get: (name: string) =>
+            name === 'x-taskflow-offline-miss' ? '1' : undefined,
+        },
+      },
+    });
+
+    render(<AuthHydrator />);
+
+    await waitFor(() => {
+      expect(mockMarkNetworkOffline).toHaveBeenCalled();
+      expect(store.hydrate).toHaveBeenCalledWith({ id: 'cached-user' });
+    });
+  });
+
   it('aborts a startup auth probe that never settles', async () => {
     jest.useFakeTimers();
     mockUsePathname.mockReturnValue('/workspaces');

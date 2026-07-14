@@ -105,8 +105,15 @@ const OfflineRuntime = () => {
         credentials: 'include',
         signal: controller.signal,
       })
-        .then(() => {
-          if (isActive) markNetworkOnline();
+        .then((response) => {
+          if (!isActive) return;
+
+          if (response.headers.get('x-taskflow-offline-miss') === '1') {
+            markNetworkOffline();
+            return;
+          }
+
+          markNetworkOnline();
         })
         .catch(() => {
           if (isActive) markNetworkOffline();
