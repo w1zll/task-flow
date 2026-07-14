@@ -67,7 +67,10 @@ describe('AuthHydrator', () => {
     render(<AuthHydrator />);
 
     await waitFor(() => {
-      expect(mockAuthApi.me).toHaveBeenCalledWith({ timeout: 5000 });
+      expect(mockAuthApi.me).toHaveBeenCalledWith({
+        signal: expect.any(AbortSignal),
+        timeout: 5000,
+      });
       expect(store.hydrate).toHaveBeenCalledWith({
         id: 'user-1',
         email: 'test@example.com',
@@ -84,9 +87,32 @@ describe('AuthHydrator', () => {
     render(<AuthHydrator />);
 
     await waitFor(() => {
-      expect(mockAuthApi.me).toHaveBeenCalledWith({ timeout: 5000 });
+      expect(mockAuthApi.me).toHaveBeenCalledWith({
+        signal: expect.any(AbortSignal),
+        timeout: 5000,
+      });
       expect(mockMarkNetworkOffline).toHaveBeenCalled();
       expect(store.hydrate).toHaveBeenCalledWith({ id: 'cached-user' });
     });
+  });
+
+  it('aborts a startup auth probe that never settles', async () => {
+    jest.useFakeTimers();
+    mockUsePathname.mockReturnValue('/workspaces');
+    mockIsBrowserOffline.mockReturnValue(false);
+    mockAuthApi.me.mockImplementation((config) =>
+      new Promise((_resolve, reject) => {
+        config?.signal?.addEventListener?.('abort', () => {
+          reject(new DOMException('Aborted', 'AbortError'));
+        });
+      }),
+    );
+
+    render(<AuthHydrator />);
+    await jest.advanceTimersByTimeAsync(5000);
+
+    expect(mockMarkNetworkOffline).toHaveBeenCalled();
+    expect(store.hydrate).toHaveBeenCalledWith({ id: 'cached-user' });
+    jest.useRealTimers();
   });
 });

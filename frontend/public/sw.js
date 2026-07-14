@@ -22,6 +22,9 @@ const APP_SHELL_URLS = [
 const isApiRequest = (url) =>
   url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io/');
 
+const isStartupAuthProbe = (request, url) =>
+  request.method === 'GET' && url.pathname === '/api/auth/me';
+
 const isStaticAsset = (request, url) =>
   url.pathname.startsWith('/_next/') ||
   url.pathname.startsWith('/icons/') ||
@@ -216,6 +219,18 @@ const networkFirstRoutePayload = async (request) => {
   }
 };
 
+const networkOnlyStartupAuthProbe = async (request) => {
+  if (isExplicitlyOffline()) {
+    return Response.error();
+  }
+
+  try {
+    return await fetchWithTimeout(request);
+  } catch {
+    return Response.error();
+  }
+};
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
@@ -276,7 +291,14 @@ self.addEventListener('fetch', (event) => {
   }
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin || isApiRequest(url)) return;
+  if (url.origin !== self.location.origin) return;
+
+  if (isStartupAuthProbe(request, url)) {
+    event.respondWith(networkOnlyStartupAuthProbe(request));
+    return;
+  }
+
+  if (isApiRequest(url)) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstNavigation(request));
