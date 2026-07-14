@@ -1,8 +1,9 @@
-const CACHE_VERSION = 'taskflow-pwa-readonly-offline-v3';
+const CACHE_VERSION = 'taskflow-pwa-readonly-offline-v4';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 const NAVIGATION_CACHE = `${CACHE_VERSION}-pages`;
 const ROUTE_PAYLOAD_CACHE = `${CACHE_VERSION}-route-payloads`;
+const NETWORK_TIMEOUT_MS = 4000;
 
 const APP_SHELL_URLS = [
   '/',
@@ -47,6 +48,19 @@ const putIfCacheable = async (cache, request, response) => {
   if (!response || !response.ok) return;
   await cache.put(request, response.clone());
 };
+
+const fetchWithTimeout = async (request, timeoutMs = NETWORK_TIMEOUT_MS) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(request, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
+const isExplicitlyOffline = () => self.navigator?.onLine === false;
 
 const createOfflineFallbackResponse = () =>
   new Response(
@@ -111,12 +125,23 @@ const createOfflineFallbackResponse = () =>
     },
   );
 
+const createOfflineRoutePayloadResponse = () =>
+  new Response('', {
+    status: 503,
+    statusText: 'Offline',
+    headers: {
+      'Content-Type': 'text/x-component',
+      'Cache-Control': 'no-store',
+      'X-TaskFlow-Offline-Miss': '1',
+    },
+  });
+
 const cacheFirst = async (request) => {
   const cache = await caches.open(ASSET_CACHE);
   const cached = await cache.match(request);
   if (cached) return cached;
 
-  const response = await fetch(request);
+  const response = await fetchWithTimeout(request);
   await putIfCacheable(cache, request, response);
   return response;
 };
@@ -124,7 +149,7 @@ const cacheFirst = async (request) => {
 const staleWhileRevalidate = async (request) => {
   const cache = await caches.open(ASSET_CACHE);
   const cached = await cache.match(request);
-  const network = fetch(request)
+  const network = fetchWithTimeout(request)
     .then(async (response) => {
       await putIfCacheable(cache, request, response);
       return response;
@@ -154,10 +179,14 @@ const navigationFallback = async (request) => {
 };
 
 const networkFirstNavigation = async (request) => {
+  if (isExplicitlyOffline()) {
+    return navigationFallback(request);
+  }
+
   const cache = await caches.open(NAVIGATION_CACHE);
 
   try {
-    const response = await fetch(request);
+    const response = await fetchWithTimeout(request);
     await putIfCacheable(cache, request, response);
     return response;
   } catch {
@@ -169,23 +198,20 @@ const networkFirstRoutePayload = async (request) => {
   const cache = await caches.open(ROUTE_PAYLOAD_CACHE);
   const cacheKey = getRoutePayloadCacheKey(request);
 
+  if (isExplicitlyOffline()) {
+    const cached = await cache.match(cacheKey);
+    return cached || createOfflineRoutePayloadResponse();
+  }
+
   try {
-    const response = await fetch(request);
+    const response = await fetchWithTimeout(request);
     await putIfCacheable(cache, cacheKey, response);
     return response;
   } catch {
     const cached = await cache.match(cacheKey);
     return (
       cached ||
-      new Response('', {
-        status: 503,
-        statusText: 'Offline',
-        headers: {
-          'Content-Type': 'text/x-component',
-          'Cache-Control': 'no-store',
-          'X-TaskFlow-Offline-Miss': '1',
-        },
-      })
+      createOfflineRoutePayloadResponse()
     );
   }
 };
@@ -202,7 +228,7 @@ self.addEventListener('install', (event) => {
                 cache: 'reload',
                 credentials: 'include',
               });
-              const response = await fetch(request);
+              const response = await fetchWithTimeout(request);
               await putIfCacheable(cache, request, response);
             } catch (error) {
               console.warn('[PWA] Failed to cache app shell URL', url, error);
