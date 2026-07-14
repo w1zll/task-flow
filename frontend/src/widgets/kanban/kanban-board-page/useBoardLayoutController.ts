@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import {
   DEFAULT_BOARD_LAYOUT,
   parseBoardLayoutFromSearchParams,
@@ -11,17 +12,30 @@ import {
 
 export const useBoardLayoutController = () => {
   const router = useRouter();
+  const isOffline = useIsOffline();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchParamsString = searchParams.toString();
 
-  const boardLayout = useMemo(
+  const urlBoardLayout = useMemo(
     () => parseBoardLayoutFromSearchParams(new URLSearchParams(searchParamsString)),
     [searchParamsString],
   );
+  const [offlineBoardLayout, setOfflineBoardLayout] =
+    useState<BoardLayout>(urlBoardLayout);
+  const boardLayout = isOffline ? offlineBoardLayout : urlBoardLayout;
+
+  useEffect(() => {
+    if (!isOffline) setOfflineBoardLayout(urlBoardLayout);
+  }, [isOffline, urlBoardLayout]);
 
   const replaceBoardLayoutUrl = useCallback(
     (layout: BoardLayout) => {
+      if (isOffline) {
+        setOfflineBoardLayout(layout);
+        return;
+      }
+
       const nextSearchParams = writeBoardLayoutToSearchParams(
         layout,
         new URLSearchParams(searchParamsString),
@@ -33,7 +47,7 @@ export const useBoardLayoutController = () => {
 
       router.replace(nextPath, { scroll: false });
     },
-    [pathname, router, searchParamsString],
+    [isOffline, pathname, router, searchParamsString],
   );
 
   return {

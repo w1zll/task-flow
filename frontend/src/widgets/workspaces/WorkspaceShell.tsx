@@ -1,5 +1,6 @@
 'use client';
 
+import type { Board } from '@/shared/api/api';
 import { useBoards } from '@/shared/queries/boards.queries';
 import { useCachedBoardDetailIds } from '@/shared/hooks/useCachedBoardDetailIds';
 import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
@@ -8,6 +9,7 @@ import {
   useWorkspaces,
 } from '@/shared/queries/workspaces.queries';
 import { useAuthStore } from '@/shared/store/root.store';
+import { useOfflineBoardNavigationStore } from '@/shared/store/offline-board-navigation.store';
 import BoardCreateDialog from '@/widgets/boards/BoardCreateDialog';
 import { Box } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
@@ -38,6 +40,13 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
   const setActiveWorkspace = useAuthStore(
     (state) => state.setActiveWorkspace,
   );
+  const offlineBoardId = useOfflineBoardNavigationStore(
+    (state) =>
+      state.view?.type === 'board' ? state.view.boardId : null,
+  );
+  const selectOfflineBoard = useOfflineBoardNavigationStore(
+    (state) => state.selectBoard,
+  );
   const { data: workspaces = [] } = useWorkspaces();
   const { data: boards = [] } = useBoards();
   const {
@@ -65,9 +74,10 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
     workspace?.isDemoTemplate || workspace?.isDemoInstance,
   );
   const activeNavKey = getActiveNavKey(pathname, workspaceId);
-  const activeBoardId = pathname.match(
+  const routeBoardId = pathname.match(
     new RegExp(`/workspaces/${workspaceId}/boards/([^/]+)`),
   )?.[1];
+  const activeBoardId = offlineBoardId ?? routeBoardId;
 
   useEffect(() => {
     if (!workspace || workspace.isActive || isSwitchingWorkspace || isOffline) {
@@ -93,6 +103,10 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
   const selectWorkspace = (nextWorkspaceId: string) => {
     closeWorkspaceMenu();
     closeMobile();
+    if (isOffline) {
+      notifyOfflineSectionUnavailable();
+      return;
+    }
     router.push(`/workspaces/${nextWorkspaceId}`);
   };
   const notifyOfflineBoardUnavailable = () => {
@@ -119,6 +133,12 @@ const WorkspaceShell = ({ workspaceId, children }: Props) => {
     isOffline,
     cachedBoardIds: cachedBoardDetailIds,
     onOpenUnavailableBoard: notifyOfflineBoardUnavailable,
+    onOpenCachedBoardOffline: (board: Board) => {
+      if (!isOffline || !routeBoardId) return false;
+
+      selectOfflineBoard(board.id);
+      return true;
+    },
     onOpenUnavailableSection: notifyOfflineSectionUnavailable,
   };
 
