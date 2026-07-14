@@ -23,6 +23,8 @@ const AuthHydrator = () => {
 
   useEffect(() => {
     let cancelled = false;
+    let authController: AbortController | null = null;
+    let authTimeoutId: number | null = null;
 
     if (pathname === '/auth' || pathname.startsWith('/auth/')) {
       hydrate(null);
@@ -44,7 +46,15 @@ const AuthHydrator = () => {
       }
 
       try {
-        const res = await authApi.me({ timeout: STARTUP_AUTH_TIMEOUT_MS });
+        authController = new AbortController();
+        authTimeoutId = window.setTimeout(
+          () => authController?.abort(),
+          STARTUP_AUTH_TIMEOUT_MS,
+        );
+        const res = await authApi.me({
+          signal: authController.signal,
+          timeout: STARTUP_AUTH_TIMEOUT_MS,
+        });
         if (cancelled) return;
         writeStoredAuthUser(res.data);
         hydrate(res.data);
@@ -61,6 +71,10 @@ const AuthHydrator = () => {
         }
 
         hydrate(null);
+      } finally {
+        if (authTimeoutId !== null) {
+          window.clearTimeout(authTimeoutId);
+        }
       }
     };
 
@@ -68,6 +82,10 @@ const AuthHydrator = () => {
 
     return () => {
       cancelled = true;
+      authController?.abort();
+      if (authTimeoutId !== null) {
+        window.clearTimeout(authTimeoutId);
+      }
     };
   }, [hydrate, isLoading, pathname, user]);
 
