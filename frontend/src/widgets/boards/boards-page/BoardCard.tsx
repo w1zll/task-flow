@@ -35,7 +35,9 @@ const BoardCard = ({
   const href = `/workspaces/${board.workspaceId}/boards/${board.id}`;
   const isOfflineCachedLink = isOffline && !isOfflineUnavailable;
   const canShowMenu =
-    board.capabilities.canDeleteBoard && canOpenMenu && !isOfflineUnavailable;
+    Boolean(board.capabilities?.canDeleteBoard) &&
+    canOpenMenu &&
+    !isOfflineUnavailable;
   const actionAreaSx = {
     height: '100%',
     p: 2.5,
@@ -148,6 +150,7 @@ const BoardCard = ({
             <CardActionArea
               component={isOfflineCachedLink ? 'a' : Link}
               href={href}
+              prefetch={false}
               sx={actionAreaSx}
             >
               {content}

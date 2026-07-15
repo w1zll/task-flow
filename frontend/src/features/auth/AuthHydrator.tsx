@@ -29,7 +29,6 @@ const isOfflineProbeResponse = (error: unknown) => {
 
 const AuthHydrator = () => {
   const pathname = usePathname();
-  const user = useAuthStore((state) => state.user);
   const isLoading = useAuthStore((state) => state.isLoading);
   const hydrate = useAuthStore((state) => state.hydrate);
 
@@ -43,6 +42,8 @@ const AuthHydrator = () => {
       return;
     }
 
+    if (!isLoading) return;
+
     const hydrateFromCache = () => {
       hydrate(readStoredAuthUser());
     };
@@ -50,10 +51,6 @@ const AuthHydrator = () => {
     const loadAuthUser = async () => {
       if (isBrowserOffline()) {
         hydrateFromCache();
-        return;
-      }
-
-      if (user && !isLoading) {
         return;
       }
 
@@ -102,7 +99,7 @@ const AuthHydrator = () => {
         window.clearTimeout(authTimeoutId);
       }
     };
-  }, [hydrate, isLoading, pathname, user]);
+  }, [hydrate, isLoading, pathname]);
 
   return null;
 };

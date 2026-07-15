@@ -2,6 +2,7 @@
 
 import { setLocaleAction } from '@/shared/actions/locale.action';
 import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
+import { syncOfflineDocumentLocale } from '@/shared/lib/offline-navigation-cache';
 import { Button, ButtonGroup } from '@mui/material';
 import { Locale, useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -24,6 +25,7 @@ const LocaleSwitcher = () => {
 
     startTransition(async () => {
       await setLocaleAction(newLocale);
+      await syncOfflineDocumentLocale(newLocale);
       router.refresh();
     });
   };
