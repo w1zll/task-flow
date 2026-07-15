@@ -395,6 +395,7 @@ const MobileBoardToolsDrawer = ({
                   <ListItemButton
                     component={NextLink}
                     href={analyticsHref}
+                    prefetch={false}
                     onClick={onClose}
                     sx={{ minHeight: 44, borderRadius: 1 }}
                   >

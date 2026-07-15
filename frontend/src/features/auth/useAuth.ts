@@ -10,6 +10,7 @@ import {
   getPendingWorkspaceInvite,
 } from '@/shared/lib/pending-workspace-invite';
 import { isBrowserOffline } from '@/shared/lib/offline';
+import { clearOfflineApplicationCaches } from '@/shared/lib/offline-navigation-cache';
 import { clearPersistedQueryCache } from '@/shared/lib/query-persistence';
 import { useAuthStore } from '@/shared/store/root.store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -28,6 +29,7 @@ export const useAuth = () => {
     workspaceId ? `/workspaces/${workspaceId}` : '/workspaces';
 
   const finishAuthentication = async (user: typeof authStore.user) => {
+    await clearOfflineApplicationCaches();
     await clearPersistedQueryCache();
     queryClient.clear();
     authStore.setUser(user);
@@ -58,6 +60,7 @@ export const useAuth = () => {
 
   const clearClientSession = async () => {
     queryClient.clear();
+    await clearOfflineApplicationCaches();
     await clearPersistedQueryCache();
     authStore.logout();
     router.push('/auth/login');

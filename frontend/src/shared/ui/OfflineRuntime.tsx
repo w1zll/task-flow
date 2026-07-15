@@ -3,8 +3,13 @@
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import type { Board } from '@/shared/api/api';
 import { markNetworkOffline, markNetworkOnline } from '@/shared/lib/offline';
-import { warmOfflineNavigationRoutes } from '@/shared/lib/offline-navigation-cache';
+import {
+  syncOfflineDocumentAuthentication,
+  syncOfflineDocumentLocale,
+  warmOfflineNavigationRoutes,
+} from '@/shared/lib/offline-navigation-cache';
 import { queryKeys } from '@/shared/queries/board-query-keys';
+import { useAuthStore } from '@/shared/store/root.store';
 import { CloudOffOutlined } from '@mui/icons-material';
 import { Alert, Box } from '@mui/material';
 import {
@@ -15,12 +20,6 @@ import {
 import { useLocale } from 'next-intl';
 import { useSnackbar } from 'notistack';
 import { useEffect, useRef } from 'react';
-
-const canRegisterServiceWorker = () =>
-  typeof window !== 'undefined' &&
-  process.env.NODE_ENV === 'production' &&
-  'serviceWorker' in navigator &&
-  window.isSecureContext;
 
 const shouldWarmNavigationCacheForQueryEvent = (
   event: QueryCacheNotifyEvent,
@@ -56,9 +55,23 @@ const OfflineRuntime = () => {
   const locale = useLocale();
   const text = locale === 'ru' ? copy.ru : copy.en;
   const isOnline = useOnlineStatus();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isAuthLoading = useAuthStore((state) => state.isLoading);
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const wasOnlineRef = useRef(isOnline);
+
+  useEffect(() => {
+    // A cached Next document can contain an older locale. Only an online
+    // render is authoritative for the user's latest next-intl cookie choice.
+    if (!isOnline) return;
+    void syncOfflineDocumentLocale(locale);
+  }, [isOnline, locale]);
+
+  useEffect(() => {
+    if (isAuthLoading) return;
+    void syncOfflineDocumentAuthentication(isAuthenticated);
+  }, [isAuthLoading, isAuthenticated]);
 
   useEffect(() => {
     onlineManager.setOnline(isOnline);
@@ -73,7 +86,7 @@ const OfflineRuntime = () => {
   }, [enqueueSnackbar, isOnline, queryClient, text.reconnected]);
 
   useEffect(() => {
-    if (isOnline || typeof window === 'undefined') {
+    if (typeof window === 'undefined') {
       return;
     }
 
@@ -91,24 +104,29 @@ const OfflineRuntime = () => {
     };
 
     const probeConnection = () => {
+      if (!isActive || controller) return;
+
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
         markNetworkOffline();
         return;
       }
 
-      cleanupProbe();
       controller = new AbortController();
-      timer = window.setTimeout(() => controller?.abort(), 5000);
+      const probeController = controller;
+      timer = window.setTimeout(() => probeController.abort(), 5000);
 
       void fetch('/api/auth/me', {
         cache: 'no-store',
         credentials: 'include',
-        signal: controller.signal,
+        signal: probeController.signal,
       })
         .then((response) => {
-          if (!isActive) return;
+          if (!isActive || controller !== probeController) return;
 
-          if (response.headers.get('x-taskflow-offline-miss') === '1') {
+          if (
+            !navigator.onLine ||
+            response.headers.get('x-taskflow-offline-miss') === '1'
+          ) {
             markNetworkOffline();
             return;
           }
@@ -116,13 +134,17 @@ const OfflineRuntime = () => {
           markNetworkOnline();
         })
         .catch(() => {
-          if (isActive) markNetworkOffline();
+          if (isActive && controller === probeController) {
+            markNetworkOffline();
+          }
         })
         .finally(() => {
-          if (timer) {
+          if (controller !== probeController) return;
+          if (timer !== null) {
             window.clearTimeout(timer);
             timer = null;
           }
+          controller = null;
         });
     };
 
@@ -130,7 +152,7 @@ const OfflineRuntime = () => {
     window.addEventListener('online', probeConnection);
     window.addEventListener('focus', probeConnection);
     document.addEventListener('visibilitychange', probeConnection);
-    const interval = window.setInterval(probeConnection, 5000);
+    const interval = window.setInterval(probeConnection, 15_000);
 
     return () => {
       isActive = false;
@@ -140,7 +162,7 @@ const OfflineRuntime = () => {
       window.clearInterval(interval);
       cleanupProbe();
     };
-  }, [isOnline]);
+  }, []);
 
   useEffect(() => {
     if (!isOnline || typeof window === 'undefined') return;
@@ -193,18 +215,6 @@ const OfflineRuntime = () => {
       unsubscribe();
     };
   }, [isOnline, queryClient]);
-
-  useEffect(() => {
-    if (!canRegisterServiceWorker()) return;
-
-    const register = () => {
-      void navigator.serviceWorker.register('/sw.js').catch((error) => {
-        console.warn('[PWA] Failed to register service worker', error);
-      });
-    };
-
-    register();
-  }, []);
 
   if (isOnline) return null;
 

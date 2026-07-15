@@ -11,6 +11,10 @@ import {
 import { ApiBody } from '../api/types';
 import type { QueryClient } from '@tanstack/react-query';
 import { queryKeys } from './board-query-keys';
+import {
+  normalizeBoard,
+  normalizeBoards,
+} from '../lib/board-capabilities';
 
 export { queryKeys };
 
@@ -223,6 +227,7 @@ export const useBoards = () => {
   return useQuery({
     queryKey: queryKeys.boards,
     queryFn: () => boardsApi.getAll().then((r) => r.data),
+    select: normalizeBoards,
     staleTime: 60_000,
   });
 };
@@ -235,6 +240,7 @@ export const useBoard = (id: string, initialData?: Board) => {
       return res.data;
     },
     initialData,
+    select: normalizeBoard,
     staleTime: 30_000,
     enabled: !!id,
   });

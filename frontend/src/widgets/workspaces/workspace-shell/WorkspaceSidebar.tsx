@@ -135,6 +135,7 @@ const WorkspaceSidebar = ({
                 key={item.key}
                 component={NextLink}
                 href={href}
+                prefetch={false}
                 selected={isActive}
                 onClick={onCloseNavigation}
                 sx={navItemSx}
@@ -245,6 +246,7 @@ const WorkspaceSidebar = ({
                   key={board.id}
                   component={isOffline ? 'a' : NextLink}
                   href={`/workspaces/${workspaceId}/boards/${board.id}`}
+                  prefetch={false}
                   selected={isActive}
                   onClick={(event) => {
                     onCloseNavigation();

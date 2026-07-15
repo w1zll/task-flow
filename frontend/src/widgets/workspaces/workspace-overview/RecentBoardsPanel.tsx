@@ -68,6 +68,7 @@ const RecentBoardsPanel = ({
         <Button
           component={Link}
           href={`/workspaces/${workspaceId}/boards`}
+          prefetch={false}
           size="small"
           endIcon={<OpenInNew />}
         >
@@ -151,6 +152,7 @@ const RecentBoardsPanel = ({
                     <CardActionArea
                       component={isOffline ? 'a' : Link}
                       href={`/workspaces/${workspaceId}/boards/${board.id}`}
+                      prefetch={false}
                       sx={actionAreaSx}
                     >
                       {content}
@@ -167,6 +169,7 @@ const RecentBoardsPanel = ({
           <Button
             component={Link}
             href={`/workspaces/${workspaceId}/boards`}
+            prefetch={false}
             startIcon={<Add />}
             variant="contained"
             sx={{ width: { xs: '100%', sm: 'auto' } }}

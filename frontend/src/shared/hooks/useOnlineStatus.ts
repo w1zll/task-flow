@@ -1,22 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import {
   getBrowserOnlineSnapshot,
   subscribeToBrowserOnlineStatus,
 } from '@/shared/lib/offline';
 
-export const useOnlineStatus = () => {
-  const [isOnline, setIsOnline] = useState(getBrowserOnlineSnapshot);
+const getServerOnlineSnapshot = () => true;
 
-  useEffect(() => {
-    const syncStatus = () => setIsOnline(getBrowserOnlineSnapshot());
-
-    syncStatus();
-    return subscribeToBrowserOnlineStatus(syncStatus);
-  }, []);
-
-  return isOnline;
-};
+export const useOnlineStatus = () =>
+  useSyncExternalStore(
+    subscribeToBrowserOnlineStatus,
+    getBrowserOnlineSnapshot,
+    getServerOnlineSnapshot,
+  );
 
 export const useIsOffline = () => !useOnlineStatus();

@@ -138,7 +138,7 @@ const TaskDetailModal = ({ board, onClose }: Props) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const syncedTaskIdRef = useRef<string | null>(null);
-  const canEdit = board.capabilities.canEditBoardContent;
+  const canEdit = board.capabilities?.canEditBoardContent ?? false;
   const canUseOnlineTaskDetails = canEdit && isOnline;
   const teams = useWorkspaceTeams(board.workspaceId, !!boardUI.openTaskId);
   const isDirty = useMemo(() => isTaskDraftChanged(task, form), [form, task]);
