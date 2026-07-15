@@ -52,7 +52,8 @@ const MobileKanbanBoard = ({
   const columns = useMemo(() => board.columns ?? [], [board.columns]);
   const [activeColumnId, setActiveColumnId] = useState(columns[0]?.id ?? '');
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const canEditBoardContent = board.capabilities.canEditBoardContent;
+  const canEditBoardContent =
+    board.capabilities?.canEditBoardContent ?? false;
   const canCreateTasks = canEditBoardContent && !isOffline;
   const canMoveTasks = canEditBoardContent && !isReorderDisabled;
   const activeColumn =

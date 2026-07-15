@@ -1,5 +1,17 @@
-const createNextIntlPlugin = require('next-intl/plugin');
+import withSerwistInit from '@serwist/next';
+import createNextIntlPlugin from 'next-intl/plugin';
+
 const withNextIntl = createNextIntlPlugin();
+const isProductionBuild = process.env.NODE_ENV === 'production';
+const withSerwist = withSerwistInit({
+  swSrc: 'src/app/sw.ts',
+  swDest: 'public/serwist-sw.js',
+  swUrl: '/serwist-sw.js',
+  disable: !isProductionBuild,
+  register: isProductionBuild,
+  reloadOnOnline: false,
+  cacheOnNavigation: false,
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -35,9 +47,26 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: '/serwist-sw.js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/',
+          },
+        ],
+      },
     ];
   },
   allowedDevOrigins: ['127.0.0.1'],
 };
 
-module.exports = withNextIntl(nextConfig);
+export default withSerwist(withNextIntl(nextConfig));

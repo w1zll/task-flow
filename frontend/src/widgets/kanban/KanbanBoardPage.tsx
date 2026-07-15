@@ -3,6 +3,7 @@
 import type { Board } from '@/shared/api/api';
 import { useAuth } from '@/features/auth/useAuth';
 import { getAvailableWorkspaceMembers } from '@/shared/lib/board-members';
+import { normalizeBoard } from '@/shared/lib/board-capabilities';
 import { isBoardPermissionError } from '@/shared/lib/boardSocketMutations';
 import { useStableBodyScrollLock } from '@/shared/lib/useStableBodyScrollLock';
 import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
@@ -25,7 +26,7 @@ import { useNotifications } from '@/shared/queries/notifications.queries';
 import { useWorkspaceMembers } from '@/shared/queries/workspaces.queries';
 import { useBoardUIStore } from '@/shared/store/root.store';
 import { Alert, Box } from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
+import { useIsRestoring, useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSnackbar } from 'notistack';
@@ -69,22 +70,27 @@ const KanbanBoardPage = ({ boardId: serverBoardId, initialBoard }: Props) => {
       state.view?.type === 'board' ? state.view.boardId : null,
   );
   const boardId = offlineBoardId ?? serverBoardId;
-  const matchingInitialBoard =
-    initialBoard?.id === boardId ? initialBoard : undefined;
+  const matchingInitialBoard = useMemo(
+    () =>
+      initialBoard?.id === boardId ? normalizeBoard(initialBoard) : undefined,
+    [boardId, initialBoard],
+  );
   const searchParams = useSearchParams();
   const qc = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const isOffline = useIsOffline();
+  const isRestoring = useIsRestoring();
   const [isInitialBoardSynced, setInitialBoardSynced] = useState(
     !matchingInitialBoard,
   );
   const {
     data: queriedBoard,
-    isLoading,
+    isLoading: isBoardQueryLoading,
     isError,
-    fetchStatus: boardFetchStatus,
   } = useBoard(boardId, matchingInitialBoard);
   const board = isInitialBoardSynced ? queriedBoard : matchingInitialBoard;
+  const isBoardLoading =
+    isRestoring || (!isOffline && isBoardQueryLoading);
   const createColumn = useCreateColumn();
   const isAddingColumn = useBoardUIStore((state) => state.isAddingColumn);
   const closeTask = useBoardUIStore((state) => state.closeTask);
@@ -141,10 +147,11 @@ const KanbanBoardPage = ({ boardId: serverBoardId, initialBoard }: Props) => {
     Boolean(board),
   );
   const roleCanEditBoardContent =
-    board?.capabilities.canEditBoardContent ?? false;
-  const roleCanManageColumns = board?.capabilities.canManageColumns ?? false;
+    board?.capabilities?.canEditBoardContent ?? false;
+  const roleCanManageColumns =
+    board?.capabilities?.canManageColumns ?? false;
   const roleCanManageBoardMembers =
-    board?.capabilities.canManageBoardMembers ?? false;
+    board?.capabilities?.canManageBoardMembers ?? false;
   const canEditBoardContent = roleCanEditBoardContent;
   const canManageColumns = roleCanManageColumns && !isOffline;
   const canManageBoardMembers = roleCanManageBoardMembers && !isOffline;
@@ -231,7 +238,7 @@ const KanbanBoardPage = ({ boardId: serverBoardId, initialBoard }: Props) => {
     boardLayout === 'kanban' && isBoardReorderDisabledByView(boardFilters);
   const activeFilterCount = countActiveBoardFilters(boardFilters);
   const canCreateOrAttachWhiteboard =
-    Boolean(board?.capabilities.canUseWhiteboard) && !isOffline;
+    Boolean(board?.capabilities?.canUseWhiteboard) && !isOffline;
 
   useStableBodyScrollLock(isMembersOpen || isActivityOpen);
 
@@ -448,7 +455,7 @@ const KanbanBoardPage = ({ boardId: serverBoardId, initialBoard }: Props) => {
     );
   }
 
-  if (isOffline && !board && boardFetchStatus === 'paused') {
+  if (isOffline && !isRestoring && !board) {
     return (
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         <Alert severity="info">
@@ -474,7 +481,7 @@ const KanbanBoardPage = ({ boardId: serverBoardId, initialBoard }: Props) => {
     >
       <BoardPageHeader
         board={board}
-        isLoading={isLoading}
+        isLoading={isBoardLoading}
         canManageColumns={canManageColumns}
         canEditBoardContent={canEditBoardContent}
         isMembersOpen={isMembersOpen}
@@ -530,7 +537,7 @@ const KanbanBoardPage = ({ boardId: serverBoardId, initialBoard }: Props) => {
       {boardLayout === 'kanban' ? (
         <BoardCanvasSection
           boardId={boardId}
-          isLoading={isLoading}
+          isLoading={isBoardLoading}
           isFiltering={isFiltering}
           filteredBoard={filteredBoard}
           highlightedTaskId={highlightedTaskId}

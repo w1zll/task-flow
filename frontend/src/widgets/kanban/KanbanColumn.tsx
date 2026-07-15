@@ -64,9 +64,10 @@ const KanbanColumn = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(column.title);
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const canEditBoardContent = board.capabilities.canEditBoardContent;
+  const canEditBoardContent =
+    board.capabilities?.canEditBoardContent ?? false;
   const canCreateTasks = canEditBoardContent && !isOffline;
-  const canManageColumns = board.capabilities.canManageColumns;
+  const canManageColumns = board.capabilities?.canManageColumns ?? false;
   const isAddingTask = addingTaskInColumnId === column.id;
 
   useEffect(() => {

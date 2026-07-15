@@ -41,8 +41,9 @@ const KanbanBoard = ({
 
   const [localBoard, setLocalBoard] = useState<Board>(board);
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
-  const canEditBoardContent = board.capabilities.canEditBoardContent;
-  const canManageColumns = board.capabilities.canManageColumns;
+  const canEditBoardContent =
+    board.capabilities?.canEditBoardContent ?? false;
+  const canManageColumns = board.capabilities?.canManageColumns ?? false;
   const normalizeTaskOrder = (tasks: Task[]) =>
     (tasks ?? []).map((task, order) => ({ ...task, order }));
 

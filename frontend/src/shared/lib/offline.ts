@@ -71,11 +71,15 @@ export const subscribeToBrowserOnlineStatus = (
 };
 
 export const markNetworkOffline = () => {
+  if (readOfflineMarker()) return;
+
   writeOfflineMarker(true);
   emitOnlineStatusChange();
 };
 
 export const markNetworkOnline = () => {
+  if (!readOfflineMarker()) return;
+
   writeOfflineMarker(false);
   emitOnlineStatusChange();
 };

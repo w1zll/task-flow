@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { authApi } from '@/shared/api/api';
+import { clearOfflineApplicationCaches } from '@/shared/lib/offline-navigation-cache';
 import { clearPersistedQueryCache } from '@/shared/lib/query-persistence';
 import { useAuthStore } from '@/shared/store/root.store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -51,6 +52,7 @@ const Hero = ({
       setDemoNavigating(true);
 
       try {
+        await clearOfflineApplicationCaches();
         await clearPersistedQueryCache();
         queryClient.clear();
         setUser(user);

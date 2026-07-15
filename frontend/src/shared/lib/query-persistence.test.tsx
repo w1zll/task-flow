@@ -1,9 +1,10 @@
 import { act } from 'react';
-import { hydrateRoot, type Root } from 'react-dom/client';
+import { createRoot, hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import {
   QueryClient,
   dehydrate,
+  useIsRestoring,
   useQuery,
 } from '@tanstack/react-query';
 import {
@@ -16,6 +17,7 @@ import {
   QUERY_CACHE_BUSTER,
   QUERY_CACHE_MAX_AGE_MS,
   normalizePersistedClient,
+  settleWithin,
   shouldPersistQuery,
 } from './query-persistence';
 
@@ -126,6 +128,78 @@ describe('query persistence', () => {
     expect(removeClient).toHaveBeenCalledTimes(1);
     consoleError.mockRestore();
     consoleWarn.mockRestore();
+  });
+
+  it('stops waiting when IndexedDB restoration never settles', async () => {
+    jest.useFakeTimers();
+    const restoration = settleWithin(
+      new Promise<PersistedClient>(() => undefined),
+      100,
+      undefined,
+    );
+
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
+
+    await expect(restoration).resolves.toBeUndefined();
+    jest.useRealTimers();
+  });
+
+  it('releases PersistQueryClientProvider after a restoration timeout', async () => {
+    jest.useFakeTimers();
+    const persister: Persister = {
+      persistClient: jest.fn(),
+      restoreClient: () =>
+        settleWithin(
+          new Promise<PersistedClient>(() => undefined),
+          100,
+          undefined,
+        ),
+      removeClient: jest.fn(),
+    };
+    const Content = () => (
+      <div>{useIsRestoring() ? 'restoring' : 'ready'}</div>
+    );
+    const container = document.createElement('div');
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <PersistQueryClientProvider
+          client={new QueryClient()}
+          persistOptions={{ persister }}
+        >
+          <Content />
+        </PersistQueryClientProvider>,
+      );
+    });
+    expect(container.textContent).toBe('restoring');
+
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
+    expect(container.textContent).toBe('ready');
+
+    await act(async () => root.unmount());
+    jest.useRealTimers();
+  });
+
+  it('rejects malformed dehydrated cache envelopes', () => {
+    expect(
+      normalizePersistedClient({
+        buster: QUERY_CACHE_BUSTER,
+        timestamp: Date.now(),
+        clientState: { queries: 'not-an-array' },
+      }),
+    ).toBeUndefined();
+    expect(
+      normalizePersistedClient({
+        buster: QUERY_CACHE_BUSTER,
+        timestamp: Date.now(),
+        clientState: { queries: [{}] },
+      }),
+    ).toBeUndefined();
   });
 
   it('keeps the first client render equal to SSR while restoring warm data', async () => {

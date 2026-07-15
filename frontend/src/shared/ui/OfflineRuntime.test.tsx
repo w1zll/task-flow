@@ -1,8 +1,14 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render } from '@testing-library/react';
 import { queryKeys } from '@/shared/queries/board-query-keys';
-import { warmOfflineNavigationRoutes } from '@/shared/lib/offline-navigation-cache';
+import {
+  syncOfflineDocumentLocale,
+  warmOfflineNavigationRoutes,
+} from '@/shared/lib/offline-navigation-cache';
+import { markNetworkOffline, markNetworkOnline } from '@/shared/lib/offline';
 import OfflineRuntime from './OfflineRuntime';
+
+let mockOnlineStatus = true;
 
 jest.mock('next-intl', () => ({
   useLocale: () => 'en',
@@ -13,10 +19,17 @@ jest.mock('notistack', () => ({
 }));
 
 jest.mock('@/shared/hooks/useOnlineStatus', () => ({
-  useOnlineStatus: () => true,
+  useOnlineStatus: () => mockOnlineStatus,
+}));
+
+jest.mock('@/shared/lib/offline', () => ({
+  markNetworkOffline: jest.fn(),
+  markNetworkOnline: jest.fn(),
 }));
 
 jest.mock('@/shared/lib/offline-navigation-cache', () => ({
+  syncOfflineDocumentAuthentication: jest.fn().mockResolvedValue(undefined),
+  syncOfflineDocumentLocale: jest.fn().mockResolvedValue(undefined),
   warmOfflineNavigationRoutes: jest.fn().mockResolvedValue(undefined),
 }));
 
@@ -28,14 +41,21 @@ const renderRuntime = (queryClient: QueryClient) =>
   );
 
 describe('OfflineRuntime navigation cache warming', () => {
+  const originalFetch = global.fetch;
+
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    mockOnlineStatus = true;
+    global.fetch = jest.fn().mockResolvedValue({
+      headers: { get: () => null },
+    });
   });
 
   afterEach(() => {
     jest.runOnlyPendingTimers();
     jest.useRealTimers();
+    global.fetch = originalFetch;
   });
 
   it('does not warm navigation routes for task comments cache updates', () => {
@@ -83,5 +103,49 @@ describe('OfflineRuntime navigation cache warming', () => {
         '/workspaces/workspace-1/boards/board-1',
       ]),
     );
+  });
+
+  it('persists the current next-intl locale while online', () => {
+    renderRuntime(new QueryClient());
+
+    expect(syncOfflineDocumentLocale).toHaveBeenCalledWith('en');
+  });
+
+  it('keeps the runtime offline for a service worker offline response', async () => {
+    mockOnlineStatus = false;
+    global.fetch = jest.fn().mockResolvedValue({
+      headers: {
+        get: (name: string) =>
+          name === 'x-taskflow-offline-miss' ? '1' : null,
+      },
+    });
+
+    await act(async () => {
+      renderRuntime(new QueryClient());
+      await Promise.resolve();
+    });
+
+    expect(markNetworkOffline).toHaveBeenCalled();
+    expect(markNetworkOnline).not.toHaveBeenCalled();
+  });
+
+  it('probes the real connection even when navigator reports online', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      headers: {
+        get: (name: string) =>
+          name === 'x-taskflow-offline-miss' ? '1' : null,
+      },
+    });
+
+    await act(async () => {
+      renderRuntime(new QueryClient());
+      await Promise.resolve();
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/auth/me',
+      expect.objectContaining({ cache: 'no-store' }),
+    );
+    expect(markNetworkOffline).toHaveBeenCalled();
   });
 });

@@ -22,6 +22,16 @@ interface AuthState {
   setActiveWorkspace: (workspaceId: string | null) => void;
 }
 
+const areAuthUsersEqual = (left: AuthUser | null, right: AuthUser | null) =>
+  left === right ||
+  (left !== null &&
+    right !== null &&
+    left.id === right.id &&
+    left.email === right.email &&
+    left.name === right.name &&
+    left.avatar === right.avatar &&
+    left.activeWorkspaceId === right.activeWorkspaceId);
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isLoading: true,
@@ -31,14 +41,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user, isAuthenticated: user !== null });
   },
   setLoading: (loading) => set({ isLoading: loading }),
-  hydrate: (user) => {
-    writeStoredAuthUser(user);
-    set({
-      user,
-      isLoading: false,
-      isAuthenticated: user !== null,
-    });
-  },
+  hydrate: (user) =>
+    set((state) => {
+      if (!state.isLoading && areAuthUsersEqual(state.user, user)) {
+        return state;
+      }
+
+      writeStoredAuthUser(user);
+      return {
+        user,
+        isLoading: false,
+        isAuthenticated: user !== null,
+      };
+    }),
   logout: () => {
     writeStoredAuthUser(null);
     set({ user: null, isAuthenticated: false });

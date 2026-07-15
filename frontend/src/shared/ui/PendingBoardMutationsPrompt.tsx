@@ -68,7 +68,7 @@ const PendingBoardMutationsPrompt = () => {
     (mutation) =>
       mutation.lastErrorCode === 'permission_changed' ||
       qc.getQueryData<Board>(queryKeys.board(mutation.boardId))?.capabilities
-        .canEditBoardContent === false,
+        ?.canEditBoardContent === false,
   ).length;
   const allMutationsAreReadOnly =
     mutations.length > 0 && readOnlyMutationCount === mutations.length;
@@ -142,7 +142,7 @@ const PendingBoardMutationsPrompt = () => {
               boardsApi.getOne(mutation.boardId).then((response) => response.data),
             staleTime: 0,
           }));
-        if (!board?.capabilities.canEditBoardContent) {
+        if (!board?.capabilities?.canEditBoardContent) {
           markConflict(mutation.id, {
             code: 'permission_changed',
             message: t('conflict.permission_changed'),

@@ -123,6 +123,7 @@ const BoardPageHeader = ({
           >
             <Link
               component={NextLink}
+              prefetch={false}
               href={
                 board?.workspaceId
                   ? `/workspaces/${board.workspaceId}/boards`
@@ -224,6 +225,7 @@ const BoardPageHeader = ({
       >
         <Button
           component={NextLink}
+          prefetch={false}
           href={
             board
               ? `/workspaces/${board.workspaceId}/analytics?boardId=${encodeURIComponent(board.id)}`

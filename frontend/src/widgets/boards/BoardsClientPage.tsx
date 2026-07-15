@@ -12,6 +12,7 @@ import {
 } from '@/shared/queries/workspaces.queries';
 import { useAuthStore } from '@/shared/store/root.store';
 import { Box } from '@mui/material';
+import { useIsRestoring } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
@@ -34,6 +35,7 @@ const BoardsClientPage = ({ initialWorkspaces = [], workspaceId }: Props) => {
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
   const isOffline = useIsOffline();
+  const isRestoring = useIsRestoring();
   const cachedBoardDetailIds = useCachedBoardDetailIds();
   const { data: boards, isLoading: boardsLoading } = useBoards();
   const deleteBoard = useDeleteBoard();
@@ -79,7 +81,8 @@ const BoardsClientPage = ({ initialWorkspaces = [], workspaceId }: Props) => {
     [boards, workspaceData],
   );
 
-  const isLoading = boardsLoading || workspaces.isLoading;
+  const isLoading =
+    isRestoring || (!isOffline && (boardsLoading || workspaces.isLoading));
   const workspaceToDelete = workspaceData.find(
     (workspace) => workspace.id === workspaceToDeleteId,
   );
