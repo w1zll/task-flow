@@ -1,17 +1,22 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  onlineManager,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query';
 import { act, render } from '@testing-library/react';
 import { queryKeys } from '@/shared/queries/board-query-keys';
 import {
   syncOfflineDocumentLocale,
   warmOfflineNavigationRoutes,
 } from '@/shared/lib/offline-navigation-cache';
-import { markNetworkOffline, markNetworkOnline } from '@/shared/lib/offline';
 import OfflineRuntime from './OfflineRuntime';
+import { useBackendAvailabilityStore } from '@/shared/store/backend-availability.store';
 
 let mockOnlineStatus = true;
 
 jest.mock('next-intl', () => ({
   useLocale: () => 'en',
+  useTranslations: () => (key: string) => key,
 }));
 
 jest.mock('notistack', () => ({
@@ -20,11 +25,6 @@ jest.mock('notistack', () => ({
 
 jest.mock('@/shared/hooks/useOnlineStatus', () => ({
   useOnlineStatus: () => mockOnlineStatus,
-}));
-
-jest.mock('@/shared/lib/offline', () => ({
-  markNetworkOffline: jest.fn(),
-  markNetworkOnline: jest.fn(),
 }));
 
 jest.mock('@/shared/lib/offline-navigation-cache', () => ({
@@ -47,6 +47,7 @@ describe('OfflineRuntime navigation cache warming', () => {
     jest.useFakeTimers();
     jest.clearAllMocks();
     mockOnlineStatus = true;
+    useBackendAvailabilityStore.setState({ status: 'ready' });
     global.fetch = jest.fn().mockResolvedValue({
       headers: { get: () => null },
     });
@@ -111,41 +112,15 @@ describe('OfflineRuntime navigation cache warming', () => {
     expect(syncOfflineDocumentLocale).toHaveBeenCalledWith('en');
   });
 
-  it('keeps the runtime offline for a service worker offline response', async () => {
+  it('replaces the offline banner while the backend is waking after reconnect', () => {
     mockOnlineStatus = false;
-    global.fetch = jest.fn().mockResolvedValue({
-      headers: {
-        get: (name: string) =>
-          name === 'x-taskflow-offline-miss' ? '1' : null,
-      },
-    });
+    useBackendAvailabilityStore.setState({ status: 'starting' });
 
-    await act(async () => {
-      renderRuntime(new QueryClient());
-      await Promise.resolve();
-    });
+    const { container } = renderRuntime(new QueryClient());
 
-    expect(markNetworkOffline).toHaveBeenCalled();
-    expect(markNetworkOnline).not.toHaveBeenCalled();
+    expect(container.textContent).not.toContain('Offline:');
+    expect(container.textContent).toContain('backendStartingTitle');
+    expect(onlineManager.isOnline()).toBe(false);
   });
 
-  it('probes the real connection even when navigator reports online', async () => {
-    global.fetch = jest.fn().mockResolvedValue({
-      headers: {
-        get: (name: string) =>
-          name === 'x-taskflow-offline-miss' ? '1' : null,
-      },
-    });
-
-    await act(async () => {
-      renderRuntime(new QueryClient());
-      await Promise.resolve();
-    });
-
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/auth/me',
-      expect.objectContaining({ cache: 'no-store' }),
-    );
-    expect(markNetworkOffline).toHaveBeenCalled();
-  });
 });

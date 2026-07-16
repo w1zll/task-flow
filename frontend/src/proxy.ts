@@ -4,6 +4,7 @@ const PROTECTED_ROUTES = ['/profile', '/workspaces'];
 const ACCESS_COOKIE = 'access_token';
 const REFRESH_COOKIE = 'refresh_token';
 const ACCESS_TOKEN_REFRESH_WINDOW_MS = 30_000;
+const BACKEND_REFRESH_TIMEOUT_MS = 1_500;
 const DEFAULT_API_URL = process.env.API_URL || 'http://localhost:3001';
 
 const isProtectedRoute = (pathname: string) =>
@@ -113,6 +114,16 @@ const clearAuthCookies = (response: NextResponse) => {
   });
 };
 
+const createLoginRedirect = (request: NextRequest) => {
+  const { pathname, search } = request.nextUrl;
+  const loginUrl = new URL('/auth/login', request.url);
+  loginUrl.searchParams.set('next', `${pathname}${search}`);
+
+  const response = NextResponse.redirect(loginUrl);
+  clearAuthCookies(response);
+  return response;
+};
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -134,6 +145,11 @@ export async function proxy(request: NextRequest) {
   }
 
   const responseHeaders = getCookieHeader(request);
+  const refreshController = new AbortController();
+  const refreshTimeout = setTimeout(
+    () => refreshController.abort(),
+    BACKEND_REFRESH_TIMEOUT_MS,
+  );
 
   try {
     const refreshResponse = await fetch(
@@ -143,16 +159,17 @@ export async function proxy(request: NextRequest) {
         headers: {
           cookie: responseHeaders,
         },
+        signal: refreshController.signal,
       },
     );
 
     if (!refreshResponse.ok) {
-      throw new Error('refresh failed');
+      return createLoginRedirect(request);
     }
 
     const setCookieHeaders = getSetCookieHeaders(refreshResponse.headers);
     if (setCookieHeaders.length === 0) {
-      throw new Error('refresh did not set auth cookies');
+      return createLoginRedirect(request);
     }
 
     const forwardedHeaders = new Headers(request.headers);
@@ -171,12 +188,9 @@ export async function proxy(request: NextRequest) {
 
     return response;
   } catch {
-    const loginUrl = new URL('/auth/login', request.url);
-    loginUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
-
-    const response = NextResponse.redirect(loginUrl);
-    clearAuthCookies(response);
-    return response;
+    return NextResponse.next();
+  } finally {
+    clearTimeout(refreshTimeout);
   }
 }
 

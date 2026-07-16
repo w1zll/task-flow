@@ -219,4 +219,20 @@ describe('proxy', () => {
       maxAge: 0,
     });
   });
+
+  it('allows rendering when the backend is temporarily unavailable', async () => {
+    const request = createRequest({
+      pathname: '/workspaces',
+      accessToken: createJwt(-10),
+      refreshToken: 'refresh-old',
+    });
+
+    (global.fetch as jest.Mock).mockRejectedValue(new TypeError('fetch failed'));
+
+    const response = await proxy(request);
+
+    expect(mockNextResponse.next).toHaveBeenCalledWith();
+    expect(mockNextResponse.redirect).not.toHaveBeenCalled();
+    expect(response.cookies.set).not.toHaveBeenCalled();
+  });
 });

@@ -7,13 +7,13 @@ import OfflineRuntime from '@/shared/ui/OfflineRuntime';
 import RouteProgressBar from '@/shared/ui/RouteProgressBar';
 import OfflineNavigationGuard from '@/shared/ui/OfflineNavigationGuard';
 import OfflineNavigationOutlet from '@/shared/ui/OfflineNavigationOutlet';
+import BackendWakeupRuntime from '@/shared/ui/BackendWakeupRuntime';
 import {
   QUERY_CACHE_BUSTER,
   QUERY_CACHE_MAX_AGE_MS,
   queryCachePersister,
   shouldPersistQuery,
 } from '@/shared/lib/query-persistence';
-import { isBrowserOffline } from '@/shared/lib/offline';
 import { useThemeStore } from '@/shared/store/root.store';
 import type { ThemeMode } from '@/shared/store/theme.store';
 import { createAppTheme } from '@/shared/theme/theme';
@@ -49,7 +49,9 @@ const getQueryClient = () => {
   }
 
   if (!browserQueryClient) {
-    onlineManager.setOnline(!isBrowserOffline());
+    // BackendWakeupRuntime is the source of truth for API readiness. Starting
+    // online here would let workspace queries race the Render cold start.
+    onlineManager.setOnline(false);
     browserQueryClient = createQueryClient();
   }
   return browserQueryClient;
@@ -134,6 +136,7 @@ const Providers = ({
             >
               <AppHeader initialThemeMode={initialThemeMode} />
               <RouteProgressBar />
+              <BackendWakeupRuntime />
               <OfflineRuntime />
               <OfflineNavigationGuard />
               <OfflineNavigationOutlet>

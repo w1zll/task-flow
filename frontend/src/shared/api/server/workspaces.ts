@@ -8,6 +8,7 @@ import {
 } from '@/shared/api/api';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { BackendUnavailableError, fetchBackendApi } from './backend';
 
 const apiBaseUrl = process.env.API_URL || 'http://localhost:3001';
 
@@ -18,7 +19,7 @@ const getCookieHeader = async () => {
 
 export const getWorkspacesForCurrentUser = async (): Promise<Workspace[]> => {
   const cookieHeader = await getCookieHeader();
-  const response = await fetch(`${apiBaseUrl}/api/workspaces`, {
+  const response = await fetchBackendApi(`${apiBaseUrl}/api/workspaces`, {
     cache: 'no-store',
     headers: {
       cookie: cookieHeader,
@@ -30,7 +31,9 @@ export const getWorkspacesForCurrentUser = async (): Promise<Workspace[]> => {
   }
 
   if (!response.ok) {
-    throw new Error(`Workspace API request failed: ${response.status}`);
+    throw new BackendUnavailableError(
+      `Workspace API request failed: ${response.status}`,
+    );
   }
 
   return response.json() as Promise<Workspace[]>;
@@ -38,7 +41,7 @@ export const getWorkspacesForCurrentUser = async (): Promise<Workspace[]> => {
 
 const fetchWorkspaceApi = async <T>(path: string): Promise<T> => {
   const cookieHeader = await getCookieHeader();
-  const response = await fetch(`${apiBaseUrl}${path}`, {
+  const response = await fetchBackendApi(`${apiBaseUrl}${path}`, {
     cache: 'no-store',
     headers: {
       cookie: cookieHeader,
@@ -50,7 +53,9 @@ const fetchWorkspaceApi = async <T>(path: string): Promise<T> => {
   }
 
   if (!response.ok) {
-    throw new Error(`Workspace API request failed: ${response.status}`);
+    throw new BackendUnavailableError(
+      `Workspace API request failed: ${response.status}`,
+    );
   }
 
   return response.json() as Promise<T>;

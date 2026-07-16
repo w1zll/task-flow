@@ -152,7 +152,7 @@ const RecentBoardsPanel = ({
                     <CardActionArea
                       component={isOffline ? 'a' : Link}
                       href={`/workspaces/${workspaceId}/boards/${board.id}`}
-                      prefetch={false}
+                      prefetch={isOffline ? undefined : false}
                       sx={actionAreaSx}
                     >
                       {content}

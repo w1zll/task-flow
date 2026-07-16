@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { queryKeys } from '@/shared/queries/board-query-keys';
 import { useOfflineBoardNavigationStore } from '@/shared/store/offline-board-navigation.store';
+import { useBackendAvailabilityStore } from '@/shared/store/backend-availability.store';
 import OfflineNavigationGuard from './OfflineNavigationGuard';
 
 const mockEnqueueSnackbar = jest.fn();
@@ -27,6 +28,10 @@ const renderGuard = (queryClient: QueryClient, href: string) =>
   );
 
 describe('OfflineNavigationGuard', () => {
+  beforeEach(() => {
+    useBackendAvailabilityStore.setState({ status: 'checking' });
+  });
+
   afterEach(() => {
     useOfflineBoardNavigationStore.getState().clearSelection();
     mockEnqueueSnackbar.mockClear();
@@ -91,6 +96,35 @@ describe('OfflineNavigationGuard', () => {
     expect(laterPopStateHandler).not.toHaveBeenCalled();
 
     window.removeEventListener('popstate', laterPopStateHandler);
+    nativePushState.mockRestore();
+  });
+
+  it('does not recreate the history lock after an unrelated rerender', () => {
+    const queryClient = new QueryClient();
+    const href = '/workspaces';
+    const nativePushState = jest.spyOn(History.prototype, 'pushState');
+    const view = renderGuard(queryClient, href);
+
+    expect(nativePushState).toHaveBeenCalledTimes(1);
+
+    view.rerender(
+      <QueryClientProvider client={queryClient}>
+        <OfflineNavigationGuard />
+        <a href={href}>navigate</a>
+      </QueryClientProvider>,
+    );
+
+    expect(nativePushState).toHaveBeenCalledTimes(1);
+    nativePushState.mockRestore();
+  });
+
+  it('does not lock App Router history while the backend is starting', () => {
+    useBackendAvailabilityStore.setState({ status: 'starting' });
+    const nativePushState = jest.spyOn(History.prototype, 'pushState');
+
+    renderGuard(new QueryClient(), '/workspaces');
+
+    expect(nativePushState).not.toHaveBeenCalled();
     nativePushState.mockRestore();
   });
 });
