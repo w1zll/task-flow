@@ -575,7 +575,7 @@ const WhiteboardPixiCanvas = ({
       await app.init({
         resizeTo: host,
         backgroundAlpha: 1,
-        backgroundColor: hexToNumber(canvasPalette.background, 0xf8fafc),
+        backgroundColor: 0xf8fafc,
         antialias: true,
         autoDensity: true,
         resolution:
@@ -1014,7 +1014,6 @@ const WhiteboardPixiCanvas = ({
       onCursorMove,
       onRequestTextNote,
       interactionOperations,
-      operations,
       startGesture,
       updateBrushCursor,
     ],

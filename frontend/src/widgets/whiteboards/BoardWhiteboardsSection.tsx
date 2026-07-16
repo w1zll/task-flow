@@ -42,21 +42,34 @@ const BoardWhiteboardsSection = ({
       }}
     >
       <Stack
-        direction="row"
+        direction={{ xs: 'column', md: 'row' }}
         spacing={1.25}
-        sx={{ alignItems: 'center', minWidth: 0 }}
+        useFlexGap
+        sx={{
+          alignItems: { xs: 'stretch', md: 'center' },
+          minWidth: 0,
+          flexWrap: 'wrap',
+        }}
       >
         <Stack
           direction="row"
           spacing={1}
-          sx={{ alignItems: 'center', minWidth: 0, flexShrink: 0 }}
+          sx={{
+            alignItems: 'center',
+            minWidth: 0,
+            flex: { xs: '1 1 auto', md: '1 1 260px', lg: '0 1 320px' },
+          }}
         >
           <GestureOutlined color="primary" fontSize="small" />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               {t('boardSectionTitle')}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: 'block', overflowWrap: 'anywhere' }}
+            >
               {t('boardSectionDescription')}
             </Typography>
           </Box>
@@ -66,7 +79,7 @@ const BoardWhiteboardsSection = ({
           direction="row"
           spacing={1}
           useFlexGap
-          sx={{ flex: 1, minWidth: 0, flexWrap: 'wrap' }}
+          sx={{ flex: '1 1 180px', minWidth: 0, flexWrap: 'wrap' }}
         >
           {linkedWhiteboards.map((whiteboard) => (
             <Chip
@@ -86,12 +99,21 @@ const BoardWhiteboardsSection = ({
           ))}
         </Stack>
 
-        <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            flexShrink: 0,
+            alignSelf: { xs: 'flex-start', md: 'center' },
+            ml: { lg: 'auto' },
+          }}
+        >
           <Button
             size="small"
             startIcon={<LinkOutlined />}
             disabled={!canCreateOrAttach}
             onClick={onAttach}
+            sx={{ whiteSpace: 'nowrap' }}
           >
             {t('attach')}
           </Button>
@@ -101,6 +123,7 @@ const BoardWhiteboardsSection = ({
             startIcon={<Add />}
             disabled={!canCreateOrAttach}
             onClick={onCreate}
+            sx={{ whiteSpace: 'nowrap' }}
           >
             {t('create')}
           </Button>
