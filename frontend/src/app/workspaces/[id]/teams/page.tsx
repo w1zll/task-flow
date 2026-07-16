@@ -11,6 +11,7 @@ import {
 } from '@tanstack/react-query';
 import { getTranslations } from 'next-intl/server';
 import { Metadata } from 'next';
+import { isBackendUnavailableError } from '@/shared/api/server/backend';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -28,13 +29,17 @@ export async function generateMetadata(): Promise<Metadata> {
 const WorkspaceTeamsRoute = async ({ params }: Props) => {
   const { id } = await params;
   const queryClient = new QueryClient();
-  const [members, teams] = await Promise.all([
-    getWorkspaceMembersForCurrentUser(id),
-    getWorkspaceTeamsForCurrentUser(id),
-  ]);
+  try {
+    const [members, teams] = await Promise.all([
+      getWorkspaceMembersForCurrentUser(id),
+      getWorkspaceTeamsForCurrentUser(id),
+    ]);
 
-  queryClient.setQueryData(queryKeys.workspaceMembers(id), members);
-  queryClient.setQueryData(queryKeys.workspaceTeams(id), teams);
+    queryClient.setQueryData(queryKeys.workspaceMembers(id), members);
+    queryClient.setQueryData(queryKeys.workspaceTeams(id), teams);
+  } catch (error) {
+    if (!isBackendUnavailableError(error)) throw error;
+  }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

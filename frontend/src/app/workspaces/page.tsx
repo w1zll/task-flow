@@ -9,6 +9,8 @@ import {
 } from '@tanstack/react-query';
 import { getTranslations } from 'next-intl/server';
 import { Metadata } from 'next/types';
+import type { Workspace } from '@/shared/api/api';
+import { isBackendUnavailableError } from '@/shared/api/server/backend';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -25,13 +27,19 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const WorkspacesPage = async () => {
   const queryClient = new QueryClient();
-  const [boards, workspaces] = await Promise.all([
-    getBoardsForCurrentUser(),
-    getWorkspacesForCurrentUser(),
-  ]);
+  let workspaces: Workspace[] = [];
 
-  queryClient.setQueryData(queryKeys.boards, boards);
-  queryClient.setQueryData(queryKeys.workspaces, workspaces);
+  try {
+    const [boards, prefetchedWorkspaces] = await Promise.all([
+      getBoardsForCurrentUser(),
+      getWorkspacesForCurrentUser(),
+    ]);
+    workspaces = prefetchedWorkspaces;
+    queryClient.setQueryData(queryKeys.boards, boards);
+    queryClient.setQueryData(queryKeys.workspaces, workspaces);
+  } catch (error) {
+    if (!isBackendUnavailableError(error)) throw error;
+  }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

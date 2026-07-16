@@ -150,7 +150,7 @@ const BoardCard = ({
             <CardActionArea
               component={isOfflineCachedLink ? 'a' : Link}
               href={href}
-              prefetch={false}
+              prefetch={isOfflineCachedLink ? undefined : false}
               sx={actionAreaSx}
             >
               {content}

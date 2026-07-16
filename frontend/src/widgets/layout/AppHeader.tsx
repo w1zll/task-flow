@@ -103,7 +103,7 @@ const AppHeader = ({
             }}
             component={isOffline ? 'a' : NextLink}
             href="/workspaces"
-            prefetch={false}
+            prefetch={isOffline ? undefined : false}
           >
             {t('myBoards')}
           </Link>
@@ -115,7 +115,7 @@ const AppHeader = ({
               <IconButton
                 component={isOffline ? 'a' : NextLink}
                 href="/workspaces"
-                prefetch={false}
+                prefetch={isOffline ? undefined : false}
                 aria-label={t('myBoards')}
                 sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
               >

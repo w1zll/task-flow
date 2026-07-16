@@ -9,6 +9,8 @@ import {
 import { getTranslations } from 'next-intl/server';
 import { Metadata } from 'next/types';
 import { redirect } from 'next/navigation';
+import { isBackendUnavailableError } from '@/shared/api/server/backend';
+import type { Board } from '@/shared/api/api';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -33,7 +35,17 @@ export async function generateMetadata({
 const WorkspaceBoardRoute = async ({ params }: Props) => {
   const { id, boardId } = await params;
   const queryClient = new QueryClient();
-  const board = await getBoardForCurrentUser(boardId);
+  let board: Board | undefined;
+
+  try {
+    board = await getBoardForCurrentUser(boardId);
+  } catch (error) {
+    if (!isBackendUnavailableError(error)) throw error;
+  }
+
+  if (!board) {
+    return <KanbanBoardPage key={boardId} boardId={boardId} />;
+  }
 
   if (board.workspaceId !== id) {
     redirect(`/workspaces/${board.workspaceId}/boards/${board.id}`);

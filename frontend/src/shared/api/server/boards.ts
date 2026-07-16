@@ -5,6 +5,7 @@ import { getBoardContentTag } from '@/shared/cache/board-cache-tags';
 import { unstable_cache } from 'next/cache';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { BackendUnavailableError, fetchBackendApi } from './backend';
 
 const apiBaseUrl = process.env.API_URL || 'http://localhost:3001';
 const boardContentCacheVersion = 'v2';
@@ -18,7 +19,7 @@ const fetchBoardApi = async <T>(
   path: string,
   init: RequestInit & { next?: NextFetchRequestConfig } = {},
 ): Promise<T> => {
-  const response = await fetch(`${apiBaseUrl}${path}`, init);
+  const response = await fetchBackendApi(`${apiBaseUrl}${path}`, init);
   handleBoardApiResponse(response);
 
   return response.json() as Promise<T>;
@@ -28,7 +29,7 @@ const fetchBoardApiNoContent = async (
   path: string,
   init: RequestInit & { next?: NextFetchRequestConfig } = {},
 ): Promise<void> => {
-  const response = await fetch(`${apiBaseUrl}${path}`, init);
+  const response = await fetchBackendApi(`${apiBaseUrl}${path}`, init);
   handleBoardApiResponse(response);
 };
 
@@ -42,7 +43,9 @@ const handleBoardApiResponse = (response: Response) => {
   }
 
   if (!response.ok) {
-    throw new Error(`Board API request failed: ${response.status}`);
+    throw new BackendUnavailableError(
+      `Board API request failed: ${response.status}`,
+    );
   }
 };
 
