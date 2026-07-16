@@ -547,63 +547,82 @@ const WhiteboardCanvasPage = ({ workspaceId, whiteboardId }: Props) => {
     </Stack>
   );
 
-  const renderBrushControls = () => (
-    <Stack
-      direction={{ xs: 'column', sm: 'row' }}
-      spacing={{ xs: 0.75, sm: 2.25, xl: 3 }}
-      sx={{
-        alignItems: { xs: 'stretch', sm: 'center' },
-        flex: { xs: '1 1 100%', md: '1 1 360px', xl: '1 1 500px' },
-        minWidth: { sm: 340, xl: 500 },
-      }}
-    >
+  const renderBrushControls = (variant: 'toolbar' | 'drawer' = 'toolbar') => {
+    const isDrawer = variant === 'drawer';
+
+    return (
       <Stack
-        direction="row"
-        spacing={1}
-        sx={{ alignItems: 'center', minWidth: { sm: 170, xl: 230 } }}
+        direction={isDrawer ? 'column' : { xs: 'column', sm: 'row' }}
+        spacing={isDrawer ? 1.5 : { xs: 0.75, sm: 2.25, xl: 3 }}
+        sx={{
+          alignItems: isDrawer ? 'stretch' : { xs: 'stretch', sm: 'center' },
+          flex: isDrawer
+            ? '0 0 auto'
+            : { xs: '1 1 100%', md: '1 1 360px', xl: '1 1 500px' },
+          minWidth: isDrawer ? 0 : { sm: 340, xl: 500 },
+          width: isDrawer ? '100%' : undefined,
+        }}
       >
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ flexShrink: 0 }}
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            alignItems: 'center',
+            minWidth: isDrawer ? 0 : { sm: 170, xl: 230 },
+          }}
         >
-          {t('width')}
-        </Typography>
-        <Slider
-          size="small"
-          min={2}
-          max={24}
-          value={width}
-          onChange={(_, value) => setWidth(value as number)}
-          aria-label={t('width')}
-          sx={{ minWidth: { xs: 120, xl: 180 } }}
-        />
-      </Stack>
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{ alignItems: 'center', minWidth: { sm: 190, xl: 250 } }}
-      >
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ flexShrink: 0 }}
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ flexShrink: 0 }}
+          >
+            {t('width')}
+          </Typography>
+          <Slider
+            size="small"
+            min={2}
+            max={24}
+            value={width}
+            onChange={(_, value) => setWidth(value as number)}
+            aria-label={t('width')}
+            sx={{
+              minWidth: isDrawer ? 0 : { xs: 120, xl: 180 },
+              flex: isDrawer ? 1 : undefined,
+            }}
+          />
+        </Stack>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            alignItems: 'center',
+            minWidth: isDrawer ? 0 : { sm: 190, xl: 250 },
+          }}
         >
-          {t('opacity')}
-        </Typography>
-        <Slider
-          size="small"
-          min={0.15}
-          max={1}
-          step={0.05}
-          value={opacity}
-          onChange={(_, value) => setOpacity(value as number)}
-          aria-label={t('opacity')}
-          sx={{ minWidth: { xs: 120, xl: 190 } }}
-        />
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ flexShrink: 0 }}
+          >
+            {t('opacity')}
+          </Typography>
+          <Slider
+            size="small"
+            min={0.15}
+            max={1}
+            step={0.05}
+            value={opacity}
+            onChange={(_, value) => setOpacity(value as number)}
+            aria-label={t('opacity')}
+            sx={{
+              minWidth: isDrawer ? 0 : { xs: 120, xl: 190 },
+              flex: isDrawer ? 1 : undefined,
+            }}
+          />
+        </Stack>
       </Stack>
-    </Stack>
-  );
+    );
+  };
 
   if (stateQuery.isLoading) {
     return (
@@ -686,7 +705,7 @@ const WhiteboardCanvasPage = ({ workspaceId, whiteboardId }: Props) => {
             startIcon={<TuneOutlined />}
             onClick={() => setToolsOpen(true)}
             sx={{
-              display: { xs: 'inline-flex', sm: 'none' },
+              display: { xs: 'inline-flex', lg: 'none' },
               flexShrink: 0,
             }}
           >
@@ -695,7 +714,7 @@ const WhiteboardCanvasPage = ({ workspaceId, whiteboardId }: Props) => {
 
           <Box
             sx={{
-              display: { xs: 'none', sm: 'block' },
+              display: { xs: 'none', lg: 'block' },
               flex: { sm: '1 1 auto', md: '0 0 auto' },
               minWidth: 0,
             }}
@@ -703,13 +722,13 @@ const WhiteboardCanvasPage = ({ workspaceId, whiteboardId }: Props) => {
             {renderToolPicker()}
           </Box>
 
-          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+          <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
             {renderColorPicker()}
           </Box>
 
           <Box
             sx={{
-              display: { xs: 'none', sm: 'block' },
+              display: { xs: 'none', lg: 'block' },
               flex: { md: '1 1 360px', xl: '1 1 500px' },
               minWidth: { md: 340, xl: 500 },
             }}
@@ -804,7 +823,15 @@ const WhiteboardCanvasPage = ({ workspaceId, whiteboardId }: Props) => {
         </Alert>
       )}
 
-      <Box ref={hostRef} sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <Box
+        ref={hostRef}
+        sx={{
+          flex: 1,
+          width: '100%',
+          minHeight: 0,
+          overflow: 'hidden',
+        }}
+      >
         <WhiteboardPixiCanvas
           operations={serverOperations}
           pendingOperations={pendingOperations}
@@ -835,7 +862,7 @@ const WhiteboardCanvasPage = ({ workspaceId, whiteboardId }: Props) => {
           },
         }}
       >
-        <Stack spacing={2} sx={{ p: 2 }}>
+        <Stack spacing={2} sx={{ p: 2, minWidth: 0 }}>
           <Stack
             direction="row"
             spacing={1}
@@ -855,7 +882,7 @@ const WhiteboardCanvasPage = ({ workspaceId, whiteboardId }: Props) => {
           <Divider />
           {renderToolPicker()}
           {renderColorPicker()}
-          {renderBrushControls()}
+          {renderBrushControls('drawer')}
         </Stack>
       </Drawer>
 
