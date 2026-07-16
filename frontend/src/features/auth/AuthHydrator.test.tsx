@@ -18,6 +18,13 @@ jest.mock('@/shared/lib/auth-session', () => ({
   writeStoredAuthUser: jest.fn(),
 }));
 jest.mock('@/shared/lib/offline');
+jest.mock('@/shared/hooks/useOnlineStatus', () => ({
+  useOnlineStatus: () => true,
+}));
+jest.mock('@/shared/store/backend-availability.store', () => ({
+  useBackendAvailabilityStore: (selector: any) =>
+    selector({ status: 'ready' }),
+}));
 
 const mockAuthApi = authApi as jest.Mocked<typeof authApi>;
 const mockUsePathname = usePathname as jest.MockedFunction<typeof usePathname>;

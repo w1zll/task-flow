@@ -7,6 +7,8 @@ import {
   markNetworkOffline,
 } from '@/shared/lib/offline';
 import { useAuthStore } from '@/shared/store/root.store';
+import { useBackendAvailabilityStore } from '@/shared/store/backend-availability.store';
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -29,6 +31,8 @@ const isOfflineProbeResponse = (error: unknown) => {
 
 const AuthHydrator = () => {
   const pathname = usePathname();
+  const isOnline = useOnlineStatus();
+  const backendStatus = useBackendAvailabilityStore((state) => state.status);
   const isLoading = useAuthStore((state) => state.isLoading);
   const hydrate = useAuthStore((state) => state.hydrate);
 
@@ -47,6 +51,13 @@ const AuthHydrator = () => {
     const hydrateFromCache = () => {
       hydrate(readStoredAuthUser());
     };
+
+    if (!isOnline) {
+      hydrateFromCache();
+      return;
+    }
+
+    if (backendStatus !== 'ready') return;
 
     const loadAuthUser = async () => {
       if (isBrowserOffline()) {
@@ -99,7 +110,7 @@ const AuthHydrator = () => {
         window.clearTimeout(authTimeoutId);
       }
     };
-  }, [hydrate, isLoading, pathname]);
+  }, [backendStatus, hydrate, isLoading, isOnline, pathname]);
 
   return null;
 };

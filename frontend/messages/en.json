@@ -1,4 +1,9 @@
 {
+  "SystemStatus": {
+    "backendStartingTitle": "Starting the demo server",
+    "backendStartingDescription": "The free backend is waking from sleep. This usually takes up to 30 seconds, and the page will continue automatically.",
+    "backendReady": "The server is ready. Loading continues."
+  },
   "HomePage": {
     "title": "TaskFlow - workspaces for teams and tasks",
     "description": "Organize work in spaces with boards, canvases, teams, roles, and tasks.",

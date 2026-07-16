@@ -8,6 +8,7 @@ import {
   QueryClient,
 } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
+import { isBackendUnavailableError } from '@/shared/api/server/backend';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -21,18 +22,23 @@ interface Props {
 const WorkspaceLayout = async ({ children, params }: Props) => {
   const { id } = (await params) as { id: string };
   const queryClient = new QueryClient();
-  const [workspaces, boards] = await Promise.all([
-    getWorkspacesForCurrentUser(),
-    getBoardsForCurrentUser(),
-  ]);
-  const workspace = workspaces.find((item) => item.id === id);
 
-  if (!workspace) {
-    notFound();
+  try {
+    const [workspaces, boards] = await Promise.all([
+      getWorkspacesForCurrentUser(),
+      getBoardsForCurrentUser(),
+    ]);
+    const workspace = workspaces.find((item) => item.id === id);
+
+    if (!workspace) {
+      notFound();
+    }
+
+    queryClient.setQueryData(queryKeys.workspaces, workspaces);
+    queryClient.setQueryData(queryKeys.boards, boards);
+  } catch (error) {
+    if (!isBackendUnavailableError(error)) throw error;
   }
-
-  queryClient.setQueryData(queryKeys.workspaces, workspaces);
-  queryClient.setQueryData(queryKeys.boards, boards);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

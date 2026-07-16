@@ -2,7 +2,6 @@
 
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import type { Board } from '@/shared/api/api';
-import { markNetworkOffline, markNetworkOnline } from '@/shared/lib/offline';
 import {
   syncOfflineDocumentAuthentication,
   syncOfflineDocumentLocale,
@@ -10,14 +9,15 @@ import {
 } from '@/shared/lib/offline-navigation-cache';
 import { queryKeys } from '@/shared/queries/board-query-keys';
 import { useAuthStore } from '@/shared/store/root.store';
+import { useBackendAvailabilityStore } from '@/shared/store/backend-availability.store';
 import { CloudOffOutlined } from '@mui/icons-material';
-import { Alert, Box } from '@mui/material';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import {
   onlineManager,
   type QueryCacheNotifyEvent,
   useQueryClient,
 } from '@tanstack/react-query';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
 import { useEffect, useRef } from 'react';
 
@@ -53,13 +53,16 @@ const copy = {
 
 const OfflineRuntime = () => {
   const locale = useLocale();
+  const systemT = useTranslations('SystemStatus');
   const text = locale === 'ru' ? copy.ru : copy.en;
   const isOnline = useOnlineStatus();
+  const backendStatus = useBackendAvailabilityStore((state) => state.status);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isAuthLoading = useAuthStore((state) => state.isLoading);
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const wasOnlineRef = useRef(isOnline);
+  const isBackendAvailable = isOnline && backendStatus === 'ready';
 
   useEffect(() => {
     // A cached Next document can contain an older locale. Only an online
@@ -74,7 +77,7 @@ const OfflineRuntime = () => {
   }, [isAuthLoading, isAuthenticated]);
 
   useEffect(() => {
-    onlineManager.setOnline(isOnline);
+    onlineManager.setOnline(isBackendAvailable);
 
     if (!wasOnlineRef.current && isOnline) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
@@ -83,86 +86,13 @@ const OfflineRuntime = () => {
     }
 
     wasOnlineRef.current = isOnline;
-  }, [enqueueSnackbar, isOnline, queryClient, text.reconnected]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    let isActive = true;
-    let controller: AbortController | null = null;
-    let timer: number | null = null;
-
-    const cleanupProbe = () => {
-      if (timer) {
-        window.clearTimeout(timer);
-        timer = null;
-      }
-      controller?.abort();
-      controller = null;
-    };
-
-    const probeConnection = () => {
-      if (!isActive || controller) return;
-
-      if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        markNetworkOffline();
-        return;
-      }
-
-      controller = new AbortController();
-      const probeController = controller;
-      timer = window.setTimeout(() => probeController.abort(), 5000);
-
-      void fetch('/api/auth/me', {
-        cache: 'no-store',
-        credentials: 'include',
-        signal: probeController.signal,
-      })
-        .then((response) => {
-          if (!isActive || controller !== probeController) return;
-
-          if (
-            !navigator.onLine ||
-            response.headers.get('x-taskflow-offline-miss') === '1'
-          ) {
-            markNetworkOffline();
-            return;
-          }
-
-          markNetworkOnline();
-        })
-        .catch(() => {
-          if (isActive && controller === probeController) {
-            markNetworkOffline();
-          }
-        })
-        .finally(() => {
-          if (controller !== probeController) return;
-          if (timer !== null) {
-            window.clearTimeout(timer);
-            timer = null;
-          }
-          controller = null;
-        });
-    };
-
-    probeConnection();
-    window.addEventListener('online', probeConnection);
-    window.addEventListener('focus', probeConnection);
-    document.addEventListener('visibilitychange', probeConnection);
-    const interval = window.setInterval(probeConnection, 15_000);
-
-    return () => {
-      isActive = false;
-      window.removeEventListener('online', probeConnection);
-      window.removeEventListener('focus', probeConnection);
-      document.removeEventListener('visibilitychange', probeConnection);
-      window.clearInterval(interval);
-      cleanupProbe();
-    };
-  }, []);
+  }, [
+    enqueueSnackbar,
+    isBackendAvailable,
+    isOnline,
+    queryClient,
+    text.reconnected,
+  ]);
 
   useEffect(() => {
     if (!isOnline || typeof window === 'undefined') return;
@@ -215,6 +145,42 @@ const OfflineRuntime = () => {
       unsubscribe();
     };
   }, [isOnline, queryClient]);
+
+  if (backendStatus === 'starting') {
+    return (
+      <Box
+        sx={{
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          flexShrink: 0,
+        }}
+      >
+        <Alert
+          severity="info"
+          icon={
+            <CircularProgress
+              size={20}
+              thickness={5}
+              color="inherit"
+              aria-hidden="true"
+            />
+          }
+          sx={{
+            borderRadius: 0,
+            alignItems: 'center',
+            '& .MuiAlert-message': { width: '100%' },
+          }}
+        >
+          <Typography component="p" variant="body2" sx={{ fontWeight: 700 }}>
+            {systemT('backendStartingTitle')}
+          </Typography>
+          <Typography component="p" variant="body2">
+            {systemT('backendStartingDescription')}
+          </Typography>
+        </Alert>
+      </Box>
+    );
+  }
 
   if (isOnline) return null;
 

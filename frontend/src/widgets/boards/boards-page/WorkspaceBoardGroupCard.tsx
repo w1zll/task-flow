@@ -137,7 +137,7 @@ const WorkspaceBoardGroupCard = ({
           <Box
             component={isOffline ? 'a' : Link}
             href={`/workspaces/${workspace.id}`}
-            prefetch={false}
+            prefetch={isOffline ? undefined : false}
             sx={headerSx}
           >
             {headerContent}

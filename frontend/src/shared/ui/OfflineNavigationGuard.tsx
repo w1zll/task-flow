@@ -4,10 +4,11 @@ import type { Board } from '@/shared/api/api';
 import { useIsOffline } from '@/shared/hooks/useOnlineStatus';
 import { queryKeys } from '@/shared/queries/board-query-keys';
 import { useOfflineBoardNavigationStore } from '@/shared/store/offline-board-navigation.store';
+import { useBackendAvailabilityStore } from '@/shared/store/backend-availability.store';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useSnackbar } from 'notistack';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const BOARD_ROUTE = /^\/workspaces\/([^/]+)\/boards\/([^/]+)\/?$/;
 const WORKSPACE_BOARDS_ROUTE = /^\/workspaces\/([^/]+)\/boards\/?$/;
@@ -21,6 +22,7 @@ const isModifiedClick = (event: MouseEvent) =>
 
 const OfflineNavigationGuard = () => {
   const isOffline = useIsOffline();
+  const backendStatus = useBackendAvailabilityStore((state) => state.status);
   const queryClient = useQueryClient();
   const selectBoard = useOfflineBoardNavigationStore(
     (state) => state.selectBoard,
@@ -31,9 +33,15 @@ const OfflineNavigationGuard = () => {
   const boardsT = useTranslations('Boards');
   const shellT = useTranslations('WorkspaceShell');
   const { enqueueSnackbar } = useSnackbar();
+  const feedbackRef = useRef({ boardsT, enqueueSnackbar, shellT });
+  const shouldGuardNavigation = isOffline && backendStatus !== 'starting';
 
   useEffect(() => {
-    if (!isOffline) return;
+    feedbackRef.current = { boardsT, enqueueSnackbar, shellT };
+  }, [boardsT, enqueueSnackbar, shellT]);
+
+  useEffect(() => {
+    if (!shouldGuardNavigation) return;
 
     const nativePushState = History.prototype.pushState;
     const nativeReplaceState = History.prototype.replaceState;
@@ -60,7 +68,8 @@ const OfflineNavigationGuard = () => {
         '',
         guardedUrl,
       );
-      enqueueSnackbar(shellT('offlineSectionUnavailable'), {
+      const feedback = feedbackRef.current;
+      feedback.enqueueSnackbar(feedback.shellT('offlineSectionUnavailable'), {
         variant: 'warning',
       });
     };
@@ -82,10 +91,10 @@ const OfflineNavigationGuard = () => {
         window.location.href,
       );
     };
-  }, [enqueueSnackbar, isOffline, shellT]);
+  }, [shouldGuardNavigation]);
 
   useEffect(() => {
-    if (!isOffline) return;
+    if (!shouldGuardNavigation) return;
 
     const handleClick = (event: MouseEvent) => {
       if (event.defaultPrevented || isModifiedClick(event)) return;
@@ -126,13 +135,15 @@ const OfflineNavigationGuard = () => {
           return;
         }
 
-        enqueueSnackbar(boardsT('offlineBoardUnavailable'), {
+        const feedback = feedbackRef.current;
+        feedback.enqueueSnackbar(feedback.boardsT('offlineBoardUnavailable'), {
           variant: 'warning',
         });
         return;
       }
 
-      enqueueSnackbar(shellT('offlineSectionUnavailable'), {
+      const feedback = feedbackRef.current;
+      feedback.enqueueSnackbar(feedback.shellT('offlineSectionUnavailable'), {
         variant: 'warning',
       });
     };
@@ -140,13 +151,10 @@ const OfflineNavigationGuard = () => {
     document.addEventListener('click', handleClick, true);
     return () => document.removeEventListener('click', handleClick, true);
   }, [
-    boardsT,
-    enqueueSnackbar,
-    isOffline,
     openCatalog,
     queryClient,
     selectBoard,
-    shellT,
+    shouldGuardNavigation,
   ]);
 
   return null;
