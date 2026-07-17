@@ -60,6 +60,16 @@ describe('AuthHydrator', () => {
     expect(mockAuthApi.me).not.toHaveBeenCalled();
   });
 
+  it('does not clear auth state on the OAuth callback route', () => {
+    mockUsePathname.mockReturnValue('/auth/oauth/callback');
+    mockIsBrowserOffline.mockReturnValue(false);
+
+    render(<AuthHydrator />);
+
+    expect(store.hydrate).not.toHaveBeenCalled();
+    expect(mockAuthApi.me).not.toHaveBeenCalled();
+  });
+
   it('hydrates from /api/auth/me on protected routes when auth is missing or loading', async () => {
     mockUsePathname.mockReturnValue('/profile');
     mockIsBrowserOffline.mockReturnValue(false);

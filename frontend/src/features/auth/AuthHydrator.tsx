@@ -29,6 +29,11 @@ const isOfflineProbeResponse = (error: unknown) => {
   return response?.headers?.get?.('x-taskflow-offline-miss') === '1';
 };
 
+const isAnonymousAuthRoute = (pathname: string) =>
+  pathname === '/auth' ||
+  pathname === '/auth/login' ||
+  pathname === '/auth/register';
+
 const AuthHydrator = () => {
   const pathname = usePathname();
   const isOnline = useOnlineStatus();
@@ -41,10 +46,12 @@ const AuthHydrator = () => {
     let authController: AbortController | null = null;
     let authTimeoutId: number | null = null;
 
-    if (pathname === '/auth' || pathname.startsWith('/auth/')) {
+    if (isAnonymousAuthRoute(pathname)) {
       hydrate(null);
       return;
     }
+
+    if (pathname === '/auth/oauth/callback') return;
 
     if (!isLoading) return;
 
