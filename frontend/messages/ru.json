@@ -147,6 +147,30 @@
       "loading": "Загрузка...",
       "haveAccount": "Уже есть аккаунт?",
       "login": "Войти"
+    },
+    "OAuth": {
+      "continue": {
+        "google": "Продолжить с Google",
+        "github": "Продолжить с GitHub"
+      },
+      "redirecting": "Переходим к провайдеру...",
+      "or": "или",
+      "Callback": {
+        "completing": "Завершаем вход",
+        "pleaseWait": "Проверяем сессию TaskFlow и готовим рабочее пространство.",
+        "errorTitle": "Не удалось завершить вход",
+        "errors": {
+          "account_exists": "Аккаунт с таким email уже существует и не был связан автоматически.",
+          "email_unverified": "Провайдер не подтвердил основной email.",
+          "access_denied": "Вы отменили вход или не предоставили доступ.",
+          "expired": "Попытка входа истекла или уже была использована.",
+          "identity_in_use": "Этот аккаунт провайдера уже подключён к другому пользователю.",
+          "provider_unavailable": "Google или GitHub временно недоступен. Попробуйте ещё раз."
+        },
+        "accountExistsHint": "Войдите по email и паролю, затем подключите Google или GitHub в профиле.",
+        "signInWithEmail": "Войти по email",
+        "retry": "Повторить вход"
+      }
     }
   },
   "Boards": {
@@ -465,7 +489,29 @@
     "sessionEnded": "Сессия завершена",
     "sessionEndError": "Не удалось завершить сессии",
     "noSessions": "Активных сессий нет.",
-    "loadingError": "Не удалось загрузить профиль"
+    "loadingError": "Не удалось загрузить профиль",
+    "oauthLinked": "Способ входа подключён",
+    "oauthIdentityInUse": "Этот аккаунт провайдера уже подключён к другому пользователю",
+    "oauthLinkError": "Не удалось подключить способ входа",
+    "signInMethods": {
+      "title": "Способы входа",
+      "description": "Подключайте Google и GitHub только после входа в текущий аккаунт.",
+      "password": "Email и пароль",
+      "provider": {
+        "google": "Google",
+        "github": "GitHub"
+      },
+      "connectedStatus": "Подключён",
+      "notConnectedStatus": "Не подключён",
+      "unavailableStatus": "Не настроен",
+      "connect": "Подключить",
+      "disconnect": "Отключить",
+      "disconnected": "Способ входа отключён",
+      "lastMethodError": "Нельзя отключить последний доступный способ входа",
+      "disconnectError": "Не удалось отключить способ входа",
+      "loadingError": "Не удалось загрузить способы входа",
+      "providerSettingsHint": "Отзыв доступа со стороны Google или GitHub выполняется отдельно в настройках провайдера."
+    }
   },
   "Header": {
     "myBoards": "Мои пространства",

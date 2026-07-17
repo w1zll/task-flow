@@ -11,6 +11,7 @@ import {
   capturePendingWorkspaceInviteFromLocation,
   getInviteAuthHref,
 } from '@/shared/lib/pending-workspace-invite';
+import OAuthButtons from './OAuthButtons';
 
 const LoginForm = () => {
   const t = useTranslations('Auth.Login');
@@ -62,6 +63,8 @@ const LoginForm = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             {t('subtitle')}
           </Typography>
+
+          <OAuthButtons />
 
           <Box
             component="form"

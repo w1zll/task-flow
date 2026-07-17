@@ -1,9 +1,16 @@
 import axios from 'axios';
 import { redirectToLogin } from './navigation';
+import { markNetworkOffline } from '../lib/offline';
 
 jest.mock('axios');
 jest.mock('./navigation', () => ({
   redirectToLogin: jest.fn(),
+}));
+jest.mock('../lib/offline', () => ({
+  OfflineReadOnlyError: class OfflineReadOnlyError extends Error {},
+  isBrowserOffline: jest.fn(() => false),
+  markNetworkOffline: jest.fn(),
+  markNetworkOnline: jest.fn(),
 }));
 
 describe('apiClient refresh handling', () => {
@@ -137,5 +144,30 @@ describe('apiClient refresh handling', () => {
     await expect(queuedPromise).rejects.toBe(refreshError);
     expect(mockedRedirectToLogin).toHaveBeenCalledWith('/auth/login');
     expect(apiClient).toBe(instance);
+  });
+
+  it('does not classify a CORS-style network error as offline while the browser is online', async () => {
+    const instance = createInstance();
+    let responseErrorHandler: any;
+    instance.interceptors.response.use.mockImplementation(
+      (_fulfilled: unknown, rejected: unknown) => {
+        responseErrorHandler = rejected;
+      },
+    );
+    mockedAxios.create.mockReturnValue(instance);
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    jest.isolateModules(() => {
+      require('./client');
+    });
+
+    const error = {
+      config: { url: '/api/auth/identities/google', method: 'delete' },
+    };
+    await expect(responseErrorHandler(error)).rejects.toBe(error);
+    expect(markNetworkOffline).not.toHaveBeenCalled();
   });
 });

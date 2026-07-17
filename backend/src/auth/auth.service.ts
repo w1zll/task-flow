@@ -56,13 +56,31 @@ export class AuthService {
     avatarFile?: AvatarUploadFile,
     sessionMetadata?: SessionMetadata,
   ) {
+    const user = await this.createOnboardedUser(
+      {
+        email: dto.email,
+        name: dto.name,
+        password: dto.password,
+      },
+      locale,
+      avatarFile,
+    );
+
+    return this.createSession(user, sessionMetadata);
+  }
+
+  async createOnboardedUser(
+    input: { email: string; name: string; password: string | null },
+    locale: AppLocale = 'en',
+    avatarFile?: AvatarUploadFile,
+  ) {
     const existing = await this.userRepo.findOne({
-      where: { email: dto.email },
+      where: { email: input.email },
     });
     if (existing) {
       throw new ConflictException('Пользователь с таким email уже существует');
     }
-    let user = await this.userRepo.save(this.userRepo.create(dto));
+    let user = await this.userRepo.save(this.userRepo.create(input));
 
     try {
       user = await this.avatarService.initializeAvatar(user, avatarFile);
@@ -82,7 +100,12 @@ export class AuthService {
       throw error;
     }
 
-    return this.createSession(user, sessionMetadata);
+    return user;
+  }
+
+  async discardOnboardedUser(user: User) {
+    await this.avatarService.removeStoredAvatar(user).catch(() => undefined);
+    await this.userRepo.remove(user);
   }
 
   updateAvatar(user: User, avatarFile: AvatarUploadFile) {

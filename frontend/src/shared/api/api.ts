@@ -2,10 +2,23 @@ import apiClient from './client';
 import { ApiBody, ApiResponse } from './types';
 import type { components } from './api.types';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
+import { withBrowserApiBaseUrl } from './base-url';
 
 export type AuthResponse = ApiResponse<'/api/auth/register', 'post'>;
 export type AuthUser = ApiResponse<'/api/auth/me', 'get'>;
 export type WsTokenResponse = { token: string };
+export type OAuthProvider = 'google' | 'github';
+export interface OAuthProvidersResponse {
+  providers: OAuthProvider[];
+}
+export interface AuthMethodsResponse {
+  local: boolean;
+  providers: Array<{
+    provider: OAuthProvider;
+    available: boolean;
+    connected: boolean;
+  }>;
+}
 export interface DemoWorkspaceSession {
   user: AuthUser;
   workspaceId: string;
@@ -177,6 +190,20 @@ const createAvatarForm = (data: RegisterPayload) => {
 };
 
 export const authApi = {
+  getProviders: () =>
+    apiClient.get<OAuthProvidersResponse>('/api/auth/providers'),
+
+  getMethods: () => apiClient.get<AuthMethodsResponse>('/api/auth/methods'),
+
+  unlinkProvider: (provider: OAuthProvider) =>
+    apiClient.delete<void>(`/api/auth/identities/${provider}`),
+
+  oauthStartUrl: (provider: OAuthProvider) =>
+    withBrowserApiBaseUrl(`/api/auth/oauth/${provider}/start`),
+
+  oauthLinkUrl: (provider: OAuthProvider) =>
+    withBrowserApiBaseUrl(`/api/auth/oauth/${provider}/link`),
+
   register: async (data: RegisterPayload) =>
     apiClient.post<ApiResponse<'/api/auth/register', 'post'>>(
       '/api/auth/register',

@@ -2,6 +2,7 @@ import type { CookieOptions, Response } from 'express';
 
 export const REFRESH_COOKIE = 'refresh_token';
 export const ACCESS_COOKIE = 'access_token';
+export const OAUTH_ATTEMPT_COOKIE = 'oauth_attempt';
 
 const useSecureCookies =
   process.env.AUTH_COOKIE_SECURE !== undefined
@@ -33,4 +34,22 @@ export const setTokenCookies = (
 export const clearTokenCookies = (res: Response) => {
   res.clearCookie(ACCESS_COOKIE, AUTH_COOKIE_OPTIONS);
   res.clearCookie(REFRESH_COOKIE, AUTH_COOKIE_OPTIONS);
+};
+
+const OAUTH_COOKIE_OPTIONS: CookieOptions = {
+  httpOnly: true,
+  secure: useSecureCookies,
+  sameSite: 'lax',
+  path: '/api/auth/oauth',
+};
+
+export const setOAuthAttemptCookie = (res: Response, value: string) => {
+  res.cookie(OAUTH_ATTEMPT_COOKIE, value, {
+    ...OAUTH_COOKIE_OPTIONS,
+    maxAge: 10 * 60 * 1000,
+  });
+};
+
+export const clearOAuthAttemptCookie = (res: Response) => {
+  res.clearCookie(OAUTH_ATTEMPT_COOKIE, OAUTH_COOKIE_OPTIONS);
 };

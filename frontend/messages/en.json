@@ -147,6 +147,30 @@
       "loading": "Loading...",
       "haveAccount": "Already have an account?",
       "login": "Sign in"
+    },
+    "OAuth": {
+      "continue": {
+        "google": "Continue with Google",
+        "github": "Continue with GitHub"
+      },
+      "redirecting": "Redirecting to provider...",
+      "or": "or",
+      "Callback": {
+        "completing": "Completing sign-in",
+        "pleaseWait": "Checking your TaskFlow session and preparing your workspace.",
+        "errorTitle": "Sign-in could not be completed",
+        "errors": {
+          "account_exists": "An account with this email already exists and was not linked automatically.",
+          "email_unverified": "The provider did not confirm a primary email address.",
+          "access_denied": "You cancelled sign-in or did not grant access.",
+          "expired": "This sign-in attempt expired or has already been used.",
+          "identity_in_use": "This provider account is already connected to another user.",
+          "provider_unavailable": "Google or GitHub is temporarily unavailable. Please try again."
+        },
+        "accountExistsHint": "Sign in with email and password, then connect Google or GitHub from your profile.",
+        "signInWithEmail": "Sign in with email",
+        "retry": "Try again"
+      }
     }
   },
   "Boards": {
@@ -472,7 +496,29 @@
     "sessionEnded": "Session ended",
     "sessionEndError": "Failed to end sessions",
     "noSessions": "No active sessions.",
-    "loadingError": "Failed to load profile"
+    "loadingError": "Failed to load profile",
+    "oauthLinked": "Sign-in method connected",
+    "oauthIdentityInUse": "This provider account is already connected to another user",
+    "oauthLinkError": "Failed to connect the sign-in method",
+    "signInMethods": {
+      "title": "Sign-in methods",
+      "description": "Connect Google and GitHub only after signing in to your current account.",
+      "password": "Email and password",
+      "provider": {
+        "google": "Google",
+        "github": "GitHub"
+      },
+      "connectedStatus": "Connected",
+      "notConnectedStatus": "Not connected",
+      "unavailableStatus": "Not configured",
+      "connect": "Connect",
+      "disconnect": "Disconnect",
+      "disconnected": "Sign-in method disconnected",
+      "lastMethodError": "The last available sign-in method cannot be disconnected",
+      "disconnectError": "Failed to disconnect the sign-in method",
+      "loadingError": "Failed to load sign-in methods",
+      "providerSettingsHint": "Revoke provider-side access separately in your Google or GitHub settings."
+    }
   },
   "Header": {
     "myBoards": "My spaces",
