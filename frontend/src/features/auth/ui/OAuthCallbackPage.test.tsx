@@ -3,6 +3,7 @@ import OAuthCallbackPage from './OAuthCallbackPage';
 import { authApi } from '@/shared/api/api';
 
 const mockFinishAuthentication = jest.fn();
+const mockHydrate = jest.fn();
 const mockReplace = jest.fn();
 let mockParams = new URLSearchParams();
 
@@ -15,6 +16,9 @@ jest.mock('next/navigation', () => ({
 }));
 jest.mock('@/features/auth/useAuth', () => ({
   useAuth: () => ({ finishAuthentication: mockFinishAuthentication }),
+}));
+jest.mock('@/shared/store/root.store', () => ({
+  useAuthStore: (selector: any) => selector({ hydrate: mockHydrate }),
 }));
 jest.mock('@/shared/api/api', () => ({
   authApi: { me: jest.fn() },
@@ -47,12 +51,18 @@ describe('OAuthCallbackPage', () => {
     expect(authApi.me).not.toHaveBeenCalled();
   });
 
-  it('returns a successful link flow to profile', () => {
+  it('restores the local user before returning a successful link flow to profile', async () => {
     mockParams = new URLSearchParams('linked=github');
+    const user = { id: 'user-1', email: 'user@example.com', name: 'User' };
+    (authApi.me as jest.Mock).mockResolvedValue({ data: user });
 
     render(<OAuthCallbackPage />);
 
-    expect(mockReplace).toHaveBeenCalledWith('/profile?oauth=linked&provider=github');
-    expect(authApi.me).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockHydrate).toHaveBeenCalledWith(user);
+      expect(mockReplace).toHaveBeenCalledWith(
+        '/profile?oauth=linked&provider=github',
+      );
+    });
   });
 });
