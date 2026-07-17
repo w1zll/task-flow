@@ -6,6 +6,7 @@ import { Alert, Box, Button, Card, CardContent, CircularProgress, Stack, Typogra
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { useAuthStore } from '@/shared/store/root.store';
 
 const allowedErrors = [
   'account_exists',
@@ -29,6 +30,7 @@ const OAuthCallbackPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { finishAuthentication } = useAuth();
+  const hydrate = useAuthStore((state) => state.hydrate);
   const started = useRef(false);
   const linked = searchParams.get('linked');
   const rawError = searchParams.get('error');
@@ -39,7 +41,13 @@ const OAuthCallbackPage = () => {
     if (started.current) return;
     started.current = true;
     if (linked === 'google' || linked === 'github') {
-      router.replace(`/profile?oauth=linked&provider=${linked}`);
+      void authApi
+        .me()
+        .then((response) => {
+          hydrate(response.data);
+          router.replace(`/profile?oauth=linked&provider=${linked}`);
+        })
+        .catch(() => setCompletionError(true));
       return;
     }
     if (errorCode) return;
@@ -48,7 +56,7 @@ const OAuthCallbackPage = () => {
       .me()
       .then((response) => finishAuthentication(response.data))
       .catch(() => setCompletionError(true));
-  }, [errorCode, finishAuthentication, linked, router]);
+  }, [errorCode, finishAuthentication, hydrate, linked, router]);
 
   const displayedError: CallbackError | null = completionError
     ? 'provider_unavailable'
