@@ -1,5 +1,6 @@
 import { ApiProperty, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { IsEmail, IsString, Max, MaxLength, MinLength } from 'class-validator';
+import { OAuthProvider } from '../entities/auth-identity.entity';
 
 export class RegisterDto {
   @ApiProperty({ example: 'john@example.com' })
@@ -104,4 +105,28 @@ export class SessionDto {
 
   @ApiProperty({ example: '2026-05-12T12:00:00.000Z' })
   expiresAt: string;
+}
+
+export class OAuthProvidersDto {
+  @ApiProperty({ enum: OAuthProvider, isArray: true })
+  providers: OAuthProvider[];
+}
+
+export class AuthMethodProviderDto {
+  @ApiProperty({ enum: OAuthProvider })
+  provider: OAuthProvider;
+
+  @ApiProperty()
+  available: boolean;
+
+  @ApiProperty()
+  connected: boolean;
+}
+
+export class AuthMethodsDto {
+  @ApiProperty()
+  local: boolean;
+
+  @ApiProperty({ type: AuthMethodProviderDto, isArray: true })
+  providers: AuthMethodProviderDto[];
 }

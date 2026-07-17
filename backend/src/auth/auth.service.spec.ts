@@ -359,6 +359,21 @@ describe('AuthService', () => {
 
       await expect(service.login(dto)).rejects.toThrow(UnauthorizedException);
     });
+
+    it('returns the same generic error for an OAuth-only account', async () => {
+      const dto: LoginDto = { email: 'oauth@example.com', password: 'password' };
+      const user = {
+        id: 'oauth-user',
+        email: dto.email,
+        password: null,
+        comparePassword: jest.fn().mockResolvedValue(false),
+      };
+      mockUserRepo.findOne.mockResolvedValue(user);
+
+      await expect(service.login(dto)).rejects.toThrow(
+        'Неверный email или пароль',
+      );
+    });
   });
 
   // Add more tests for refresh, logout, etc.

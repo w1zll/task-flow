@@ -1,10 +1,35 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authApi } from '@/shared/api/api';
+import { authApi, type OAuthProvider } from '@/shared/api/api';
 import { useAuthStore } from '@/shared/store/root.store';
 import { queryKeys } from './board-query-keys';
 
 export const authQueryKeys = {
   sessions: ['auth', 'sessions'] as const,
+  providers: ['auth', 'providers'] as const,
+  methods: ['auth', 'methods'] as const,
+};
+
+export const useOAuthProviders = () =>
+  useQuery({
+    queryKey: authQueryKeys.providers,
+    queryFn: () => authApi.getProviders().then((response) => response.data),
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
+
+export const useAuthMethods = () =>
+  useQuery({
+    queryKey: authQueryKeys.methods,
+    queryFn: () => authApi.getMethods().then((response) => response.data),
+    staleTime: 30_000,
+  });
+
+export const useUnlinkProvider = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (provider: OAuthProvider) => authApi.unlinkProvider(provider),
+    onSuccess: () => qc.invalidateQueries({ queryKey: authQueryKeys.methods }),
+  });
 };
 
 export const useSessions = () => {

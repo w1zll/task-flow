@@ -518,6 +518,21 @@ STORAGE_PROVIDER=local
 ENABLE_DEMO_MODE=true
 ```
 
+### Google и GitHub OAuth
+
+```env
+GOOGLE_OAUTH_CLIENT_ID=...
+GOOGLE_OAUTH_CLIENT_SECRET=...
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3001/api/auth/oauth/google/callback
+GITHUB_OAUTH_CLIENT_ID=...
+GITHUB_OAUTH_CLIENT_SECRET=...
+GITHUB_OAUTH_REDIRECT_URI=http://localhost:3001/api/auth/oauth/github/callback
+OAUTH_ATTEMPT_SECRET=<случайная строка минимум 32 байта>
+OAUTH_PROVIDER_TIMEOUT_MS=8000
+```
+
+Provider появляется в UI только когда заданы его client id, client secret, redirect URI и `OAUTH_ATTEMPT_SECRET`. При совпадении подтверждённого provider email с существующим TaskFlow account автоматического объединения нет: сначала войдите обычным способом, затем подключите provider в профиле.
+
 ### Frontend вручную
 
 ```bash
@@ -531,9 +546,12 @@ Env:
 
 ```env
 API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3001
 NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
 FRONTEND_REVALIDATE_SECRET=...
 ```
+
+`NEXT_PUBLIC_API_URL` обязателен для production OAuth: browser обращается к публичному backend напрямую, чтобы host-only httpOnly cookies, выставленные backend callback, использовались последующими API-запросами. `API_URL` остаётся server-side адресом для Next.js. Если `NEXT_PUBLIC_API_URL` не задан, frontend сохраняет прежний same-origin `/api` proxy fallback, но Google/GitHub callback на отдельном backend origin в такой конфигурации работать не будет.
 
 ### PWA/offline проверки
 

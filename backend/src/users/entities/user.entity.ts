@@ -17,6 +17,7 @@ import { Board } from '@/boards/entities/board.entity';
 import { BoardMember } from '@/boards/entities/board-member.entity';
 import { Workspace } from '@/workspaces/entities/workspace.entity';
 import { WorkspaceMember } from '@/workspaces/entities/workspace-member.entity';
+import { AuthIdentity } from '@/auth/entities/auth-identity.entity';
 
 @Entity('users')
 export class User {
@@ -29,9 +30,9 @@ export class User {
   @Column({ length: 100 })
   name: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Exclude()
-  password: string;
+  password: string | null;
 
   @Column({ nullable: true, length: 500 })
   avatar: string;
@@ -70,6 +71,9 @@ export class User {
   @OneToMany(() => RefreshToken, (token) => token.user)
   refreshTokens: RefreshToken[];
 
+  @OneToMany(() => AuthIdentity, (identity) => identity.user)
+  authIdentities: AuthIdentity[];
+
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
@@ -78,6 +82,7 @@ export class User {
     }
   }
   async comparePassword(plain: string): Promise<boolean> {
+    if (!this.password) return false;
     return bcrypt.compare(plain, this.password);
   }
 }

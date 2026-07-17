@@ -11,6 +11,13 @@ import { AuthController } from './auth.controller';
 import { BoardsModule } from '@/boards/boards.module';
 import { UsersModule } from '@/users/users.module';
 import { WorkspacesModule } from '@/workspaces/workspaces.module';
+import { AuthIdentity } from './entities/auth-identity.entity';
+import { OAuthAttempt } from './entities/oauth-attempt.entity';
+import { AuthAuditEvent } from './entities/auth-audit-event.entity';
+import { OAuthProviderService } from './oauth/oauth-provider.service';
+import { OAuthService } from './oauth/oauth.service';
+import { InMemoryRateLimiterService } from '@/common/rate-limit/in-memory-rate-limiter.service';
+import { OAuthAvatarService } from './oauth/oauth-avatar.service';
 
 @Module({
   imports: [
@@ -26,12 +33,25 @@ import { WorkspacesModule } from '@/workspaces/workspaces.module';
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, RefreshToken]),
+    TypeOrmModule.forFeature([
+      User,
+      RefreshToken,
+      AuthIdentity,
+      OAuthAttempt,
+      AuthAuditEvent,
+    ]),
     UsersModule,
     WorkspacesModule,
     forwardRef(() => BoardsModule),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    OAuthProviderService,
+    OAuthService,
+    OAuthAvatarService,
+    InMemoryRateLimiterService,
+  ],
   controllers: [AuthController],
   exports: [AuthService, JwtModule],
 })

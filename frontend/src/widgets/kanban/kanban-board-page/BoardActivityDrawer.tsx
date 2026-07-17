@@ -43,6 +43,11 @@ type ActivityChange = {
   to?: unknown;
 };
 
+type ActivityTranslator = (
+  key: string,
+  values?: Record<string, string | number | Date>,
+) => string;
+
 const getMetadataString = (
   metadata: Record<string, unknown>,
   key: string,
@@ -71,7 +76,7 @@ const getActivityTaskId = (activity: BoardActivity) => {
 
 const formatRole = (
   role: unknown,
-  t: ReturnType<typeof useTranslations>,
+  t: ActivityTranslator,
 ) => {
   switch (role) {
     case 'owner':
@@ -87,7 +92,7 @@ const formatRole = (
 
 const formatActivityField = (
   field: unknown,
-  t: ReturnType<typeof useTranslations>,
+  t: ActivityTranslator,
 ) => {
   switch (field) {
     case 'title':
@@ -130,7 +135,7 @@ const formatActivityField = (
 const formatActivityValue = (
   field: unknown,
   value: unknown,
-  t: ReturnType<typeof useTranslations>,
+  t: ActivityTranslator,
 ) => {
   if (value === null || value === undefined || value === '') {
     return t('activityValues.empty');
@@ -199,7 +204,7 @@ const formatActivityValue = (
 
 const formatActivityChanges = (
   changes: ActivityChange[],
-  t: ReturnType<typeof useTranslations>,
+  t: ActivityTranslator,
 ) =>
   changes
     .map((change) =>
@@ -213,7 +218,7 @@ const formatActivityChanges = (
 
 const formatEventText = (
   event: BoardActivity['event'],
-  t: ReturnType<typeof useTranslations>,
+  t: ActivityTranslator,
 ) => {
   switch (event) {
     case 'board_created':
@@ -253,7 +258,7 @@ const formatEventText = (
 
 const getActivitySubtitle = (
   activity: BoardActivity,
-  t: ReturnType<typeof useTranslations>,
+  t: ActivityTranslator,
 ) => {
   const actor = activity.actorUser?.name ?? t('activitySystem');
   const metadata = activity.metadata ?? {};
@@ -357,6 +362,8 @@ const BoardActivityDrawer = ({
   onOpenTask,
 }: BoardActivityDrawerProps) => {
   const t = useTranslations('BoardPage');
+  const activityT: ActivityTranslator = (key, values) =>
+    t(key as never, values as never);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'), {
     defaultMatches: false,
@@ -494,7 +501,7 @@ const BoardActivityDrawer = ({
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
-                    primary={formatEventText(activity.event, t)}
+                    primary={formatEventText(activity.event, activityT)}
                     secondary={
                       <>
                         <Typography
@@ -503,7 +510,7 @@ const BoardActivityDrawer = ({
                           color="text.secondary"
                           sx={{ display: 'block' }}
                         >
-                          {getActivitySubtitle(activity, t)}
+                          {getActivitySubtitle(activity, activityT)}
                         </Typography>
                         <Typography
                           component="span"

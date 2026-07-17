@@ -31,7 +31,9 @@ import { useAuth } from '@/features/auth/useAuth';
 import UserAvatar from '@/shared/ui/UserAvatar';
 import { AVATAR_ACCEPT, validateAvatarFile } from '@/shared/lib/avatar';
 import { useSnackbar } from 'notistack';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import SignInMethodsCard from '@/features/auth/ui/SignInMethodsCard';
 
 const ProfileClientPage = () => {
   const t = useTranslations('ProfilePage');
@@ -45,6 +47,25 @@ const ProfileClientPage = () => {
   const resetAvatar = useResetAvatar();
   const isAvatarPending = updateAvatar.isPending || resetAvatar.isPending;
   const [confirmOthersOpen, setConfirmOthersOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const oauthNotificationHandled = useRef(false);
+
+  useEffect(() => {
+    if (oauthNotificationHandled.current) return;
+    oauthNotificationHandled.current = true;
+    if (searchParams.get('oauth') === 'linked') {
+      enqueueSnackbar(t('oauthLinked'), { variant: 'success' });
+    }
+    const oauthError = searchParams.get('oauthError');
+    if (oauthError) {
+      enqueueSnackbar(
+        oauthError === 'identity_in_use'
+          ? t('oauthIdentityInUse')
+          : t('oauthLinkError'),
+        { variant: 'error' },
+      );
+    }
+  }, [enqueueSnackbar, searchParams, t]);
 
   const formatDate = (value: string) =>
     format.dateTime(new Date(value), {
@@ -184,6 +205,8 @@ const ProfileClientPage = () => {
           </Stack>
         </CardContent>
       </Card>
+
+      <SignInMethodsCard />
 
       <Typography variant="h6" sx={{ fontWeight: 700, mt: 4 }} gutterBottom>
         {t('sessionsTitle')}

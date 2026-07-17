@@ -6,6 +6,7 @@ import {
   markNetworkOnline,
 } from '../lib/offline';
 import { redirectToLogin } from './navigation';
+import { browserApiBaseUrl } from './base-url';
 
 const AUTH_ENDPOINTS = [
   '/api/auth/login',
@@ -18,7 +19,7 @@ const isOptionalAuthProbe = (url: string) =>
   /^\/api\/auth\/me(?:[?#].*)?$/.test(url);
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: '',
+  baseURL: browserApiBaseUrl,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -57,7 +58,11 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
-    if (!error.response) {
+    if (
+      !error.response &&
+      typeof navigator !== 'undefined' &&
+      navigator.onLine === false
+    ) {
       markNetworkOffline();
     }
 
