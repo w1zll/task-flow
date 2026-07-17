@@ -113,5 +113,6 @@ export const useAuth = () => {
     logout: logoutMutation.mutate,
     isLoginLoading: loginMutation.isPending || isCompletingInvite,
     isRegisterLoading: registerMutation.isPending || isCompletingInvite,
+    finishAuthentication,
   };
 };

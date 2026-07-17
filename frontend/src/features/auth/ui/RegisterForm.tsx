@@ -27,6 +27,7 @@ import {
   capturePendingWorkspaceInviteFromLocation,
   getInviteAuthHref,
 } from '@/shared/lib/pending-workspace-invite';
+import OAuthButtons from './OAuthButtons';
 
 const RegisterForm = () => {
   const t = useTranslations('Auth.Register');
@@ -109,6 +110,8 @@ const RegisterForm = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             {t('subtitle')}
           </Typography>
+
+          <OAuthButtons />
 
           <Box
             component="form"

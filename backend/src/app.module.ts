@@ -38,6 +38,9 @@ import { WhiteboardOperation } from './whiteboards/entities/whiteboard-operation
 import { WhiteboardSnapshot } from './whiteboards/entities/whiteboard-snapshot.entity';
 import { WhiteboardsModule } from './whiteboards/whiteboards.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { AuthIdentity } from './auth/entities/auth-identity.entity';
+import { OAuthAttempt } from './auth/entities/oauth-attempt.entity';
+import { AuthAuditEvent } from './auth/entities/auth-audit-event.entity';
 
 @Module({
   imports: [
@@ -83,6 +86,9 @@ import { AnalyticsModule } from './analytics/analytics.module';
             WhiteboardOperation,
             WhiteboardSnapshot,
             RefreshToken,
+            AuthIdentity,
+            OAuthAttempt,
+            AuthAuditEvent,
           ],
           synchronize: false,
           // synchronize: process.env.NODE_ENV === 'development',

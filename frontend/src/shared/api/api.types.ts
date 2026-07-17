@@ -36,6 +36,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List configured social sign-in providers */
+        get: operations["AuthController_providers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/oauth/{provider}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Start Google or GitHub sign-in */
+        get: operations["AuthController_startOAuth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/oauth/{provider}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Connect Google or GitHub to the current account */
+        get: operations["AuthController_linkOAuth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/oauth/{provider}/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Complete Google or GitHub authorization */
+        get: operations["AuthController_oauthCallback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List available sign-in methods */
+        get: operations["AuthController_methods"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/identities/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disconnect a social sign-in method */
+        delete: operations["AuthController_unlinkOAuth"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/register": {
         parameters: {
             query?: never;
@@ -1192,6 +1294,19 @@ export interface components {
             /** @example 2026-07-16T12:00:00.000Z */
             timestamp: string;
         };
+        OAuthProvidersDto: {
+            providers: ("google" | "github")[];
+        };
+        AuthMethodProviderDto: {
+            /** @enum {string} */
+            provider: "google" | "github";
+            available: boolean;
+            connected: boolean;
+        };
+        AuthMethodsDto: {
+            local: boolean;
+            providers: components["schemas"]["AuthMethodProviderDto"][];
+        };
         RegisterRequestDto: {
             /** @example john@example.com */
             email: string;
@@ -2198,6 +2313,124 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HealthResponseDto"];
                 };
+            };
+        };
+    };
+    AuthController_providers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthProvidersDto"];
+                };
+            };
+        };
+    };
+    AuthController_startOAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: "google" | "github";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_linkOAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: "google" | "github";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_oauthCallback: {
+        parameters: {
+            query: {
+                code: string;
+                state: string;
+                error: string;
+            };
+            header?: never;
+            path: {
+                provider: "google" | "github";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_methods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthMethodsDto"];
+                };
+            };
+        };
+    };
+    AuthController_unlinkOAuth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: "google" | "github";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
