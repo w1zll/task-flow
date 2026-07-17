@@ -523,10 +523,10 @@ ENABLE_DEMO_MODE=true
 ```env
 GOOGLE_OAUTH_CLIENT_ID=...
 GOOGLE_OAUTH_CLIENT_SECRET=...
-GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3001/api/auth/oauth/google/callback
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3000/api/auth/oauth/google/callback
 GITHUB_OAUTH_CLIENT_ID=...
 GITHUB_OAUTH_CLIENT_SECRET=...
-GITHUB_OAUTH_REDIRECT_URI=http://localhost:3001/api/auth/oauth/github/callback
+GITHUB_OAUTH_REDIRECT_URI=http://localhost:3000/api/auth/oauth/github/callback
 OAUTH_ATTEMPT_SECRET=<случайная строка минимум 32 байта>
 OAUTH_PROVIDER_TIMEOUT_MS=8000
 ```
@@ -546,12 +546,21 @@ Env:
 
 ```env
 API_URL=http://localhost:3001
-NEXT_PUBLIC_API_URL=http://localhost:3001
 NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
 FRONTEND_REVALIDATE_SECRET=...
 ```
 
-`NEXT_PUBLIC_API_URL` обязателен для production OAuth: browser обращается к публичному backend напрямую, чтобы host-only httpOnly cookies, выставленные backend callback, использовались последующими API-запросами. `API_URL` остаётся server-side адресом для Next.js. Если `NEXT_PUBLIC_API_URL` не задан, frontend сохраняет прежний same-origin `/api` proxy fallback, но Google/GitHub callback на отдельном backend origin в такой конфигурации работать не будет.
+Browser всегда обращается к API через same-origin путь `/api`, который Next.js проксирует на `API_URL`. Это необходимо для SSR: OAuth callback и обычные auth responses выставляют host-only httpOnly cookies на frontend-домене, поэтому эти cookies видны и браузеру, и Next.js Server Components. `API_URL` остаётся server-side адресом backend и не публикуется в browser bundle.
+
+```env
+# Local
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3000/api/auth/oauth/google/callback
+GITHUB_OAUTH_REDIRECT_URI=http://localhost:3000/api/auth/oauth/github/callback
+
+# Production example
+GOOGLE_OAUTH_REDIRECT_URI=https://your-frontend.vercel.app/api/auth/oauth/google/callback
+GITHUB_OAUTH_REDIRECT_URI=https://your-frontend.vercel.app/api/auth/oauth/github/callback
+```
 
 ### PWA/offline проверки
 
